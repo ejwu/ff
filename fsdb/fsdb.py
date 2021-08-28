@@ -41,6 +41,10 @@ BUFF_TYPES = {
 TRIGGER_TYPES = {
     "1": "RESIDENT", "2": "RANDOM", "3": "ENERGY", "4": "CD", "5": "LOST_HP", "6": "COST_HP", "7": "COST_CHP", "8": "COST_OHP"}
 
+#ConfigSkillType - Basic/energy/link?
+SKILL_TYPES = {
+    "1": "Basic", "2": "Aura", "3": "Energy", "4": "Link"}
+
 #SeekSortRule
 SEEK_SORT_RULES = {
     "1": "S_NONE", "2": "S_DISTANCE_MIN", "3": "S_DISTANCE_MAX", "4": "S_HP_PERCENT_MAX", "5": "S_HP_PERCENT_MIN",
@@ -95,14 +99,19 @@ def transform_skill(skill):
             if value["sequence"] in SEEK_SORT_RULES:
                 value["sequence"] = SEEK_SORT_RULES[value["sequence"]]
 
-        
+    # Replace skill type
+    if skill["property"]:
+        prop_str = str(skill["property"])
+        if prop_str in SKILL_TYPES:
+            skill["property"] = SKILL_TYPES[prop_str]
+            
     return skill
 
 def insert_denormalized_skill(fsid, skill):
 #c.execute("CREATE TABLE dn_skills(fsid text, descr text, id text, effect text, target_num text, target text, target_type text)")
 #    print(skill)
     for target in skill["target"]:
-        row = [fsid, skill["descr"], skill["id"]]
+        row = [fsid, skill["descr"], skill["id"], skill["property"]]
 #        print(target)
 #        print(skill["target"][target])
 #        print(skill["target"][target]["num"])
@@ -112,7 +121,7 @@ def insert_denormalized_skill(fsid, skill):
         row.append(skill["target"][target]["type"])
 #        print(row)
 #        print(str(row))
-        c.execute("INSERT INTO dn_skills VALUES(?, ?, ?, ?, ?, ?, ?)", row)
+        c.execute("INSERT INTO dn_skills VALUES(?, ?, ?, ?, ?, ?, ?, ?)", row)
 
 
 parser = argparse.ArgumentParser(description="Parse and dump FF files to a database")
@@ -135,7 +144,7 @@ conn = sqlite3.connect(args.db)
 c = conn.cursor()
 
 c.execute("DROP TABLE IF EXISTS fs")
-c.execute("CREATE TABLE fs (artifactCost text, artifactCostId text, artifactName text, artifactQuestId text, artifactStatus text, attack text, attackRange text, attackRate text, backgroundStory text, breakLevel text, cardCollectionBook text, career text, concertSkill text, contractLevel text, critDamage text, critRate text, cv text, cvCn text, defence text, descr text, exclusivePet text, favoriteFood text, fragmentId text, growType text, hp text, id text, maxLevel text, name text, qualityId text, skill text, skin text, specialCard text, star text, tasteId text, threat text, vigour)")
+c.execute("CREATE TABLE fs (artifactCost text, artifactCostId text, artifactName text, artifactQuestId text, artifactStatus text, attack text, attackRange text, attackRate text, backgroundStory text, breakLevel text, career text, concertSkill text, contractLevel text, critDamage text, critRate text, cv text, cvCn text, defence text, descr text, exclusivePet text, favoriteFood text, fragmentId text, growType text, hp text, id text, maxLevel text, name text, qualityId text, skill text, skin text, star text, tasteId text, threat text, vigour)")
 
 fs_data = json.load(open(FS_FILE))
 
@@ -146,6 +155,7 @@ fs_to_skills = {}
 skills_to_fs = {}
 for id, fs in fs_data.items():
     fs = transform_fs(fs)
+#    print(fs.keys())
 #    if id == "200001":
 #        print(list((str(value) for value in fs.values())))
 #        print(list((str(value) for value in transform_fs(fs).values())))
@@ -168,7 +178,7 @@ c.execute("DROP TABLE IF EXISTS skills")
 c.execute("CREATE TABLE skills(fsid text, battleType text, descr text, id text, immuneDispel text, infectTarget text, infectTime text, innerPile text, insideCd text, name text, property text, readingTime text, target text, triggerAction text, triggerActionTarget text, triggerCondition text, triggerConditionTarget text, triggerInsideCd text, triggerType text, type text, weaknessEffect text)")
 
 c.execute("DROP TABLE IF EXISTS dn_skills")
-c.execute("CREATE TABLE dn_skills(fsid text, descr text, id text, effect text, target_num text, target text, target_type text)") 
+c.execute("CREATE TABLE dn_skills(fsid text, descr text, id text, type text, effect text, target_num text, target text, target_type text)") 
     
 skill_data = json.load(open(SKILLS_FILE))
 skill_columns = list(skill_data["10001"].keys())
