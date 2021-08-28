@@ -1,8 +1,14 @@
 #!/usr/bin/python3
 
+import argparse
 from collections import defaultdict
 import json
+import os
+from pathlib import Path
 import sqlite3
+import sys
+
+# Mostly from BattleConstants.lua
 
 # FS rarity
 FS_RARITY = {"5": "SP", "4": "UR", "3": "SR", "2": "R", "1": "M"}
@@ -108,13 +114,30 @@ def insert_denormalized_skill(fsid, skill):
 #        print(str(row))
         c.execute("INSERT INTO dn_skills VALUES(?, ?, ?, ?, ?, ?, ?)", row)
 
-conn = sqlite3.connect("fs.db")
+
+parser = argparse.ArgumentParser(description="Parse and dump FF files to a database")
+parser.add_argument("dir", help="Base directory for the datafiles (contains com.egg.foodandroid)")
+parser.add_argument("--db", help="File name for the database to be created", default="fs.db")
+args = parser.parse_args()
+
+path = Path(args.dir)
+path = path / "com.egg.foodandroid" / "files" / "res_sub" / "conf" / "en-us" / "card"
+FS_FILE = path / "card.json.pretty"
+SKILLS_FILE = path / "skill.json.pretty"
+
+if not FS_FILE.exists():
+    sys.exit(f"Can't find card.json.pretty at {FS_FILE}")
+
+if not SKILLS_FILE.exists():
+    sys.exit(f"Can't find skill.json.pretty at {SKILLS_FILE}")
+    
+conn = sqlite3.connect(args.db)
 c = conn.cursor()
 
 c.execute("DROP TABLE IF EXISTS fs")
 c.execute("CREATE TABLE fs (artifactCost text, artifactCostId text, artifactName text, artifactQuestId text, artifactStatus text, attack text, attackRange text, attackRate text, backgroundStory text, breakLevel text, cardCollectionBook text, career text, concertSkill text, contractLevel text, critDamage text, critRate text, cv text, cvCn text, defence text, descr text, exclusivePet text, favoriteFood text, fragmentId text, growType text, hp text, id text, maxLevel text, name text, qualityId text, skill text, skin text, specialCard text, star text, tasteId text, threat text, vigour)")
 
-fs_data = json.load(open("card.json.pretty"))
+fs_data = json.load(open(FS_FILE))
 
 columns = list(fs_data["200001"].keys())
 fill = ("?," * len(columns))[:-1]
@@ -147,7 +170,7 @@ c.execute("CREATE TABLE skills(fsid text, battleType text, descr text, id text, 
 c.execute("DROP TABLE IF EXISTS dn_skills")
 c.execute("CREATE TABLE dn_skills(fsid text, descr text, id text, effect text, target_num text, target text, target_type text)") 
     
-skill_data = json.load(open("skill.json.pretty"))
+skill_data = json.load(open(SKILLS_FILE))
 skill_columns = list(skill_data["10001"].keys())
 fill = ("?," * (len(skill_columns) + 1))[:-1]
 for skill_id, skill in skill_data.items():
