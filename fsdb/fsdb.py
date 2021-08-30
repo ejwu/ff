@@ -54,6 +54,13 @@ SEEK_SORT_RULES = {
 TARGET_TYPES = {
     "1": "T_OBJ_SELF", "2": "T_OBJ_ENEMY", "3": "T_OBJ_FRIEND", "4": "T_OBJ_ALL"}
 
+# Just by inspection
+TOGI_TYPES = {
+    1: "Antler", 2: "Striped", 3: "Bushy"}
+
+# Column name for skill types, e.g., Basic/Energy/Link/T1_Antler_L6
+TYPE_DESC = "type_desc"
+
 def transform_fs(fs):
     fs["career"] = FS_TYPE[fs["career"]]
     fs["qualityId"] = FS_RARITY[fs["qualityId"]]
@@ -71,6 +78,7 @@ def transform_skill(skill):
                     print("haven't mapped target type", key)
             skill[field] = new_field
         else:
+            # TODO: what's going on here?
             print("no target for", field, skill["id"])
 
     # the type.effect field also uses buff type as a value, replace it as well
@@ -87,6 +95,7 @@ def transform_skill(skill):
                 new_trigger_type[TRIGGER_TYPES[key]] = skill["triggerType"][key]
         skill["triggerType"] = new_trigger_type
     else:
+        # TODO: what's going on here?
         print("no triggerType for", skill["id"])        
 
     # Replace target types
@@ -104,66 +113,133 @@ def transform_skill(skill):
         prop_str = str(skill["property"])
         if prop_str in SKILL_TYPES:
             skill["property"] = SKILL_TYPES[prop_str]
+    skill[TYPE_DESC] = skill["property"]
+
+    # Artifact skills have these populated, put something in for normal skills 
+    if not "skillKind" in skill:
+        skill["skillKind"] = -1
+    if not "skillGroup" in skill:
+        skill["skillGroup"] = -1
             
     return skill
 
+def insert_skill(c, fill, fsid, skill):
+    row = [fsid]
+    for k in sorted(skill.keys()):
+        row.append(json.dumps(skill[k]))
+
+    c.execute(f"INSERT INTO skills VALUES({fill})", row)
+    insert_denormalized_skill(fsid, skill)
+
+
 def insert_denormalized_skill(fsid, skill):
-#c.execute("CREATE TABLE dn_skills(fsid text, descr text, id text, effect text, target_num text, target text, target_type text)")
-#    print(skill)
     for target in skill["target"]:
-        row = [fsid, skill["descr"], skill["id"], skill["property"]]
-#        print(target)
-#        print(skill["target"][target])
-#        print(skill["target"][target]["num"])
+        row = [fsid, skill["descr"], skill["id"], skill["property"], skill["type_desc"]]
         row.append(target)
         row.append(skill["target"][target]["num"])
         row.append(skill["target"][target]["sequence"])
         row.append(skill["target"][target]["type"])
-#        print(row)
-#        print(str(row))
-        c.execute("INSERT INTO dn_skills VALUES(?, ?, ?, ?, ?, ?, ?, ?)", row)
 
+        c.execute("INSERT INTO dn_skills VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
 
-parser = argparse.ArgumentParser(description="Parse and dump FF files to a database")
-parser.add_argument("dir", help="Base directory for the datafiles (contains com.egg.foodandroid)")
-parser.add_argument("--db", help="File name for the database to be created", default="fs.db")
-args = parser.parse_args()
-
-path = Path(args.dir)
-path = path / "com.egg.foodandroid" / "files" / "res_sub" / "conf" / "en-us" / "card"
-FS_FILE = path / "card.json.pretty"
-SKILLS_FILE = path / "skill.json.pretty"
-
-if not FS_FILE.exists():
-    sys.exit(f"Can't find card.json.pretty at {FS_FILE}")
-
-if not SKILLS_FILE.exists():
-    sys.exit(f"Can't find skill.json.pretty at {SKILLS_FILE}")
+def parse_artifacts():
+    # Return a multimap of fsid to all their skills
+    fs_to_skills = defaultdict(list)
     
+    all_artifacts = json.load(open(ARTIFACT_MAPPING_FILE))
+    skill_groups = json.load(open(ARTIFACT_SKILL_GROUP_FILE))
+    for fsid in all_artifacts.keys():
+        artifact_map = all_artifacts[fsid]
+
+        # There seems to be an explicit mapping in cardArtifactGemstoneSkill.json as well.
+        # Assuming here that they're not insane and these filenames make sense.
+        artifact_file = ARTIFACT_PATH / f"gemstoneSkill{fsid}.json.pretty"
+
+        if not artifact_file.exists():
+            # This seems to happen for partially translated newer artifacts.  Presumably all of them
+            # have artifactStatus != 1 in the fs table.
+            print(f"Artifact file doesn't exist for fs {fsid} despite existing in talentPoint.json")
+            continue
+
+        artifact = json.load(open(artifact_file))
+        togi_count = 0
+
+        for key in sorted(artifact_map.keys(), key=int):
+            node = artifact_map[key]
+            # The basic and energy skill buffs are also treated as artifact skills.
+            # Identify them by their 3 levels and ignore them (togi nodes are level 1 in this file)
+            if node["getSkill"] and node["level"] != "3":
+                togi_count += 1
+
+                # Making an assumption here that skills are always in the same order
+                skill_count = 0
+                for skill in node["getSkill"]:
+                    skill_count += 1
+                    # Only use the L6 version of a skill to avoid spamming the main skill table
+                    skill = transform_skill(artifact[str(skill_groups[skill]["6"])])
+                    skill[TYPE_DESC] = f"T{togi_count}_{TOGI_TYPES[skill_count]}_L6"
+                    
+                    # Make artifact skills look like normal skills
+                    del skill["gemstoneGrade"]
+                    # Huh?  descr0 and descr show different ranges.  Might want to keep these
+                    del skill["descr0"]
+                    skill["infectTarget"] = "artifact"
+                    skill["infectTime"] = "artifact"
+                    skill["weaknessEffect"] = "artifact"
+                    fs_to_skills[fsid].append(skill)
+
+    return fs_to_skills
+
+        
+def parse_args():
+    parser = argparse.ArgumentParser(description="Parse and dump FF files to a database")
+    parser.add_argument("dir", help="Base directory for the datafiles (contains com.egg.foodandroid)")
+    parser.add_argument("--db", help="File name for the database to be created", default="fs.db")
+    return parser.parse_args()
+
+def assert_files_exist():
+    if not FS_FILE.exists():
+        sys.exit(f"Can't find card.json.pretty at {FS_FILE}")
+
+    if not SKILLS_FILE.exists():
+        sys.exit(f"Can't find skill.json.pretty at {SKILLS_FILE}")
+
+    if not ARTIFACT_MAPPING_FILE.exists():
+        sys.exit(f"Can't find talentPoint.json.pretty at {ARTIFACT_MAPPING_FILE}")
+
+    if not ARTIFACT_SKILL_GROUP_FILE.exists():
+        sys.exit(f"Can't find gemstoneSkillGroup.json.pretty at {ARTIFACT_SKILL_GROUP_FILE}")
+    
+args = parse_args()
+path = Path(args.dir) / "com.egg.foodandroid" / "files" / "publish" / "conf" / "en-us"
+FS_FILE = path / "card" / "card.json.pretty"
+SKILLS_FILE = path / "card" / "skill.json.pretty"
+
+ARTIFACT_PATH = path / "artifact"
+# This appears to be the togi map for every FS
+ARTIFACT_MAPPING_FILE = ARTIFACT_PATH / "talentPoint.json.pretty"
+# Togi map refers to a skill group, which maps to individual skills for all 10 togi levels
+ARTIFACT_SKILL_GROUP_FILE = ARTIFACT_PATH / "gemstoneSkillGroup.json.pretty"
+
+assert_files_exist()
+
 conn = sqlite3.connect(args.db)
 c = conn.cursor()
 
 c.execute("DROP TABLE IF EXISTS fs")
-c.execute("CREATE TABLE fs (artifactCost text, artifactCostId text, artifactName text, artifactQuestId text, artifactStatus text, attack text, attackRange text, attackRate text, backgroundStory text, breakLevel text, career text, concertSkill text, contractLevel text, critDamage text, critRate text, cv text, cvCn text, defence text, descr text, exclusivePet text, favoriteFood text, fragmentId text, growType text, hp text, id text, maxLevel text, name text, qualityId text, skill text, skin text, star text, tasteId text, threat text, vigour)")
+c.execute("CREATE TABLE fs (artifactCost text, artifactCostId text, artifactName text, artifactQuestId text, artifactStatus text, attack text, attackRange text, attackRate text, backgroundStory text, breakLevel text, cardCollectionBook text, career text, concertSkill text, contractLevel text, critDamage text, critRate text, cv text, cvCn text, defence text, descr text, exclusivePet text, favoriteFood text, fragmentId text, growType text, hp text, id text, maxLevel text, name text, qualityId text, skill text, skin text, specialCard text, star text, tasteId text, threat text, vigour)")
 
 fs_data = json.load(open(FS_FILE))
 
 columns = list(fs_data["200001"].keys())
-fill = ("?," * len(columns))[:-1]
+fs_fill = ("?," * len(columns))[:-1]
 
 fs_to_skills = {}
 skills_to_fs = {}
 for id, fs in fs_data.items():
     fs = transform_fs(fs)
-#    print(fs.keys())
-#    if id == "200001":
-#        print(list((str(value) for value in fs.values())))
-#        print(list((str(value) for value in transform_fs(fs).values())))
-
-#    print(fill)
-#    print(list(str(value) for value in fs.values()))
-        
-    c.execute(f"INSERT INTO fs VALUES({fill})", list((str(value) for value in fs.values())))
+    
+    c.execute(f"INSERT INTO fs VALUES({fs_fill})", list((str(value) for value in fs.values())))
     if not fs["skill"]:
         print("No skills: ", fs)
         raise
@@ -172,28 +248,37 @@ for id, fs in fs_data.items():
             print("Skill already exists:", skill_id)
         skills_to_fs[skill_id] = id
 
-
     
 c.execute("DROP TABLE IF EXISTS skills")
-c.execute("CREATE TABLE skills(fsid text, battleType text, descr text, id text, immuneDispel text, infectTarget text, infectTime text, innerPile text, insideCd text, name text, property text, readingTime text, target text, triggerAction text, triggerActionTarget text, triggerCondition text, triggerConditionTarget text, triggerInsideCd text, triggerType text, type text, weaknessEffect text)")
+c.execute("CREATE TABLE skills(fsid text, battleType text, descr text, id text, immuneDispel text, infectTarget text, infectTime text, innerPile text, insideCd text, name text, property text, readingTime text, skillGroup text, skillKind text, target text, triggerAction text, triggerActionTarget text, triggerCondition text, triggerConditionTarget text, triggerInsideCd text, triggerType text, type text, type_desc text, weaknessEffect text)")
 
+# Querying by complicated json objects on skills with multiple effects is a pain.
+# Denormalize skills by splitting each effect and target into a separate row.
 c.execute("DROP TABLE IF EXISTS dn_skills")
-c.execute("CREATE TABLE dn_skills(fsid text, descr text, id text, type text, effect text, target_num text, target text, target_type text)") 
+c.execute("CREATE TABLE dn_skills(fsid text, descr text, id text, type text, type_desc text, effect text, target_num text, target text, target_type text)") 
     
 skill_data = json.load(open(SKILLS_FILE))
 skill_columns = list(skill_data["10001"].keys())
-fill = ("?," * (len(skill_columns) + 1))[:-1]
+skill_fill = ("?," * (len(skill_columns) + 4))[:-1]
+
+# Normal skills
 for skill_id, skill in skill_data.items():
     fsid = None
     if skill_id not in skills_to_fs:
-        print("missing skill", skill_id, skill["descr"])
+        pass
+    # This includes skills for enemies as well, not just FS
+    #   print("missing skill", skill_id, skill["descr"])
     else:
         fsid = skills_to_fs[skill_id]
 
     skill = transform_skill(skill)
-    c.execute(f"INSERT INTO skills VALUES({fill})", [fsid] + list((json.dumps(value) for value in skill.values())))
-    insert_denormalized_skill(fsid, skill)
-    
-    
+    insert_skill(c, skill_fill, fsid, skill)
+
+# Artifact skills
+f2s = parse_artifacts()
+for fsid in f2s.keys():
+    for arti_skill in f2s[fsid]:
+        insert_skill(c, skill_fill, fsid, arti_skill)
+
 conn.commit()
 conn.close()
