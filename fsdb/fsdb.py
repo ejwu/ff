@@ -136,11 +136,15 @@ def insert_denormalized_skill(fsid, skill):
     for target in skill["target"]:
         row = [fsid, skill["descr"], skill["id"], skill["property"], skill["type_desc"]]
         row.append(target)
+        effect = skill["type"][target]
+        row.append(effect["effectSuccessRate"])
+        row.append(effect["effectTime"])
         row.append(skill["target"][target]["num"])
         row.append(skill["target"][target]["sequence"])
         row.append(skill["target"][target]["type"])
 
-        c.execute("INSERT INTO dn_skills VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
+
+        c.execute("INSERT INTO dn_skills VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
 
 def parse_artifacts():
     # Return a multimap of fsid to all their skills
@@ -227,7 +231,7 @@ conn = sqlite3.connect(args.db)
 c = conn.cursor()
 
 c.execute("DROP TABLE IF EXISTS fs")
-c.execute("CREATE TABLE fs (artifactCost text, artifactCostId text, artifactName text, artifactQuestId text, artifactStatus text, attack text, attackRange text, attackRate text, backgroundStory text, breakLevel text, cardCollectionBook text, career text, concertSkill text, contractLevel text, critDamage text, critRate text, cv text, cvCn text, defence text, descr text, exclusivePet text, favoriteFood text, fragmentId text, growType text, hp text, id text, maxLevel text, name text, qualityId text, skill text, skin text, specialCard text, star text, tasteId text, threat text, vigour)")
+c.execute("CREATE TABLE fs (artifactCost text, artifactCostId text, artifactName text, artifactQuestId text, artifactStatus text, attack integer, attackRange integer, attackRate integer, backgroundStory text, breakLevel text, cardCollectionBook text, career text, concertSkill text, contractLevel integer, critDamage integer, critRate integer, cv text, cvCn text, defence integer, descr text, exclusivePet text, favoriteFood text, fragmentId text, growType text, hp integer, id text, maxLevel integer, name text, qualityId text, skill text, skin text, specialCard text, star text, tasteId text, threat integer, vigour integer)")
 
 fs_data = json.load(open(FS_FILE))
 
@@ -255,7 +259,7 @@ c.execute("CREATE TABLE skills(fsid text, battleType text, descr text, id text, 
 # Querying by complicated json objects on skills with multiple effects is a pain.
 # Denormalize skills by splitting each effect and target into a separate row.
 c.execute("DROP TABLE IF EXISTS dn_skills")
-c.execute("CREATE TABLE dn_skills(fsid text, descr text, id text, type text, type_desc text, effect text, target_num text, target text, target_type text)") 
+c.execute("CREATE TABLE dn_skills(fsid text, descr text, id text, type text, type_desc text, effect text, effect_rate numeric, effect_time numeric, target_num integer, target text, target_type text)") 
     
 skill_data = json.load(open(SKILLS_FILE))
 skill_columns = list(skill_data["10001"].keys())
