@@ -1,0 +1,41 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v2.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v2.0": {
+      "DecryptCocos2dAsset/1.0.0": {
+        "dependencies": {
+          "Iconic.Zlib.Netstandard": "1.0.0"
+        },
+        "runtime": {
+          "DecryptCocos2dAsset.dll": {}
+        }
+      },
+      "Iconic.Zlib.Netstandard/1.0.0": {
+        "runtime": {
+          "lib/netstandard1.3/Iconic.Zlib.Netstandard.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "DecryptCocos2dAsset/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Iconic.Zlib.Netstandard/1.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-1CqyBU2WER/qDzatH4zRv25/YrUYn5dyJ0zMkk7J78yjQ9VSfwkLoF1VGn6kyXAtMVe2wxQp4AFjj7gbGeIDhg==",
+      "path": "iconic.zlib.netstandard/1.0.0",
+      "hashPath": "iconic.zlib.netstandard.1.0.0.nupkg.sha512"
+    }
+  }
+}

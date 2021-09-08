@@ -1,0 +1,15 @@
+/home/ejwu/cczp/DecryptCocos2dAsset/DecryptCocos2dAsset/bin/Debug/netcoreapp3.1/DecryptCocos2dAsset
+/home/ejwu/cczp/DecryptCocos2dAsset/DecryptCocos2dAsset/bin/Debug/netcoreapp3.1/DecryptCocos2dAsset.deps.json
+/home/ejwu/cczp/DecryptCocos2dAsset/DecryptCocos2dAsset/bin/Debug/netcoreapp3.1/DecryptCocos2dAsset.runtimeconfig.json
+/home/ejwu/cczp/DecryptCocos2dAsset/DecryptCocos2dAsset/bin/Debug/netcoreapp3.1/DecryptCocos2dAsset.runtimeconfig.dev.json
+/home/ejwu/cczp/DecryptCocos2dAsset/DecryptCocos2dAsset/bin/Debug/netcoreapp3.1/DecryptCocos2dAsset.dll
+/home/ejwu/cczp/DecryptCocos2dAsset/DecryptCocos2dAsset/bin/Debug/netcoreapp3.1/DecryptCocos2dAsset.pdb
+/home/ejwu/cczp/DecryptCocos2dAsset/DecryptCocos2dAsset/bin/Debug/netcoreapp3.1/Iconic.Zlib.Netstandard.dll
+/home/ejwu/cczp/DecryptCocos2dAsset/DecryptCocos2dAsset/obj/Debug/netcoreapp3.1/DecryptCocos2dAsset.csprojAssemblyReference.cache
+/home/ejwu/cczp/DecryptCocos2dAsset/DecryptCocos2dAsset/obj/Debug/netcoreapp3.1/DecryptCocos2dAsset.AssemblyInfoInputs.cache
+/home/ejwu/cczp/DecryptCocos2dAsset/DecryptCocos2dAsset/obj/Debug/netcoreapp3.1/DecryptCocos2dAsset.AssemblyInfo.cs
+/home/ejwu/cczp/DecryptCocos2dAsset/DecryptCocos2dAsset/obj/Debug/netcoreapp3.1/DecryptCocos2dAsset.csproj.CoreCompileInputs.cache
+/home/ejwu/cczp/DecryptCocos2dAsset/DecryptCocos2dAsset/obj/Debug/netcoreapp3.1/DecryptCocos2dAsset.csproj.CopyComplete
+/home/ejwu/cczp/DecryptCocos2dAsset/DecryptCocos2dAsset/obj/Debug/netcoreapp3.1/DecryptCocos2dAsset.dll
+/home/ejwu/cczp/DecryptCocos2dAsset/DecryptCocos2dAsset/obj/Debug/netcoreapp3.1/DecryptCocos2dAsset.pdb
+/home/ejwu/cczp/DecryptCocos2dAsset/DecryptCocos2dAsset/obj/Debug/netcoreapp3.1/DecryptCocos2dAsset.genruntimeconfig.cache
