@@ -74,7 +74,7 @@ def create_tables():
     # Querying by complicated json objects on skills with multiple effects is a pain.
     # Denormalize skills by splitting each effect and target into a separate row.
     c.execute("DROP TABLE IF EXISTS dn_skills")
-    c.execute("CREATE TABLE dn_skills(fs_id text, monster_id text, descr text, id text, type text, type_desc text, effect text, effect_rate numeric, effect_time numeric, target_num integer, target text, target_type text)") 
+    c.execute("CREATE TABLE dn_skills(fs_id text, monster_id text, descr text, id text, type text, type_desc text, effect_type text, effect, effect_rate numeric, effect_time numeric, target_num integer, target text, target_type text, trigger_type text, cooldown integer)") 
 
 def transform_fs(fs):
     fs["career"] = FS_TYPE[fs["career"]]
@@ -160,34 +160,30 @@ def insert_skill(c, fill, fsid, skill, skills_to_monsters):
     monster_list = []
     if str(skill["id"]) in skills_to_monsters.keys():
         monster_list = skills_to_monsters[str(skill["id"])]
-    insert_denormalized_skill(fsid, skill, monster_list)
+    insert_denormalized_skill(c, fsid, skill, monster_list)
 
-
-def insert_denormalized_skill(fsid, skill, monster_list):
+def populate_and_insert(c, fsid, monster_id, skill):
     for target in skill["target"]:
-        row = [fsid, "", skill["descr"], skill["id"], skill["property"], skill["type_desc"]]
+        row = [fsid, monster_id, skill["descr"], skill["id"], skill["property"], skill["type_desc"]]
         row.append(target)
         effect = skill["type"][target]
+        row.append(str(effect["effect"]))
         row.append(effect["effectSuccessRate"])
         row.append(effect["effectTime"])
         row.append(skill["target"][target]["num"])
         row.append(skill["target"][target]["sequence"])
         row.append(skill["target"][target]["type"])
-
-        c.execute("INSERT INTO dn_skills VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
-
+        row.append(str(skill["triggerType"]))
+        if skill["triggerType"] and "CD" in skill["triggerType"]:
+            row.append(skill["triggerType"]["CD"])
+        else:
+            row.append("")
+        c.execute("INSERT INTO dn_skills VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
+    
+def insert_denormalized_skill(c, fsid, skill, monster_list):
+    populate_and_insert(c, fsid, "", skill)
     for monster in monster_list:
-        for target in skill["target"]:
-            row = ["", monster, skill["descr"], skill["id"], skill["property"], skill["type_desc"]]
-            row.append(target)
-            effect = skill["type"][target]
-            row.append(effect["effectSuccessRate"])
-            row.append(effect["effectTime"])
-            row.append(skill["target"][target]["num"])
-            row.append(skill["target"][target]["sequence"])
-            row.append(skill["target"][target]["type"])
-
-            c.execute("INSERT INTO dn_skills VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
+        populate_and_insert(c, "", monster, skill)
             
 def parse_artifacts():
     # Return a multimap of fsid to all their skills
