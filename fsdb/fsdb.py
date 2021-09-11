@@ -81,12 +81,22 @@ def transform_fs(fs):
     fs["qualityId"] = FS_RARITY[fs["qualityId"]]
     return fs
 
+def transform_monster(monster):
+    immunity_list = []
+    for immunity in monster["immunitySkillProperty"]:
+        if immunity not in BUFF_TYPES.keys():
+            print(f"unknown immunity {immunity} in monster {monster['id']}")
+        immunity_list.append(BUFF_TYPES[immunity])
+    monster["immunitySkillProperty"] = immunity_list
+    return monster
+
 def parse_monsters():
     # Return a multimap of skills to every monster that uses it
     skills_to_monsters = defaultdict(list)
     monsters = json.load(open(MONSTER_FILE))
     fill = ("?," * len(monsters["362122"]))[:-1]
     for monster_id, monster in monsters.items():
+        monster = transform_monster(monster)
         c.execute(f"INSERT INTO monsters VALUES({fill})", list([str(monster[key]) for key in sorted(monster)]))
         for skill_id in monster["skill"]:
             skills_to_monsters[skill_id].append(monster["id"])
