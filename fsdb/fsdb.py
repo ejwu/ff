@@ -295,7 +295,8 @@ skills_to_fs = {}
 for id, fs in fs_data.items():
     fs = transform_fs(fs)
     
-    c.execute(f"INSERT INTO fs VALUES({fs_fill})", list((str(value) for value in fs.values())))
+    c.execute(f"INSERT INTO fs VALUES({fs_fill})", list([str(fs[key]) for key in sorted(fs)]))
+
     if not fs["skill"]:
         print("No skills: ", fs)
         raise
