@@ -61,10 +61,37 @@ TOGI_TYPES = {
 # Column name for skill types, e.g., Basic/Energy/Link/T1_Antler_L6
 TYPE_DESC = "type_desc"
 
+def create_tables():
+    c.execute("DROP TABLE IF EXISTS fs")
+    c.execute("CREATE TABLE fs (artifactCost text, artifactCostId text, artifactName text, artifactQuestId text, artifactStatus text, attack integer, attackRange integer, attackRate integer, backgroundStory text, breakLevel text, cardCollectionBook text, career text, concertSkill text, contractLevel integer, critDamage integer, critRate integer, cv text, cvCn text, defence integer, descr text, exclusivePet text, favoriteFood text, fragmentId text, growType text, hp integer, id text, maxLevel integer, name text, qualityId text, skill text, skin text, specialCard text, star text, tasteId text, threat integer, vigour integer)")
+
+    c.execute("DROP TABLE IF EXISTS monsters")
+    c.execute("CREATE TABLE monsters (agreeDialogue text, attack integer, attackInterval integer, attackRange integer, attackRate integer, career text, critDamage integer, critRate integer, defaultLayer text, defence integer, descr text, drawId text, dropRate integer, feature text, foodsLike text, formType text, hp integer, id text, immunitySkillProperty text, meetDialogue text, name text, petCoin text, refuseDialogue text, scale text, showSkill text, skill text, skinId text, star text, type text, weatherProperty text)")
+
+    c.execute("DROP TABLE IF EXISTS skills")
+    c.execute("CREATE TABLE skills(fsid text, battleType text, descr text, id integer, immuneDispel text, infectTarget text, infectTime text, innerPile text, insideCd text, name text, property text, readingTime text, skillGroup text, skillKind text, target text, triggerAction text, triggerActionTarget text, triggerCondition text, triggerConditionTarget text, triggerInsideCd text, triggerType text, type text, type_desc text, weaknessEffect text)")
+
+    # Querying by complicated json objects on skills with multiple effects is a pain.
+    # Denormalize skills by splitting each effect and target into a separate row.
+    c.execute("DROP TABLE IF EXISTS dn_skills")
+    c.execute("CREATE TABLE dn_skills(fs_id text, monster_id text, descr text, id text, type text, type_desc text, effect text, effect_rate numeric, effect_time numeric, target_num integer, target text, target_type text)") 
+
 def transform_fs(fs):
     fs["career"] = FS_TYPE[fs["career"]]
     fs["qualityId"] = FS_RARITY[fs["qualityId"]]
     return fs
+
+def parse_monsters():
+    # Return a multimap of skills to every monster that uses it
+    skills_to_monsters = defaultdict(list)
+    monsters = json.load(open(MONSTER_FILE))
+    fill = ("?," * len(monsters["362122"]))[:-1]
+    for monster_id, monster in monsters.items():
+        c.execute(f"INSERT INTO monsters VALUES({fill})", list([str(monster[key]) for key in sorted(monster)]))
+        for skill_id in monster["skill"]:
+            skills_to_monsters[skill_id].append(monster["id"])
+
+    return skills_to_monsters
 
 def transform_skill(skill):
     # Replace buff types
@@ -123,18 +150,22 @@ def transform_skill(skill):
             
     return skill
 
-def insert_skill(c, fill, fsid, skill):
+def insert_skill(c, fill, fsid, skill, skills_to_monsters):
     row = [fsid]
     for k in sorted(skill.keys()):
         row.append(json.dumps(skill[k]))
 
     c.execute(f"INSERT INTO skills VALUES({fill})", row)
-    insert_denormalized_skill(fsid, skill)
+
+    monster_list = []
+    if str(skill["id"]) in skills_to_monsters.keys():
+        monster_list = skills_to_monsters[str(skill["id"])]
+    insert_denormalized_skill(fsid, skill, monster_list)
 
 
-def insert_denormalized_skill(fsid, skill):
+def insert_denormalized_skill(fsid, skill, monster_list):
     for target in skill["target"]:
-        row = [fsid, skill["descr"], skill["id"], skill["property"], skill["type_desc"]]
+        row = [fsid, "", skill["descr"], skill["id"], skill["property"], skill["type_desc"]]
         row.append(target)
         effect = skill["type"][target]
         row.append(effect["effectSuccessRate"])
@@ -143,9 +174,21 @@ def insert_denormalized_skill(fsid, skill):
         row.append(skill["target"][target]["sequence"])
         row.append(skill["target"][target]["type"])
 
+        c.execute("INSERT INTO dn_skills VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
 
-        c.execute("INSERT INTO dn_skills VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
+    for monster in monster_list:
+        for target in skill["target"]:
+            row = ["", monster, skill["descr"], skill["id"], skill["property"], skill["type_desc"]]
+            row.append(target)
+            effect = skill["type"][target]
+            row.append(effect["effectSuccessRate"])
+            row.append(effect["effectTime"])
+            row.append(skill["target"][target]["num"])
+            row.append(skill["target"][target]["sequence"])
+            row.append(skill["target"][target]["type"])
 
+            c.execute("INSERT INTO dn_skills VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
+            
 def parse_artifacts():
     # Return a multimap of fsid to all their skills
     fs_to_skills = defaultdict(list)
@@ -208,6 +251,9 @@ def assert_files_exist():
     if not SKILLS_FILE.exists():
         sys.exit(f"Can't find skill.json.pretty at {SKILLS_FILE}")
 
+    if not MONSTER_FILE.exists():
+        sys.exit(f"Can't find monster.json.pretty at {MONSTER_FILE}")
+        
     if not ARTIFACT_MAPPING_FILE.exists():
         sys.exit(f"Can't find talentPoint.json.pretty at {ARTIFACT_MAPPING_FILE}")
 
@@ -218,6 +264,7 @@ args = parse_args()
 path = Path(args.dir) / "com.egg.foodandroid" / "files" / "publish" / "conf" / "en-us"
 FS_FILE = path / "card" / "card.json.pretty"
 SKILLS_FILE = path / "card" / "skill.json.pretty"
+MONSTER_FILE = path / "monster" / "monster.json.pretty"
 
 ARTIFACT_PATH = path / "artifact"
 # This appears to be the togi map for every FS
@@ -230,8 +277,7 @@ assert_files_exist()
 conn = sqlite3.connect(args.db)
 c = conn.cursor()
 
-c.execute("DROP TABLE IF EXISTS fs")
-c.execute("CREATE TABLE fs (artifactCost text, artifactCostId text, artifactName text, artifactQuestId text, artifactStatus text, attack integer, attackRange integer, attackRate integer, backgroundStory text, breakLevel text, cardCollectionBook text, career text, concertSkill text, contractLevel integer, critDamage integer, critRate integer, cv text, cvCn text, defence integer, descr text, exclusivePet text, favoriteFood text, fragmentId text, growType text, hp integer, id text, maxLevel integer, name text, qualityId text, skill text, skin text, specialCard text, star text, tasteId text, threat integer, vigour integer)")
+create_tables()
 
 fs_data = json.load(open(FS_FILE))
 
@@ -252,20 +298,14 @@ for id, fs in fs_data.items():
             print("Skill already exists:", skill_id)
         skills_to_fs[skill_id] = id
 
-    
-c.execute("DROP TABLE IF EXISTS skills")
-c.execute("CREATE TABLE skills(fsid text, battleType text, descr text, id text, immuneDispel text, infectTarget text, infectTime text, innerPile text, insideCd text, name text, property text, readingTime text, skillGroup text, skillKind text, target text, triggerAction text, triggerActionTarget text, triggerCondition text, triggerConditionTarget text, triggerInsideCd text, triggerType text, type text, type_desc text, weaknessEffect text)")
 
-# Querying by complicated json objects on skills with multiple effects is a pain.
-# Denormalize skills by splitting each effect and target into a separate row.
-c.execute("DROP TABLE IF EXISTS dn_skills")
-c.execute("CREATE TABLE dn_skills(fsid text, descr text, id text, type text, type_desc text, effect text, effect_rate numeric, effect_time numeric, target_num integer, target text, target_type text)") 
-    
+skills_to_monsters = parse_monsters()
+  
 skill_data = json.load(open(SKILLS_FILE))
 skill_columns = list(skill_data["10001"].keys())
 skill_fill = ("?," * (len(skill_columns) + 4))[:-1]
 
-# Normal skills
+# Normal skills for FS and monsters
 for skill_id, skill in skill_data.items():
     fsid = None
     if skill_id not in skills_to_fs:
@@ -276,13 +316,14 @@ for skill_id, skill in skill_data.items():
         fsid = skills_to_fs[skill_id]
 
     skill = transform_skill(skill)
-    insert_skill(c, skill_fill, fsid, skill)
+    insert_skill(c, skill_fill, fsid, skill, skills_to_monsters)
 
 # Artifact skills
 f2s = parse_artifacts()
 for fsid in f2s.keys():
     for arti_skill in f2s[fsid]:
-        insert_skill(c, skill_fill, fsid, arti_skill)
+        insert_skill(c, skill_fill, fsid, arti_skill, {})
 
 conn.commit()
 conn.close()
+
