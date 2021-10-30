@@ -1,12 +1,16 @@
 #!/usr/bin/python
 
+import argparse
+import json
+import sys
+from collections import Counter
 from collections import defaultdict
 from operator import itemgetter
-import json
 
-BAR_LEVEL = 4
+from multiset import FrozenMultiset
+from multiset import Multiset
 
-# TODO: Update when bar level increases
+# TODO: Update when bar level increases past 4
 MAT_SHOP = {
     'Rum': {'cost': 50, 'num': 10},
     'Vodka': {'cost': 50, 'num': 10},
@@ -14,7 +18,9 @@ MAT_SHOP = {
     'Tequila': {'cost': 50, 'num': 10},
     'Gin': {'cost': 50, 'num': 10},
     'Whisky': {'cost': 50, 'num': 10},
+    
     'Coffee Liqueur': {'cost': 20, 'num': 4},
+    
     'Cola': {'cost': 20, 'num': 4},
     'Cane Syrup': {'cost': 20, 'num': 4},
     'Honey': {'cost': 20, 'num': 4},
@@ -23,22 +29,35 @@ MAT_SHOP = {
     'Soda Water': {'cost': 20, 'num': 4},
     'Pineapple Juice': {'cost': 20, 'num': 4},
     'Sugar': {'cost': 20, 'num': 4},
-    'Orange Juice': {'cost': 20, 'num': 4}}
+    'Orange Juice': {'cost': 20, 'num': 4},
+    'Cream': {'cost': 20, 'num': 4},
 
+    # Level 6 ingredient needed by level 5 drinks, put it in with num=0 to avoid crashes
+    'Orange Curacao': {'cost': 20, 'num': 0}
+}
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Find various maxima for bar menus")
+    parser.add_argument("--barlevel", help="Level of the bar", type=int, default=4)
+    return parser.parse_args()
 
 materials_json = json.load(open("/home/ejwu/ff/ff20211026/com.egg.foodandroid/files/publish/conf/en-us/bar/material.json.pretty"))
 bar_level_json = json.load(open("/home/ejwu/ff/ff20211026/com.egg.foodandroid/files/publish/conf/en-us/bar/levelUp.json.pretty"))
 formula_json = json.load(open("/home/ejwu/ff/ff20211026/com.egg.foodandroid/files/publish/conf/en-us/bar/formula.json.pretty"))
 drink_json = json.load(open("/home/ejwu/ff/ff20211026/com.egg.foodandroid/files/publish/conf/en-us/bar/drink.json.pretty"))
 
-bar_level = defaultdict(dict)
-drinks = defaultdict(dict)
+bar_level_data = defaultdict(dict)
+drinks_data = defaultdict(dict)
 material_costs = defaultdict(dict)
+
 
 # Populate stock limits for each bar level
 for level in bar_level_json.values():
-    bar_level[level["level"]] = int(level["stockNum"])
+    bar_level_data[level["level"]] = int(level["stockNum"])
 
+bar_level = parse_args().barlevel
+print(f"Bar level: {bar_level}, max drinks: {bar_level_data[bar_level]}") 
+    
 # Populate material availability and cost in the market
 for key, material in materials_json.items():
     mat_name = material["name"]
@@ -49,7 +68,7 @@ for key, material in materials_json.items():
 
 # Populate drink rewards
 for drink_obj in drink_json.values():
-    drink = drinks[drink_obj["name"]]
+    drink = drinks_data[drink_obj["name"]]
     drink["barFame"] = int(drink_obj["barPopularity"])
     drink["tickets"] = int(drink_obj["barPoint"])
     drink["barLevel"] = int(formula_json[str(drink_obj["formulaId"])]["openBarLevel"])
@@ -58,18 +77,13 @@ for drink_obj in drink_json.values():
 # Populate drink requirements
 for formula in formula_json.values():
     for material, quantity in zip(formula["materials"], formula["matching"]):
-        drinks[formula["name"]]["materials"].append([material, int(quantity)])
+        drinks_data[formula["name"]]["materials"].append([material, int(quantity)])
 
-        
-
-#print(material_costs)
-
-        
-drinks_by_level = sorted(drinks.items(), reverse=True, key=lambda item: item[1]["barLevel"])
+drinks_by_level = sorted(drinks_data.items(), reverse=True, key=lambda item: item[1]["barLevel"])
 #for drink in drinks_by_level:
 #    print(drink)
 
-drink_setf = filter(lambda item: item[1]["barLevel"] <= BAR_LEVEL, drinks_by_level)
+drink_setf = filter(lambda item: item[1]["barLevel"] <= bar_level, drinks_by_level)
 #for drink in drink_set:
 #    print(drink)
 
@@ -94,7 +108,7 @@ def can_make_drink(drink, materials_available):
 def can_make_drinks(drinks):
     materials_used = defaultdict(int)
     for drink in drinks:
-        for material in drink[1]["materials"]:
+        for material in drinks_data[drink]["materials"]:
             materials_used[material[0]] += material[1]
 
     for material, num_used in materials_used.items():
@@ -104,9 +118,17 @@ def can_make_drinks(drinks):
 
 def print_combo(combo):
     d = []
+    c = Counter()
     for drink in combo:
-        d.append(drink[0])
+        d.append(drink)
+        for material in drinks_data[drink]["materials"]:
+            c[material_costs[material[0]]["name"]] += material[1]
     print(d)
+    ingredients = []
+    for k, v in c.items():
+        #print(v, k)
+        ingredients.append(str(v) + " " + k)
+    print(", ".join(ingredients))
 
 def print_combos(combos):
     for combo in combos:
@@ -117,11 +139,14 @@ def get_drink_set_info(drinks):
     fame = 0
     tickets = 0
     for drink in drinks:
-        fame += drink[1]["barFame"]
-        tickets += drink[1]["tickets"]
-        for material in drink[1]["materials"]:
+        drink_data = drinks_data[drink]
+        fame += drink_data["barFame"]
+        tickets += drink_data["tickets"]
+        for material in drink_data["materials"]:
             cost += material_costs[material[0]]["cost"] * material[1]
     return [cost, fame, tickets]
+
+PROCESSED = set()
 
 def all_combos(num_drinks_remaining, drinks_made, drink_set):
 #    print(f"all: {num_drinks_remaining} {drinks_made} {len(drink_set)}\n")
@@ -132,18 +157,23 @@ def all_combos(num_drinks_remaining, drinks_made, drink_set):
     for drink in drink_set:
 #        print(f"\nnum made before: {len(drinks_made)}")
         made = drinks_made.copy()
-        made.append(drink)
-#        print(f"num made after: {len(made)}")
-#        print("potential: ", made)
-        if can_make_drinks(made):
-#            print("valid")
-            combos.append(made)
-#            print_combos(combos)
-#        else:
-#            print("invalid")
+        made.add(drink[0])
+        fms_made = FrozenMultiset(made)
+        if fms_made not in PROCESSED:
+            #        print(f"num made after: {len(made)}")
+            #        print("potential: ", made)
+            PROCESSED.add(fms_made)
+            if can_make_drinks(fms_made):
+                #            print("valid")
+                combos.append(made)
+                #            print_combos(combos)
+                #        else:
+                #            print("invalid")
 
+    
     if num_drinks_remaining > 1:
         to_return = []
+        print(num_drinks_remaining, sys.getsizeof(combos))
         for combo in combos:
 #            print(f"made: {combo}")
             all_c = all_combos(num_drinks_remaining - 1, combo, drink_set)
@@ -160,13 +190,12 @@ def all_combos(num_drinks_remaining, drinks_made, drink_set):
 #        print_combos(combos)
         return combos
 
-print(f"Bar level: {BAR_LEVEL}, max drinks: {bar_level[BAR_LEVEL]}") 
-all_c = all_combos(7, [], drink_set)
+all_c = all_combos(bar_level_data[bar_level], Multiset(), drink_set)
 
 print("All combos")
 #print_combos(c)
 print(len(all_c))
-
+print("size", sys.getsizeof(all_c))
 
 max_cost = 0
 max_cost_drinks = []
@@ -178,6 +207,7 @@ max_tickets = 0
 max_tickets_drinks = []
 max_tickets_efficiency = 0.0
 max_tickets_efficiency_drinks = []
+
 
 for drinks in all_c:
     [cost, fame, tickets] = get_drink_set_info(drinks)
