@@ -10,8 +10,6 @@ from operator import itemgetter
 from multiset import FrozenMultiset
 from multiset import Multiset
 
-import inspect
-
 from sys import getsizeof, stderr
 from itertools import chain
 from collections import deque
@@ -216,6 +214,92 @@ PROCESSED2 = defaultdict(set)
 CACHE_HITS = Counter()
 print("Available drinks: ", len(drink_set), drink_set)
 
+# Various facets to optimize against
+max_cost = 0
+max_cost_drinks = []
+max_fame = 0
+max_fame_tickets = 0
+max_fame_drinks = []
+max_fame_efficiency = 0.0
+max_fame_efficiency_tickets_efficiency = 0.0
+max_fame_efficiency_drinks = []
+max_tickets = 0
+max_tickets_fame = 0
+max_tickets_drinks = []
+max_tickets_efficiency = 0.0
+max_tickets_efficiency_fame_efficiency = 0.0
+max_tickets_efficiency_drinks = []
+combos_processed = 0
+
+def process_leaf_nodes(all_c):
+    global max_cost
+    global max_cost_drinks
+    global max_fame
+    global max_fame_tickets
+    global max_fame_drinks
+    global max_fame_efficiency
+    global max_fame_efficiency_tickets_efficiency
+    global max_fame_efficiency_drinks
+    global max_tickets
+    global max_tickets_fame
+    global max_tickets_drinks
+    global max_tickets_efficiency
+    global max_tickets_efficiency_fame_efficiency
+    global max_tickets_efficiency_drinks
+    global combos_processed
+    
+    for drinks in all_c:
+        combos_processed += 1
+        [cost, fame, tickets] = get_drink_set_info(drinks)
+        if cost > max_cost:
+            max_cost = cost
+            max_cost_drinks = drinks
+
+        # Max fame
+        if fame > max_fame:
+            max_fame = fame
+            max_fame_tickets = tickets
+            max_fame_drinks = drinks
+        elif fame == max_fame:
+            if tickets > max_fame_tickets:
+                max_fame_tickets = tickets
+                max_fame_drinks = drinks
+            elif tickets == max_fame_tickets and cost < get_drink_set_info(max_fame_drinks)[0]:
+                max_fame_drinks = drinks
+
+        # Max fame efficiency
+        if (fame / cost) > max_fame_efficiency:
+            max_fame_efficiency = fame / cost
+            max_fame_efficiency_ticket_efficiency = tickets / cost
+            max_fame_efficiency_drinks = drinks
+        elif (fame / cost) == max_fame_efficiency:
+            if tickets / cost > max_fame_efficiency_tickets_efficiency:
+                max_fame_efficiency_tickets_efficiency = tickets / cost
+                max_fame_efficiency_drinks = drinks
+
+        # Max tickets
+        if tickets > max_tickets:
+            max_tickets = tickets
+            max_tickets_fame = fame
+            max_tickets_drinks = drinks
+        elif tickets == max_tickets:
+            if fame > max_tickets_fame:
+                max_tickets_fame = fame
+                max_tickets_drinks = drinks
+            elif fame == max_tickets_fame and cost < get_drink_set_info(max_tickets_drinks)[0]:
+                max_tickets_drinks = drinks
+
+        # Max ticket efficiency
+        if (tickets / cost) > max_tickets_efficiency:
+            max_tickets_efficiency = tickets / cost
+            max_tickets_efficiency_fame_efficiency = fame / cost
+            max_tickets_efficiency_drinks = drinks
+        elif (tickets / cost) == max_tickets_efficiency:
+            if fame / cost > max_tickets_efficiency_fame_efficiency:
+                max_tickets_efficiency_fame_efficiency = fame / cost
+                max_tickets_efficiency_drinks = drinks
+    
+
 def all_combos(num_drinks_remaining, drinks_made, drink_set):
     global DUPES
     combos = []
@@ -247,85 +331,18 @@ def all_combos(num_drinks_remaining, drinks_made, drink_set):
             to_return += all_c
         return to_return
     else:
-        return combos
+        process_leaf_nodes(combos)
+        return []
 
-all_c = all_combos(bar_level_data[bar_level], (), drink_set)
+all_combos(bar_level_data[bar_level], (), drink_set)
 
 for i, d in PROCESSED2.items():
-    print(i, total_size(d))
+    print(f"{i} {total_size(d):,}")
 
-print(total_size(PROCESSED2))
+print(f"{total_size(PROCESSED2):,} bytes used for cache")
 
 print(f"{DUPES:,} dupes not processed")
-print(f"All combos: {len(all_c):,}")
-#print_combos(c)
-print(f"size: {total_size(all_c):,}")
-
-max_cost = 0
-max_cost_drinks = []
-max_fame = 0
-max_fame_tickets = 0
-max_fame_drinks = []
-max_fame_efficiency = 0.0
-max_fame_efficiency_tickets_efficiency = 0.0
-max_fame_efficiency_drinks = []
-max_tickets = 0
-max_tickets_fame = 0
-max_tickets_drinks = []
-max_tickets_efficiency = 0.0
-max_tickets_efficiency_fame_efficiency = 0.0
-max_tickets_efficiency_drinks = []
-
-
-for drinks in all_c:
-    [cost, fame, tickets] = get_drink_set_info(drinks)
-    if cost > max_cost:
-        max_cost = cost
-        max_cost_drinks = drinks
-
-    # Max fame
-    if fame > max_fame:
-        max_fame = fame
-        max_fame_tickets = tickets
-        max_fame_drinks = drinks
-    elif fame == max_fame:
-        if tickets > max_fame_tickets:
-            max_fame_tickets = tickets
-            max_fame_drinks = drinks
-        elif tickets == max_fame_tickets and cost < get_drink_set_info(max_fame_drinks)[0]:
-                max_fame_drinks = drinks
-
-    # Max fame efficiency
-    if (fame / cost) > max_fame_efficiency:
-        max_fame_efficiency = fame / cost
-        max_fame_efficiency_ticket_efficiency = tickets / cost
-        max_fame_efficiency_drinks = drinks
-    elif (fame / cost) == max_fame_efficiency:
-        if tickets / cost > max_fame_efficiency_tickets_efficiency:
-            max_fame_efficiency_tickets_efficiency = tickets / cost
-            max_fame_efficiency_drinks = drinks
-
-    # Max tickets
-    if tickets > max_tickets:
-        max_tickets = tickets
-        max_tickets_fame = fame
-        max_tickets_drinks = drinks
-    elif tickets == max_tickets:
-        if fame > max_tickets_fame:
-            max_tickets_fame = fame
-            max_tickets_drinks = drinks
-        elif fame == max_tickets_fame and cost < get_drink_set_info(max_tickets_drinks)[0]:
-                max_tickets_drinks = drinks
-
-    # Max ticket efficiency
-    if (tickets / cost) > max_tickets_efficiency:
-        max_tickets_efficiency = tickets / cost
-        max_tickets_efficiency_fame_efficiency = fame / cost
-        max_tickets_efficiency_drinks = drinks
-    elif (tickets / cost) == max_tickets_efficiency:
-        if fame / cost > max_tickets_efficiency_fame_efficiency:
-            max_tickets_efficiency_fame_efficiency = fame / cost
-            max_tickets_efficiency_drinks = drinks
+print(f"{combos_processed:,} combos processed, possibly including dupes")
 
 print("\nmax cost: ", max_cost)
 print_combo(max_cost_drinks)
