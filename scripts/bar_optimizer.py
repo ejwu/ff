@@ -2,17 +2,19 @@
 
 import argparse
 import json
+import multiprocessing
+import resource
 import sys
 from collections import Counter
 from collections import defaultdict
+from multiprocessing import Pool
+from multiprocessing import Process
 from operator import itemgetter
-
-from multiset import FrozenMultiset
-from multiset import Multiset
 
 from sys import getsizeof, stderr
 from itertools import chain
 from collections import deque
+
 try:
     from reprlib import repr
 except ImportError:
@@ -28,6 +30,9 @@ def total_size(o, handlers={}, verbose=False):
                     OtherContainerClass: OtherContainerClass.get_elements}
 
     """
+    # Can't use this with pypy
+    if True:
+        return 0
     dict_handler = lambda d: chain.from_iterable(d.items())
     all_handlers = {tuple: iter,
                     list: iter,
@@ -35,8 +40,6 @@ def total_size(o, handlers={}, verbose=False):
                     dict: dict_handler,
                     set: iter,
                     frozenset: iter,
-                    Multiset: iter,
-                    FrozenMultiset: iter
                    }
     all_handlers.update(handlers)     # user handlers take precedence
     seen = set()                      # track which object id's have already been seen
@@ -58,6 +61,9 @@ def total_size(o, handlers={}, verbose=False):
         return s
 
     return sizeof(o)
+
+# Hack for perfect hashing
+PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199]
 
 
 # TODO: Update when bar level increases past 4
@@ -83,18 +89,14 @@ MAT_SHOP = {
     'Cream': {'cost': 20, 'num': 4},
 
     # Level 6 ingredient needed by level 5 drinks, put it in with num=0 to avoid crashes
-    'Orange Curacao': {'cost': 20, 'num': 4}
+    'Orange Curacao': {'cost': 20, 'num': 4},
+    'Vermouth': {'cost': 20, 'num': 4},
 }
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Find various maxima for bar menus")
     parser.add_argument("--barlevel", help="Level of the bar", type=int, default=4)
     return parser.parse_args()
-
-materials_json = json.load(open("/home/ejwu/ff/ff20211026/com.egg.foodandroid/files/publish/conf/en-us/bar/material.json.pretty"))
-bar_level_json = json.load(open("/home/ejwu/ff/ff20211026/com.egg.foodandroid/files/publish/conf/en-us/bar/levelUp.json.pretty"))
-formula_json = json.load(open("/home/ejwu/ff/ff20211026/com.egg.foodandroid/files/publish/conf/en-us/bar/formula.json.pretty"))
-drink_json = json.load(open("/home/ejwu/ff/ff20211026/com.egg.foodandroid/files/publish/conf/en-us/bar/drink.json.pretty"))
 
 bar_level_data = defaultdict(dict)
 drinks_data = defaultdict(dict)
@@ -103,56 +105,63 @@ material_costs = defaultdict(dict)
 material_name_to_id = {}
 
 # Populate stock limits for each bar level
-for level in bar_level_json.values():
-    bar_level_data[level["level"]] = int(level["stockNum"])
+with open("/home/ejwu/ff/ff20211026/com.egg.foodandroid/files/publish/conf/en-us/bar/levelUp.json.pretty") as bar_level_file:
+    for level in json.load(bar_level_file).values():
+        bar_level_data[level["level"]] = int(level["stockNum"])
 
-bar_level = parse_args().barlevel
-print(f"Bar level: {bar_level}, max drinks: {bar_level_data[bar_level]}") 
-    
 # Populate material availability and cost in the market
-for key, material in materials_json.items():
-    mat_name = material["name"]
-    material_costs[key]["name"] = mat_name
-    material_name_to_id[mat_name] = key
-    if mat_name in MAT_SHOP:
-        material_costs[key]["cost"] = MAT_SHOP[mat_name]["cost"]
-        material_costs[key]["num"] = MAT_SHOP[mat_name]["num"]
-        material_costs[key]["type"] = material["materialType"]
+with open("/home/ejwu/ff/ff20211026/com.egg.foodandroid/files/publish/conf/en-us/bar/material.json.pretty") as material_file:
+    for key, material in json.load(material_file).items():
+        mat_name = material["name"]
+        material_costs[key]["name"] = mat_name
+        material_name_to_id[mat_name] = key
+        if mat_name in MAT_SHOP:
+            material_costs[key]["cost"] = MAT_SHOP[mat_name]["cost"]
+            material_costs[key]["num"] = MAT_SHOP[mat_name]["num"]
+            material_costs[key]["type"] = material["materialType"]
 
-# Populate drink rewards
-for drink_obj in drink_json.values():
-    drink = drinks_data[drink_obj["name"]]
-    drink["barFame"] = int(drink_obj["barPopularity"])
-    drink["tickets"] = int(drink_obj["barPoint"])
-    drink["barLevel"] = int(formula_json[str(drink_obj["formulaId"])]["openBarLevel"])
-    drink["id"] = int(drink_obj["id"])
-    drink_id_to_name[drink["id"]] = drink_obj["name"]
-    drink["materials"] = []
+with open("/home/ejwu/ff/ff20211026/com.egg.foodandroid/files/publish/conf/en-us/bar/formula.json.pretty") as formula_file, open("/home/ejwu/ff/ff20211026/com.egg.foodandroid/files/publish/conf/en-us/bar/drink.json.pretty") as drink_file:
+    formula_json = json.load(formula_file)
+    # Populate drink rewards
+    for drink_obj in json.load(drink_file).values():
+        drink = drinks_data[drink_obj["name"]]
+        drink["barFame"] = int(drink_obj["barPopularity"])
+        drink["tickets"] = int(drink_obj["barPoint"])
+        drink["barLevel"] = int(formula_json[str(drink_obj["formulaId"])]["openBarLevel"])
+        drink["id"] = int(drink_obj["id"])
+        drink_id_to_name[drink["id"]] = drink_obj["name"]
+        drink["materials"] = []
 
-# Populate drink requirements
-for formula in formula_json.values():
-    for material, quantity in zip(formula["materials"], formula["matching"]):
-        drinks_data[formula["name"]]["materials"].append([material, int(quantity)])
+    # Populate drink requirements
+    for formula in formula_json.values():
+        for material, quantity in zip(formula["materials"], formula["matching"]):
+            drinks_data[formula["name"]]["materials"].append([material, int(quantity)])
         
+bar_level = parse_args().barlevel
 drinks_by_level = sorted(drinks_data.items(), reverse=True, key=lambda item: item[1]["barLevel"])
-#for drink in drinks_by_level:
-#    print(drink)
-
 drink_setf = filter(lambda item: item[1]["barLevel"] <= bar_level, drinks_by_level)
-#for drink in drink_set:
-#    print(drink)
 
+# Hacky perfect hash for drink multisets
+drink_to_prime = {}
 drink_set = []
-for drink in drink_setf:
+for i, drink in enumerate(drink_setf):
     drink_set.append(drink[1]["id"])
+    drink_to_prime[drink[1]["id"]] = PRIMES[i]
+
+print(f"Bar level: {bar_level}, max drinks: {bar_level_data[bar_level]}, available drinks: {len(drink_set)}") 
+    
+def hash_drinks(drinks):
+    value = 1
+    for drink in drinks:
+        value *= drink_to_prime[drink]
+    return value
+
 
 materials_available = {}
 for key, material in material_costs.items():
     if "num" in material:
         materials_available[key] = material["num"]
-
-ALL_MATERIALS_AVAILABLE = materials_available.copy()
-
+        
 def can_make_drinks(drinks):
     materials_used = defaultdict(int)
     for drink in drinks:
@@ -160,7 +169,7 @@ def can_make_drinks(drinks):
             materials_used[material[0]] += material[1]
 
     for material, num_used in materials_used.items():
-        if num_used > ALL_MATERIALS_AVAILABLE[material]:
+        if num_used > materials_available[material]:
             return False
     return True
 
@@ -206,13 +215,17 @@ def check(drinks):
         drink_ids.append(drinks_data[drink_str]["id"])
     print_combo(drink_ids)
 
-
-
 DUPES = 0
-PROCESSED = set()
-PROCESSED2 = defaultdict(set)
+PROCESSED = defaultdict(set)
 CACHE_HITS = Counter()
-print("Available drinks: ", len(drink_set), drink_set)
+
+def print_cache_info():
+    print(f"{DUPES:,} dupes found, cache_size {total_size(PROCESSED):,}")
+    print("Cache by level:")
+    for count, subcache in PROCESSED.items():
+        print(f"{count:>2} num: {len(subcache):>15,}  |  size: {total_size(subcache):>15,}")
+    print("Cache hits: ", sorted(CACHE_HITS.items()))
+    print(f"{resource.getrusage(resource.RUSAGE_SELF).ru_maxrss:,}K memory used")
 
 # Various facets to optimize against
 max_cost = 0
@@ -250,6 +263,9 @@ def process_leaf_nodes(all_c):
     
     for drinks in all_c:
         combos_processed += 1
+        if combos_processed % 10000000 == 0:
+            print(f"{combos_processed:,} processed, {resource.getrusage(resource.RUSAGE_SELF).ru_maxrss:,}K memory in use")
+
         [cost, fame, tickets] = get_drink_set_info(drinks)
         if cost > max_cost:
             max_cost = cost
@@ -298,7 +314,6 @@ def process_leaf_nodes(all_c):
             if fame / cost > max_tickets_efficiency_fame_efficiency:
                 max_tickets_efficiency_fame_efficiency = fame / cost
                 max_tickets_efficiency_drinks = drinks
-    
 
 def all_combos(num_drinks_remaining, drinks_made, drink_set):
     global DUPES
@@ -306,29 +321,29 @@ def all_combos(num_drinks_remaining, drinks_made, drink_set):
     if num_drinks_remaining == 0:
         return drinks_made
     for drink in drink_set:
-        made = tuple(sorted(drinks_made + (drink,)))
-        if made not in PROCESSED2[len(made)]:
+        made = drinks_made + (drink,)
+        if hash_drinks(made) not in PROCESSED[len(made)]:
             # Skip caching leaf nodes with too many drinks to save memory but increase processing time
             # TODO: I think this puts a bunch of dupes in the final results?
-            # TODO: Consider processing leaf nodes in place to avoid having to save a giant list of all of them
-            if len(made) < 9:
-                PROCESSED2[len(made)].add(made)
+
+            # Pypy might let us use 10 here instead of 9
+            if len(made) < 10:
+                PROCESSED[len(made)].add(hash_drinks(made))
             if can_make_drinks(made):
                 combos.append(made)
         else:
             CACHE_HITS[len(made)] += 1
             DUPES += 1
             if DUPES % 5000000 == 0:
-                print(f"{DUPES:,} {total_size(PROCESSED2):,}")
-                for i, s in PROCESSED2.items():
-                    print(i, len(s))
-                print(sorted(CACHE_HITS.items()))
+                print_cache_info()
 
     if num_drinks_remaining > 1:
         to_return = []
+
         for combo in combos:
             all_c = all_combos(num_drinks_remaining - 1, combo, drink_set)
             to_return += all_c
+
         return to_return
     else:
         process_leaf_nodes(combos)
@@ -336,10 +351,8 @@ def all_combos(num_drinks_remaining, drinks_made, drink_set):
 
 all_combos(bar_level_data[bar_level], (), drink_set)
 
-for i, d in PROCESSED2.items():
-    print(f"{i} {total_size(d):,}")
-
-print(f"{total_size(PROCESSED2):,} bytes used for cache")
+print_cache_info()
+print(f"{total_size(PROCESSED):,} bytes used for cache")
 
 print(f"{DUPES:,} dupes not processed")
 print(f"{combos_processed:,} combos processed, possibly including dupes")
@@ -362,8 +375,3 @@ print_combo(max_tickets_drinks)
 [c, f, t] = get_drink_set_info(max_tickets_efficiency_drinks)
 print(f"\nmax tickets efficiency: {t}, fame {f}, cost {c}")
 print_combo(max_tickets_efficiency_drinks)
-
-
-#print("\n\ncheck")
-#check(['Screwdriver', 'Honey Soda', 'Dirty Banana', 'Long Island Iced Tea', 'Long Island Iced Tea', 'Cuba Libre', 'Palm Beach', 'Zombie', 'Gin Basil Smash'])
-
