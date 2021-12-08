@@ -62,10 +62,6 @@ def total_size(o, handlers={}, verbose=False):
 
     return sizeof(o)
 
-# Hack for perfect hashing
-PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199]
-
-
 # TODO: Update when bar level increases past 4
 MAT_SHOP = {
     'Rum': {'cost': 50, 'num': 10},
@@ -76,6 +72,9 @@ MAT_SHOP = {
     'Whisky': {'cost': 50, 'num': 10},
     
     'Coffee Liqueur': {'cost': 20, 'num': 4},
+    'Orange Curacao': {'cost': 20, 'num': 4},
+    'Vermouth': {'cost': 20, 'num': 4},
+    'Bitters': {'cost': 20, 'num': 4},
     
     'Cola': {'cost': 20, 'num': 4},
     'Cane Syrup': {'cost': 20, 'num': 4},
@@ -88,9 +87,18 @@ MAT_SHOP = {
     'Orange Juice': {'cost': 20, 'num': 4},
     'Cream': {'cost': 20, 'num': 4},
 
-    # Level 6 ingredient needed by level 5 drinks, put it in with num=0 to avoid crashes
-    'Orange Curacao': {'cost': 20, 'num': 4},
-    'Vermouth': {'cost': 20, 'num': 4},
+    # Estimate for level 9
+    'Baileys': {'cost': 20, 'num': 4},
+    # 10
+    'Campari': {'cost': 20, 'num': 4},
+    # 11
+    'Fruit Syrup': {'cost': 20, 'num': 4},
+    # 12
+    'Chartreuse': {'cost': 20, 'num': 4},
+    # 13
+    'Aperol': {'cost': 20, 'num': 4},
+    # 14
+    'Wine': {'cost': 20, 'num': 4},
 }
 
 def parse_args():
@@ -105,7 +113,7 @@ material_costs = defaultdict(dict)
 material_name_to_id = {}
 
 # Populate stock limits for each bar level
-with open("/home/ejwu/ff/ff20211026/com.egg.foodandroid/files/publish/conf/en-us/bar/levelUp.json.pretty") as bar_level_file:
+with open("/home/ejwu/ff/ff20211202/com.egg.foodandroid/files/publish/conf/en-us/bar/levelUp.json.pretty") as bar_level_file:
     for level in json.load(bar_level_file).values():
         bar_level_data[level["level"]] = int(level["stockNum"])
 
@@ -141,22 +149,14 @@ bar_level = parse_args().barlevel
 drinks_by_level = sorted(drinks_data.items(), reverse=True, key=lambda item: item[1]["barLevel"])
 drink_setf = filter(lambda item: item[1]["barLevel"] <= bar_level, drinks_by_level)
 
-# Hacky perfect hash for drink multisets
-drink_to_prime = {}
 drink_set = []
+drink_to_index = {}
 for i, drink in enumerate(drink_setf):
     drink_set.append(drink[1]["id"])
-    drink_to_prime[drink[1]["id"]] = PRIMES[i]
-
+    drink_to_index[drink[1]["id"]] = i
+    
 print(f"Bar level: {bar_level}, max drinks: {bar_level_data[bar_level]}, available drinks: {len(drink_set)}") 
     
-def hash_drinks(drinks):
-    value = 1
-    for drink in drinks:
-        value *= drink_to_prime[drink]
-    return value
-
-
 materials_available = {}
 for key, material in material_costs.items():
     if "num" in material:
@@ -208,24 +208,19 @@ def get_drink_set_info(drinks):
         cost += material_costs[material]["cost"]
     return [cost, fame, tickets]
 
+def get_drink_set_min(drinks):
+    minimum = 999
+    for drink in drinks:
+        if drink_to_index[drink] < minimum:
+            minimum = drink_to_index[drink]
+    return minimum
+
 def check(drinks):
     print("Checking")
     drink_ids = []
     for drink_str in drinks:
         drink_ids.append(drinks_data[drink_str]["id"])
     print_combo(drink_ids)
-
-DUPES = 0
-PROCESSED = defaultdict(set)
-CACHE_HITS = Counter()
-
-def print_cache_info():
-    print(f"{DUPES:,} dupes found, cache_size {total_size(PROCESSED):,}")
-    print("Cache by level:")
-    for count, subcache in PROCESSED.items():
-        print(f"{count:>2} num: {len(subcache):>15,}  |  size: {total_size(subcache):>15,}")
-    print("Cache hits: ", sorted(CACHE_HITS.items()))
-    print(f"{resource.getrusage(resource.RUSAGE_SELF).ru_maxrss:,}K memory used")
 
 # Various facets to optimize against
 max_cost = 0
@@ -320,22 +315,13 @@ def all_combos(num_drinks_remaining, drinks_made, drink_set):
     combos = []
     if num_drinks_remaining == 0:
         return drinks_made
+    
+    minimum = get_drink_set_min(drinks_made)
     for drink in drink_set:
-        made = drinks_made + (drink,)
-        if hash_drinks(made) not in PROCESSED[len(made)]:
-            # Skip caching leaf nodes with too many drinks to save memory but increase processing time
-            # TODO: I think this puts a bunch of dupes in the final results?
-
-            # Pypy might let us use 10 here instead of 9
-            if len(made) < 10:
-                PROCESSED[len(made)].add(hash_drinks(made))
+        if drink_to_index[drink] <= minimum:
+            made = drinks_made + (drink,)
             if can_make_drinks(made):
                 combos.append(made)
-        else:
-            CACHE_HITS[len(made)] += 1
-            DUPES += 1
-            if DUPES % 5000000 == 0:
-                print_cache_info()
 
     if num_drinks_remaining > 1:
         to_return = []
@@ -350,12 +336,6 @@ def all_combos(num_drinks_remaining, drinks_made, drink_set):
         return []
 
 all_combos(bar_level_data[bar_level], (), drink_set)
-
-print_cache_info()
-print(f"{total_size(PROCESSED):,} bytes used for cache")
-
-print(f"{DUPES:,} dupes not processed")
-print(f"{combos_processed:,} combos processed, possibly including dupes")
 
 print("\nmax cost: ", max_cost)
 print_combo(max_cost_drinks)
