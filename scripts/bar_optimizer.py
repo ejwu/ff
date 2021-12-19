@@ -15,54 +15,7 @@ from sys import getsizeof, stderr
 from itertools import chain
 from collections import deque
 
-try:
-    from reprlib import repr
-except ImportError:
-    pass
-def total_size(o, handlers={}, verbose=False):
-    """ Returns the approximate memory footprint an object and all of its contents.
-
-    Automatically finds the contents of the following builtin containers and
-    their subclasses:  tuple, list, deque, dict, set and frozenset.
-    To search other containers, add handlers to iterate over their contents:
-
-        handlers = {SomeContainerClass: iter,
-                    OtherContainerClass: OtherContainerClass.get_elements}
-
-    """
-    # Can't use this with pypy
-    if True:
-        return 0
-    dict_handler = lambda d: chain.from_iterable(d.items())
-    all_handlers = {tuple: iter,
-                    list: iter,
-                    deque: iter,
-                    dict: dict_handler,
-                    set: iter,
-                    frozenset: iter,
-                   }
-    all_handlers.update(handlers)     # user handlers take precedence
-    seen = set()                      # track which object id's have already been seen
-    default_size = getsizeof(0)       # estimate sizeof object without __sizeof__
-
-    def sizeof(o):
-        if id(o) in seen:       # do not double count the same object
-            return 0
-        seen.add(id(o))
-        s = getsizeof(o, default_size)
-
-        if verbose:
-            print(s, type(o), repr(o), file=stderr)
-
-        for typ, handler in all_handlers.items():
-            if isinstance(o, typ):
-                s += sum(map(sizeof, handler(o)))
-                break
-        return s
-
-    return sizeof(o)
-
-# TODO: Update when bar level increases past 4
+# TODO: Update when bar level increases
 MAT_SHOP = {
     'Rum': {'cost': 50, 'num': 10},
     'Vodka': {'cost': 50, 'num': 10},
@@ -74,8 +27,9 @@ MAT_SHOP = {
     'Coffee Liqueur': {'cost': 20, 'num': 4},
     'Orange Curacao': {'cost': 20, 'num': 4},
     'Vermouth': {'cost': 20, 'num': 4},
-    'Bitters': {'cost': 20, 'num': 4},
-    
+    'Bitters': {'cost': 40, 'num': 4},
+    'Baileys': {'cost': 40, 'num': 4},
+
     'Cola': {'cost': 20, 'num': 4},
     'Cane Syrup': {'cost': 20, 'num': 4},
     'Honey': {'cost': 20, 'num': 4},
@@ -87,18 +41,17 @@ MAT_SHOP = {
     'Orange Juice': {'cost': 20, 'num': 4},
     'Cream': {'cost': 20, 'num': 4},
 
-    # Estimate for level 9
-    'Baileys': {'cost': 20, 'num': 4},
+    # Estimates
     # 10
-    'Campari': {'cost': 20, 'num': 4},
-    # 11
-    'Fruit Syrup': {'cost': 20, 'num': 4},
+    'Campari': {'cost': 40, 'num': 4},
+    # 11, other
+    'Fruit Syrup': {'cost': 40, 'num': 4},
     # 12
-    'Chartreuse': {'cost': 20, 'num': 4},
+    'Chartreuse': {'cost': 40, 'num': 4},
     # 13
-    'Aperol': {'cost': 20, 'num': 4},
+    'Aperol': {'cost': 40, 'num': 4},
     # 14
-    'Wine': {'cost': 20, 'num': 4},
+    'Wine': {'cost': 40, 'num': 4},
 }
 
 def parse_args():
@@ -112,13 +65,15 @@ drink_id_to_name = {}
 material_costs = defaultdict(dict)
 material_name_to_id = {}
 
+BASE_PATH = "/home/ejwu/ff/ff20211202/com.egg.foodandroid/files/publish/conf/en-us/bar/"
+
 # Populate stock limits for each bar level
-with open("/home/ejwu/ff/ff20211202/com.egg.foodandroid/files/publish/conf/en-us/bar/levelUp.json.pretty") as bar_level_file:
+with open(BASE_PATH + "levelUp.json.pretty") as bar_level_file:
     for level in json.load(bar_level_file).values():
         bar_level_data[level["level"]] = int(level["stockNum"])
 
 # Populate material availability and cost in the market
-with open("/home/ejwu/ff/ff20211026/com.egg.foodandroid/files/publish/conf/en-us/bar/material.json.pretty") as material_file:
+with open(BASE_PATH + "material.json.pretty") as material_file:
     for key, material in json.load(material_file).items():
         mat_name = material["name"]
         material_costs[key]["name"] = mat_name
@@ -128,7 +83,7 @@ with open("/home/ejwu/ff/ff20211026/com.egg.foodandroid/files/publish/conf/en-us
             material_costs[key]["num"] = MAT_SHOP[mat_name]["num"]
             material_costs[key]["type"] = material["materialType"]
 
-with open("/home/ejwu/ff/ff20211026/com.egg.foodandroid/files/publish/conf/en-us/bar/formula.json.pretty") as formula_file, open("/home/ejwu/ff/ff20211026/com.egg.foodandroid/files/publish/conf/en-us/bar/drink.json.pretty") as drink_file:
+with open(BASE_PATH + "formula.json.pretty") as formula_file, open(BASE_PATH + "drink.json.pretty") as drink_file:
     formula_json = json.load(formula_file)
     # Populate drink rewards
     for drink_obj in json.load(drink_file).values():
@@ -222,94 +177,171 @@ def check(drinks):
         drink_ids.append(drinks_data[drink_str]["id"])
     print_combo(drink_ids)
 
-# Various facets to optimize against
-max_cost = 0
-max_cost_drinks = []
-max_fame = 0
-max_fame_tickets = 0
-max_fame_drinks = []
-max_fame_efficiency = 0.0
-max_fame_efficiency_tickets_efficiency = 0.0
-max_fame_efficiency_drinks = []
-max_tickets = 0
-max_tickets_fame = 0
-max_tickets_drinks = []
-max_tickets_efficiency = 0.0
-max_tickets_efficiency_fame_efficiency = 0.0
-max_tickets_efficiency_drinks = []
+class BestDrinkSet:
+    def __init__(self, comp):
+        # Comparator for drink sets
+        self.comp = comp
+        # Best drink set so far
+        self.best = []
+
+        
+    def offer(self, drinks):
+        """
+        Compare the given set of drinks to the currently known best one according to the comparator and replace it if afppropriate.
+        """
+        if self.comp(drinks, self.best) > 0:
+            self.best = drinks
+
+# Drink info is [cost, fame, tickets]
+def get_cost_diff_desc(l_info, r_info):
+    return l_info[0] - r_info[0]
+
+# In the usual case we want lowest cost
+def get_cost_diff(l_info, r_info):
+    return get_cost_diff_desc(l_info, r_info) * -1
+
+def get_fame_diff(l_info, r_info):
+    return l_info[1] - r_info[1]
+
+def get_fame_effic_diff(l_info, r_info):
+    # The starting empty drink set has no cost
+    if r_info[0] == 0:
+        return 1
+    return (l_info[1] / l_info[0]) - (r_info[1] / r_info[0])
+
+# 3.25 is close to the ratio of max_tickets to max_fame at bar level 9
+OVERALL_COEFF = 3.25
+def get_overall_diff(l_info, r_info):
+    return (l_info[1] * OVERALL_COEFF + l_info[2]) - (r_info[1] * OVERALL_COEFF + r_info[2])
+
+def get_overall_effic_diff(l_info, r_info):
+    # The starting empty drink set has no cost
+    if r_info[0] == 0:
+        return 1
+    return ((l_info[1] * OVERALL_COEFF + l_info[2]) / l_info[0]) - ((r_info[1] * OVERALL_COEFF + r_info[2]) / r_info[0])
+    
+def get_tickets_diff(l_info, r_info):
+    return l_info[2] - r_info[2]
+
+def get_tickets_effic_diff(l_info, r_info):
+    # The starting empty drink set has no cost
+    if r_info[0] == 0:
+        return 1
+    return (l_info[2] / l_info[0]) - (r_info[2] / r_info[0])
+
+def sort_by_cost(l, r):
+    l_info = get_drink_set_info(l)
+    r_info = get_drink_set_info(r)
+    
+    if get_cost_diff_desc(l_info, r_info) != 0:
+        return get_cost_diff_desc(l_info, r_info)
+    if get_fame_diff(l_info, r_info) != 0:
+        return get_fame_diff(l_info, r_info)
+    if get_tickets_diff(l_info, r_info) != 0:
+        return get_tickets_diff(l_info, r_info)
+    return 0
+
+def sort_by_fame(l, r):
+    l_info = get_drink_set_info(l)
+    r_info = get_drink_set_info(r)
+    
+    if get_fame_diff(l_info, r_info) != 0:
+        return get_fame_diff(l_info, r_info)
+    if get_tickets_diff(l_info, r_info) != 0:
+        return get_tickets_diff(l_info, r_info)
+    if get_cost_diff(l_info, r_info) != 0:
+        return get_cost_diff(l_info, r_info)
+    return 0
+
+def sort_by_fame_effic(l, r):
+    l_info = get_drink_set_info(l)
+    r_info = get_drink_set_info(r)
+    
+    if get_fame_effic_diff(l_info, r_info) != 0:
+        return get_fame_effic_diff(l_info, r_info)
+    if get_fame_diff(l_info, r_info) != 0:
+        return get_fame_diff(l_info, r_info)
+    if get_tickets_diff(l_info, r_info) != 0:
+        return get_tickets_diff(l_info, r_info)
+    # Fairly sure ticket_effic and cost don't matter here
+    if get_cost_diff(l_info, r_info) != 0:
+        return get_cost_diff(l_info, r_info)
+    return 0
+
+def sort_by_tickets(l, r):
+    l_info = get_drink_set_info(l)
+    r_info = get_drink_set_info(r)
+    
+    if get_tickets_diff(l_info, r_info) != 0:
+        return get_tickets_diff(l_info, r_info)
+    if get_fame_diff(l_info, r_info) != 0:
+        return get_fame_diff(l_info, r_info)
+    if get_cost_diff(l_info, r_info) != 0:
+        return get_cost_diff(l_info, r_info)
+    return 0
+
+def sort_by_tickets_effic(l, r):
+    l_info = get_drink_set_info(l)
+    r_info = get_drink_set_info(r)
+    
+    if get_tickets_effic_diff(l_info, r_info) != 0:
+        return get_tickets_effic_diff(l_info, r_info)
+    if get_tickets_diff(l_info, r_info) != 0:
+        return get_tickets_diff(l_info, r_info)
+    if get_fame_diff(l_info, r_info) != 0:
+        return get_fame_diff(l_info, r_info)
+    # Fairly sure ticket_effic and cost don't matter here
+    if get_cost_diff(l_info, r_info) != 0:
+        return get_cost_diff(l_info, r_info)
+    return 0
+
+def sort_by_overall(l, r):
+    l_info = get_drink_set_info(l)
+    r_info = get_drink_set_info(r)
+
+    if get_overall_diff(l_info, r_info) != 0:
+        return get_overall_diff(l_info, r_info)
+    if get_overall_effic_diff(l_info, r_info) != 0:
+        return get_overall_effic_diff(l_info, r_info)
+    if get_fame_diff(l_info, r_info) != 0:
+        return get_fame_diff(l_info, r_info)
+    return 0
+
+def sort_by_overall_effic(l, r):
+    l_info = get_drink_set_info(l)
+    r_info = get_drink_set_info(r)
+
+    if get_overall_effic_diff(l_info, r_info) != 0:
+        return get_overall_effic_diff(l_info, r_info)
+    if get_overall_diff(l_info, r_info) != 0:
+        return get_overall_diff(l_info, r_info)
+    return 0
+    
+bdc_cost = BestDrinkSet(sort_by_cost)
+bdc_fame = BestDrinkSet(sort_by_fame)
+bdc_fame_effic = BestDrinkSet(sort_by_fame_effic)
+bdc_tickets = BestDrinkSet(sort_by_tickets)
+bdc_tickets_effic = BestDrinkSet(sort_by_tickets_effic)
+bdc_overall = BestDrinkSet(sort_by_overall)
+bdc_overall_effic = BestDrinkSet(sort_by_overall_effic)
+
 combos_processed = 0
 
 def process_leaf_nodes(all_c):
-    global max_cost
-    global max_cost_drinks
-    global max_fame
-    global max_fame_tickets
-    global max_fame_drinks
-    global max_fame_efficiency
-    global max_fame_efficiency_tickets_efficiency
-    global max_fame_efficiency_drinks
-    global max_tickets
-    global max_tickets_fame
-    global max_tickets_drinks
-    global max_tickets_efficiency
-    global max_tickets_efficiency_fame_efficiency
-    global max_tickets_efficiency_drinks
     global combos_processed
-    
+
     for drinks in all_c:
         combos_processed += 1
         if combos_processed % 10000000 == 0:
             print(f"{combos_processed:,} processed, {resource.getrusage(resource.RUSAGE_SELF).ru_maxrss:,}K memory in use")
-
-        [cost, fame, tickets] = get_drink_set_info(drinks)
-        if cost > max_cost:
-            max_cost = cost
-            max_cost_drinks = drinks
-
-        # Max fame
-        if fame > max_fame:
-            max_fame = fame
-            max_fame_tickets = tickets
-            max_fame_drinks = drinks
-        elif fame == max_fame:
-            if tickets > max_fame_tickets:
-                max_fame_tickets = tickets
-                max_fame_drinks = drinks
-            elif tickets == max_fame_tickets and cost < get_drink_set_info(max_fame_drinks)[0]:
-                max_fame_drinks = drinks
-
-        # Max fame efficiency
-        if (fame / cost) > max_fame_efficiency:
-            max_fame_efficiency = fame / cost
-            max_fame_efficiency_ticket_efficiency = tickets / cost
-            max_fame_efficiency_drinks = drinks
-        elif (fame / cost) == max_fame_efficiency:
-            if tickets / cost > max_fame_efficiency_tickets_efficiency:
-                max_fame_efficiency_tickets_efficiency = tickets / cost
-                max_fame_efficiency_drinks = drinks
-
-        # Max tickets
-        if tickets > max_tickets:
-            max_tickets = tickets
-            max_tickets_fame = fame
-            max_tickets_drinks = drinks
-        elif tickets == max_tickets:
-            if fame > max_tickets_fame:
-                max_tickets_fame = fame
-                max_tickets_drinks = drinks
-            elif fame == max_tickets_fame and cost < get_drink_set_info(max_tickets_drinks)[0]:
-                max_tickets_drinks = drinks
-
-        # Max ticket efficiency
-        if (tickets / cost) > max_tickets_efficiency:
-            max_tickets_efficiency = tickets / cost
-            max_tickets_efficiency_fame_efficiency = fame / cost
-            max_tickets_efficiency_drinks = drinks
-        elif (tickets / cost) == max_tickets_efficiency:
-            if fame / cost > max_tickets_efficiency_fame_efficiency:
-                max_tickets_efficiency_fame_efficiency = fame / cost
-                max_tickets_efficiency_drinks = drinks
-
+        bdc_cost.offer(drinks)
+        bdc_fame.offer(drinks)
+        bdc_fame_effic.offer(drinks)
+        bdc_tickets.offer(drinks)
+        bdc_tickets_effic.offer(drinks)
+        bdc_overall.offer(drinks)
+        bdc_overall_effic.offer(drinks)
+        
 def all_combos(num_drinks_remaining, drinks_made, drink_set):
     global DUPES
     combos = []
@@ -337,21 +369,29 @@ def all_combos(num_drinks_remaining, drinks_made, drink_set):
 
 all_combos(bar_level_data[bar_level], (), drink_set)
 
-print("\nmax cost: ", max_cost)
-print_combo(max_cost_drinks)
+print(f"\nmax cost: {get_drink_set_info(bdc_cost.best)[0]}")
+print_combo(bdc_cost.best)
 
-[c, f, t] = get_drink_set_info(max_fame_drinks)
-print(f"\nmax fame: {max_fame}, tickets {t}, cost {c}")
-print_combo(max_fame_drinks)
+[c, f, t] = get_drink_set_info(bdc_fame.best)
+print(f"\nmax fame: {f}, tickets {t}, cost {c}")
+print_combo(bdc_fame.best)
 
-[c, f, t] = get_drink_set_info(max_fame_efficiency_drinks)
+[c, f, t] = get_drink_set_info(bdc_fame_effic.best)
 print(f"\nmax fame efficiency: {f}, tickets {t}, cost {c}")
-print_combo(max_fame_efficiency_drinks)
+print_combo(bdc_fame_effic.best)
 
-[c, f, t] = get_drink_set_info(max_tickets_drinks)
-print(f"\nmax tickets: {max_tickets}, fame {f}, cost {c}")
-print_combo(max_tickets_drinks)
+[c, f, t] = get_drink_set_info(bdc_tickets.best)
+print(f"\nmax tickets: {t}, fame {f}, cost {c}")
+print_combo(bdc_tickets.best)
 
-[c, f, t] = get_drink_set_info(max_tickets_efficiency_drinks)
+[c, f, t] = get_drink_set_info(bdc_tickets_effic.best)
 print(f"\nmax tickets efficiency: {t}, fame {f}, cost {c}")
-print_combo(max_tickets_efficiency_drinks)
+print_combo(bdc_tickets_effic.best)
+
+[c, f, t] = get_drink_set_info(bdc_overall.best)
+print(f"\nmax overall:")
+print_combo(bdc_overall.best)
+
+[c, f, t] = get_drink_set_info(bdc_tickets_effic.best)
+print(f"\nmax overall efficiency:")
+print_combo(bdc_overall_effic.best)
