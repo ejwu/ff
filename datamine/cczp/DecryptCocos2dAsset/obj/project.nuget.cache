@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "7E4F5b2d8JYp/AtqYpMj83Z+5ldJIZh6ztSUk1BrYf2llFmT1ceVjWivHsSJyhVXXJiNbu0Kxbif47t5whhewg==",
+  "dgSpecHash": "tz77KUkuCfc2UG4+RSssKH4RU2fE3kAHNKeLJhrpHg5oLAJ0k4I8SeoLasV2JLx1lwKH7FEEGVBNmXpBpiWunw==",
   "success": true,
-  "projectFilePath": "/home/ejwu/cczp/DecryptCocos2dAsset/DecryptCocos2dAsset/DecryptCocos2dAsset.csproj",
+  "projectFilePath": "/home/ejwu/src/ff/datamine/cczp/DecryptCocos2dAsset/DecryptCocos2dAsset.csproj",
   "expectedPackageFiles": [
     "/home/ejwu/.nuget/packages/iconic.zlib.netstandard/1.0.0/iconic.zlib.netstandard.1.0.0.nupkg.sha512",
     "/home/ejwu/.nuget/packages/microsoft.netcore.platforms/1.0.1/microsoft.netcore.platforms.1.0.1.nupkg.sha512",

@@ -1,7 +1,7 @@
 {
   "version": 3,
   "targets": {
-    ".NETCoreApp,Version=v3.1": {
+    "net5.0": {
       "Iconic.Zlib.Netstandard/1.0.0": {
         "type": "package",
         "dependencies": {
@@ -4162,7 +4162,7 @@
     }
   },
   "projectFileDependencyGroups": {
-    ".NETCoreApp,Version=v3.1": [
+    "net5.0": [
       "Iconic.Zlib.Netstandard >= 1.0.0"
     ]
   },
@@ -4172,23 +4172,24 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/ejwu/cczp/DecryptCocos2dAsset/DecryptCocos2dAsset/DecryptCocos2dAsset.csproj",
+      "projectUniqueName": "/home/ejwu/src/ff/datamine/cczp/DecryptCocos2dAsset/DecryptCocos2dAsset.csproj",
       "projectName": "DecryptCocos2dAsset",
-      "projectPath": "/home/ejwu/cczp/DecryptCocos2dAsset/DecryptCocos2dAsset/DecryptCocos2dAsset.csproj",
+      "projectPath": "/home/ejwu/src/ff/datamine/cczp/DecryptCocos2dAsset/DecryptCocos2dAsset.csproj",
       "packagesPath": "/home/ejwu/.nuget/packages/",
-      "outputPath": "/home/ejwu/cczp/DecryptCocos2dAsset/DecryptCocos2dAsset/obj/",
+      "outputPath": "/home/ejwu/src/ff/datamine/cczp/DecryptCocos2dAsset/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/ejwu/.nuget/NuGet/NuGet.Config"
       ],
       "originalTargetFrameworks": [
-        "netcoreapp3.1"
+        "netcoreapp5.0"
       ],
       "sources": {
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
-        "netcoreapp3.1": {
+        "net5.0": {
+          "targetAlias": "netcoreapp5.0",
           "projectReferences": {}
         }
       },
@@ -4199,7 +4200,8 @@
       }
     },
     "frameworks": {
-      "netcoreapp3.1": {
+      "net5.0": {
+        "targetAlias": "netcoreapp5.0",
         "dependencies": {
           "Iconic.Zlib.Netstandard": {
             "target": "Package",
@@ -4221,7 +4223,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/3.1.412/RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/usr/lib64/dotnet/sdk/5.0.206/RuntimeIdentifierGraph.json"
       }
     }
   }
