@@ -9,49 +9,46 @@ from collections import Counter
 from collections import defaultdict
 from multiprocessing import Pool
 from multiprocessing import Process
-from operator import itemgetter
-
-from sys import getsizeof, stderr
-from itertools import chain
-from collections import deque
 
 # TODO: Update when bar level increases
 MAT_SHOP = {
-    'Rum': {'cost': 50, 'num': 10},
-    'Vodka': {'cost': 50, 'num': 10},
-    'Brandy': {'cost': 50, 'num': 10},
-    'Tequila': {'cost': 50, 'num': 10},
-    'Gin': {'cost': 50, 'num': 10},
-    'Whisky': {'cost': 50, 'num': 10},
+    'Rum': {'cost': 50, 'num': 10, 'level': 1},
+    'Vodka': {'cost': 50, 'num': 10, 'level': 1},
+    'Brandy': {'cost': 50, 'num': 10, 'level': 1},
+    'Tequila': {'cost': 50, 'num': 10, 'level': 1},
+    'Gin': {'cost': 50, 'num': 10, 'level': 1},
+    'Whisky': {'cost': 50, 'num': 10, 'level': 1},
     
-    'Coffee Liqueur': {'cost': 20, 'num': 4},
-    'Orange Curacao': {'cost': 20, 'num': 4},
-    'Vermouth': {'cost': 20, 'num': 4},
-    'Bitters': {'cost': 40, 'num': 4},
-    'Baileys': {'cost': 40, 'num': 4},
+    'Coffee Liqueur': {'cost': 20, 'num': 4, 'level': 2},
+    # This is annoying because a level 5 drink (Singapore Sling) requires a level 6 ingredient,
+    # which can break things when running this at bar_level=5
+    'Orange Curacao': {'cost': 20, 'num': 4, 'level': 6},
+    'Vermouth': {'cost': 20, 'num': 4, 'level': 7},
+    'Bitters': {'cost': 40, 'num': 4, 'level': 8},
+    'Baileys': {'cost': 40, 'num': 4, 'level': 9},
 
-    'Cola': {'cost': 20, 'num': 4},
-    'Cane Syrup': {'cost': 20, 'num': 4},
-    'Honey': {'cost': 20, 'num': 4},
-    'Lemon Juice': {'cost': 20, 'num': 4},
-    'Mint Leaf': {'cost': 20, 'num': 4},
-    'Soda Water': {'cost': 20, 'num': 4},
-    'Pineapple Juice': {'cost': 20, 'num': 4},
-    'Sugar': {'cost': 20, 'num': 4},
-    'Orange Juice': {'cost': 20, 'num': 4},
-    'Cream': {'cost': 20, 'num': 4},
+    'Cola': {'cost': 20, 'num': 4, 'level': 1},
+    'Orange Juice': {'cost': 20, 'num': 4, 'level': 1},
+    'Pineapple Juice': {'cost': 20, 'num': 4, 'level': 1},
+    'Soda Water': {'cost': 20, 'num': 4, 'level': 1},
+    'Cane Syrup': {'cost': 20, 'num': 4, 'level': 2},
+    'Lemon Juice': {'cost': 20, 'num': 4, 'level': 2},
+    'Mint Leaf': {'cost': 20, 'num': 4, 'level': 3},
+    'Honey': {'cost': 20, 'num': 4, 'level': 4},
+    'Sugar': {'cost': 20, 'num': 4, 'level': 4},
+    'Cream': {'cost': 20, 'num': 4, 'level': 5},
 
     # Estimates
     # 10
-    'Campari': {'cost': 40, 'num': 4},
+    'Campari': {'cost': 40, 'num': 4, 'level': 10},
     # 11, other
-    'Fruit Syrup': {'cost': 40, 'num': 4},
+    'Fruit Syrup': {'cost': 40, 'num': 4, 'level': 11},
     # 12
-    'Chartreuse': {'cost': 40, 'num': 4},
+    'Chartreuse': {'cost': 40, 'num': 4, 'level': 12},
     # 13
-    'Aperol': {'cost': 40, 'num': 4},
+    'Aperol': {'cost': 40, 'num': 4, 'level': 13},
     # 14
-    'Wine': {'cost': 40, 'num': 4},
+    'Wine': {'cost': 40, 'num': 4, 'level': 14},
 }
 
 def parse_args():
@@ -82,6 +79,7 @@ with open(BASE_PATH + "material.json.pretty") as material_file:
             material_costs[key]["cost"] = MAT_SHOP[mat_name]["cost"]
             material_costs[key]["num"] = MAT_SHOP[mat_name]["num"]
             material_costs[key]["type"] = material["materialType"]
+            material_costs[key]["level"] = MAT_SHOP[mat_name]["level"]
 
 with open(BASE_PATH + "formula.json.pretty") as formula_file, open(BASE_PATH + "drink.json.pretty") as drink_file:
     formula_json = json.load(formula_file)
@@ -137,16 +135,16 @@ def print_combo(combo):
             counter[material_costs[material[0]]["name"]] += material[1]
     print(drink_names)
     ingredients = []
+    unused_ingredients = [mat[0] for mat in MAT_SHOP.items() if mat[1]["level"] <= bar_level]
     for material, count in sorted(counter.items(), key=lambda x: material_costs[material_name_to_id[x[0]]]["type"]):
         ingredients.append(str(count) + " " + material)
-    print("Uses: ", ", ".join(ingredients))
+        unused_ingredients.remove(material)
+    print("\nUses: ", ", ".join(ingredients))
+    if len(unused_ingredients) <= 4:
+        print(f"(Buy everything except {unused_ingredients})")
     [c, f, t] = get_drink_set_info(combo)
-    print(f"Fame {f}, tickets {t}, cost {c}, fame/cost {f/c:.3}, tickets/cost {t/c:.3}")
+    print(f"\nFame {f}, tickets {t}, cost {c}, fame/cost {f/c:.3}, tickets/cost {t/c:.3}")
     
-def print_combos(combos):
-    for combo in combos:
-        print_combo(combo)
-
 def get_drink_set_info(drinks):
     cost = 0
     fame = 0
@@ -170,12 +168,15 @@ def get_drink_set_min(drinks):
             minimum = drink_to_index[drink]
     return minimum
 
+def drink_strs_to_ids(drink_strs):
+    drink_ids = []
+    for drink_str in drink_strs:
+        drink_ids.append(drinks_data[drink_str]["id"])
+    return drink_ids
+
 def check(drinks):
     print("Checking")
-    drink_ids = []
-    for drink_str in drinks:
-        drink_ids.append(drinks_data[drink_str]["id"])
-    print_combo(drink_ids)
+    print_combo(drink_strs_to_ids(drinks))
 
 class BestDrinkSet:
     def __init__(self, comp):
@@ -343,7 +344,6 @@ def process_leaf_nodes(all_c):
         bdc_overall_effic.offer(drinks)
         
 def all_combos(num_drinks_remaining, drinks_made, drink_set):
-    global DUPES
     combos = []
     if num_drinks_remaining == 0:
         return drinks_made
@@ -369,29 +369,29 @@ def all_combos(num_drinks_remaining, drinks_made, drink_set):
 
 all_combos(bar_level_data[bar_level], (), drink_set)
 
-print(f"\nmax cost: {get_drink_set_info(bdc_cost.best)[0]}")
+print(f"\n\nmax cost: {get_drink_set_info(bdc_cost.best)[0]}")
 print_combo(bdc_cost.best)
 
 [c, f, t] = get_drink_set_info(bdc_fame.best)
-print(f"\nmax fame: {f}, tickets {t}, cost {c}")
+print(f"\n\nmax fame: {f}, tickets {t}, cost {c}")
 print_combo(bdc_fame.best)
 
 [c, f, t] = get_drink_set_info(bdc_fame_effic.best)
-print(f"\nmax fame efficiency: {f}, tickets {t}, cost {c}")
+print(f"\n\nmax fame efficiency: {f}, tickets {t}, cost {c}")
 print_combo(bdc_fame_effic.best)
 
 [c, f, t] = get_drink_set_info(bdc_tickets.best)
-print(f"\nmax tickets: {t}, fame {f}, cost {c}")
+print(f"\n\nmax tickets: {t}, fame {f}, cost {c}")
 print_combo(bdc_tickets.best)
 
 [c, f, t] = get_drink_set_info(bdc_tickets_effic.best)
-print(f"\nmax tickets efficiency: {t}, fame {f}, cost {c}")
+print(f"\n\nmax tickets efficiency: {t}, fame {f}, cost {c}")
 print_combo(bdc_tickets_effic.best)
 
 [c, f, t] = get_drink_set_info(bdc_overall.best)
-print(f"\nmax overall:")
+print(f"\n\nmax overall:")
 print_combo(bdc_overall.best)
 
 [c, f, t] = get_drink_set_info(bdc_tickets_effic.best)
-print(f"\nmax overall efficiency:")
+print(f"\n\nmax overall efficiency:")
 print_combo(bdc_overall_effic.best)
