@@ -14,13 +14,15 @@ from multiprocessing import JoinableQueue
 
 # TODO: Update when bar level increases
 MAT_SHOP = {
+     # Base Spirits
     'Rum': {'cost': 50, 'num': 10, 'level': 1},
     'Vodka': {'cost': 50, 'num': 10, 'level': 1},
     'Brandy': {'cost': 50, 'num': 10, 'level': 1},
     'Tequila': {'cost': 50, 'num': 10, 'level': 1},
     'Gin': {'cost': 50, 'num': 10, 'level': 1},
     'Whisky': {'cost': 50, 'num': 10, 'level': 1},
-    
+
+    # Flavor Spirits
     'Coffee Liqueur': {'cost': 20, 'num': 4, 'level': 2},
     # This is annoying because a level 5 drink (Singapore Sling) requires a level 6 ingredient,
     # which can break things when running this at bar_level=5
@@ -28,7 +30,9 @@ MAT_SHOP = {
     'Vermouth': {'cost': 20, 'num': 4, 'level': 7},
     'Bitters': {'cost': 40, 'num': 4, 'level': 8},
     'Baileys': {'cost': 40, 'num': 4, 'level': 9},
+    'Campari': {'cost': 40, 'num': 4, 'level': 10},
 
+    # Other
     'Cola': {'cost': 20, 'num': 4, 'level': 1},
     'Orange Juice': {'cost': 20, 'num': 4, 'level': 1},
     'Pineapple Juice': {'cost': 20, 'num': 4, 'level': 1},
@@ -40,9 +44,7 @@ MAT_SHOP = {
     'Sugar': {'cost': 20, 'num': 4, 'level': 4},
     'Cream': {'cost': 20, 'num': 4, 'level': 5},
 
-    # Estimates
-    # 10
-    'Campari': {'cost': 40, 'num': 4, 'level': 10},
+    # Assumptions
     # 11, other
     'Fruit Syrup': {'cost': 40, 'num': 4, 'level': 11},
     # 12
@@ -51,14 +53,52 @@ MAT_SHOP = {
     'Aperol': {'cost': 40, 'num': 4, 'level': 13},
     # 14
     'Wine': {'cost': 40, 'num': 4, 'level': 14},
+    # 15
+    'Fruit Liqueur': {'cost': 40, 'num': 4, 'level': 15},
+    # 16
+    'Ginger Beer': {'cost': 40, 'num': 4, 'level': 16},
+    # 17, other
+    'Soda': {'cost': 20, 'num': 4, 'level': 17},
+    # 18
+    'Benedictine': {'cost': 40, 'num': 4, 'level': 18},
+    # 19, other
+    'Fruit Juice': {'cost': 20, 'num': 4, 'level': 19},
+    # 20, other
+    'Hot Sauce': {'cost': 20, 'num': 4, 'level': 20},
+    # 20, other
+    'Tomato Juice': {'cost': 20, 'num': 4, 'level': 20},
 }
+
+def update_mat_shop_for_level_11():
+    # bar level 11
+    # spirits: 75 for 15
+    # flavor: 6 for 60 for baileys/bitters, 6 for 30 for vermouth/orange curacao/coffee, 4/40 for campari
+    # other: 6/30, 4/40 for fruit syrup
+    for spirit in ['Rum', 'Vodka', 'Brandy', 'Gin', 'Tequila', 'Whisky']:
+        MAT_SHOP[spirit]['cost'] = 75
+        MAT_SHOP[spirit]['num'] = 15
+
+    for flavor in ['Baileys', 'Bitters']:
+        MAT_SHOP[flavor]['cost'] = 60
+        MAT_SHOP[flavor]['num'] = 6
+    for flavor in ['Vermouth', 'Orange Curacao', 'Coffee Liqueur']:
+        MAT_SHOP[flavor]['cost'] = 30
+        MAT_SHOP[flavor]['num'] = 6
+
+    for other in ['Cola', 'Orange Juice', 'Pineapple Juice', 'Soda Water', 'Cane Syrup', 'Lemon Juice', 'Mint Leaf', 'Honey', 'Sugar', 'Cream']:
+        MAT_SHOP[other]['cost'] = 30
+        MAT_SHOP[other]['num'] = 6
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Find various maxima for bar menus")
     parser.add_argument("--barlevel", help="Level of the bar", type=int, default=4)
     return parser.parse_args()
 
-bar_level_data = defaultdict(dict)
+bar_level = parse_args().barlevel
+if bar_level >= 11:
+    update_mat_shop_for_level_11()
+
+max_drinks_by_bar_level = defaultdict(dict)
 drinks_data = defaultdict(dict)
 drink_id_to_name = {}
 material_costs = defaultdict(dict)
@@ -69,7 +109,7 @@ BASE_PATH = "/home/ejwu/ff/ff20211202/com.egg.foodandroid/files/publish/conf/en-
 # Populate stock limits for each bar level
 with open(BASE_PATH + "levelUp.json.pretty") as bar_level_file:
     for level in json.load(bar_level_file).values():
-        bar_level_data[level["level"]] = int(level["stockNum"])
+        max_drinks_by_bar_level[level["level"]] = int(level["stockNum"])
 
 # Populate material availability and cost in the market
 with open(BASE_PATH + "material.json.pretty") as material_file:
@@ -100,7 +140,6 @@ with open(BASE_PATH + "formula.json.pretty") as formula_file, open(BASE_PATH + "
         for material, quantity in zip(formula["materials"], formula["matching"]):
             drinks_data[formula["name"]]["materials"].append([material, int(quantity)])
         
-bar_level = parse_args().barlevel
 drinks_by_level = sorted(drinks_data.items(), reverse=True, key=lambda item: item[1]["barLevel"])
 drink_setf = filter(lambda item: item[1]["barLevel"] <= bar_level, drinks_by_level)
 
@@ -110,7 +149,7 @@ for i, drink in enumerate(drink_setf):
     drink_set.append(drink[1]["id"])
     drink_to_index[drink[1]["id"]] = i
     
-print(f"Bar level: {bar_level}, max drinks: {bar_level_data[bar_level]}, available drinks: {len(drink_set)}") 
+print(f"Bar level: {bar_level}, max drinks: {max_drinks_by_bar_level[bar_level]}, available drinks: {len(drink_set)}") 
     
 materials_available = {}
 for key, material in material_costs.items():
@@ -141,7 +180,7 @@ def print_combo(combo):
     for material, count in sorted(counter.items(), key=lambda x: material_costs[material_name_to_id[x[0]]]["type"]):
         ingredients.append(str(count) + " " + material)
         unused_ingredients.remove(material)
-    print("\nUses: ", ", ".join(ingredients))
+    print("\nUses:", ", ".join(ingredients))
     if len(unused_ingredients) <= 4:
         print(f"(Buy everything except {unused_ingredients})")
     [c, f, t] = get_drink_set_info(combo)
@@ -389,21 +428,49 @@ def sort_by_overall_effic(l, r):
         return get_overall_diff(l_info, r_info)
     return 0
 
-stats = Stats()
 
-def stats_callback(stats):
-    global results_queue
-    # TODO: how does this even happen?
-    if stats.num_processed > 0:
-        results_queue.put(stats)
+MAX_DRINKS = max_drinks_by_bar_level[bar_level]
+# Number of drinks in the combos from the generator
+HELPER_DEPTH = 8
+# Indexing in the recursion is weird
+FORK_LEVEL = MAX_DRINKS - HELPER_DEPTH + 1
+DRINKS_TO_PROCESS = MAX_DRINKS - HELPER_DEPTH
+DRINK_SET = drink_set
 
-def all_combos_leafy_helper(num_drinks_remaining, drinks_made, drink_set):
+print(f"generating combos of size {HELPER_DEPTH}, pool processing subtrees of depth {DRINKS_TO_PROCESS}")
+
+def all_combos_generator(num_drinks_remaining, drinks_made, drink_set):
+    if num_drinks_remaining == 0:
+        raise Error()
+    combos = []
+    minimum = get_drink_set_min(drinks_made)
+    for drink in drink_set:
+        if drink_to_index[drink] <= minimum:
+            made = drinks_made + (drink,)
+            if can_make_drinks(made):
+                combos.append(made)
+
+    if num_drinks_remaining == FORK_LEVEL:
+        for combo in combos:
+            yield combo
+    else:
+        for combo in combos:
+            yield from all_combos_generator(num_drinks_remaining - 1, combo, drink_set)
+
+def partial_combo_handler(drinks_made):
+    combos = partial_combo_handler_helper(drinks_made, DRINKS_TO_PROCESS)
+    stats = Stats()
+    for combo in combos:
+        stats.offer_all(combo)
+    return stats
+
+def partial_combo_handler_helper(drinks_made, num_drinks_remaining):
     combos = []
     if num_drinks_remaining == 0:
         return [drinks_made]
     
     minimum = get_drink_set_min(drinks_made)
-    for drink in drink_set:
+    for drink in DRINK_SET:
         if drink_to_index[drink] <= minimum:
             made = drinks_made + (drink,)
             if can_make_drinks(made):
@@ -412,63 +479,26 @@ def all_combos_leafy_helper(num_drinks_remaining, drinks_made, drink_set):
     to_return = []
 
     for combo in combos:
-        to_return += all_combos_leafy_helper(num_drinks_remaining - 1, combo, drink_set)
+        to_return += partial_combo_handler_helper(combo, num_drinks_remaining - 1)
 
     return to_return
 
-def all_combos_helper_top_level(num_drinks_remaining, drinks_made, drink_set):
+if __name__ == '__main__':
+    pool = multiprocessing.Pool(7)
     stats = Stats()
-    for combo in all_combos_leafy_helper(num_drinks_remaining, drinks_made, drink_set):
-        stats.offer_all(combo)
+    jobs = 0
+    combo_count = 0
 
-    return stats
+    for i in pool.imap_unordered(partial_combo_handler, all_combos_generator(MAX_DRINKS, (), drink_set), chunksize=100):
+        jobs += 1
+        stats.add(i)
+        combo_count += i.num_processed
+        if jobs % 1000000 == 0:
+            print(f"{jobs:,} jobs processed, {combo_count:,} combos processed, {time.asctime()}")
+        if jobs % 10000000 == 0:
+            stats.print()
 
-def all_combos(num_drinks_remaining, drinks_made, drink_set, pool, results):
-    combos = []
-    
-    minimum = get_drink_set_min(drinks_made)
-    for drink in drink_set:
-        if drink_to_index[drink] <= minimum:
-            made = drinks_made + (drink,)
-            if can_make_drinks(made):
-                combos.append(made)
-
-    if num_drinks_remaining > 8:
-        for combo in combos:
-            all_combos(num_drinks_remaining - 1, combo, drink_set, pool, results)
-    elif num_drinks_remaining == 8:
-        pool.apply_async(all_combos_helper_top_level, args=(num_drinks_remaining, drinks_made, drink_set), callback=stats_callback)
-
-def results_consumer(queue):
-    calls = 0
-    stats = Stats()
-    while True:
-        if calls % 10000 == 0:
-            print(calls, queue.qsize())
-        result = queue.get()
-        calls += 1
-        if result is not None:
-            stats.add(result)
-            queue.task_done()
-        if result == None:
-            queue.task_done()
-            break
-
-    print("from consumer processed", calls)
     stats.print()
-    print(f"{stats.num_processed:,}")
+    print(f"Final: {jobs:,} jobs processed, {combo_count:,} combos processed")
 
-pool = Pool(8)
-results_queue = JoinableQueue()
-consumer = Process(target=results_consumer, args=(results_queue, ))
-consumer.start()
 
-all_combos(bar_level_data[bar_level], (), drink_set, pool, results_queue)
-
-pool.close()
-pool.join()
-
-results_queue.join()
-
-results_queue.put(None)
-consumer.join()
