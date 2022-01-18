@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import argparse
+import functools
 import json
 import multiprocessing
 import time
@@ -140,11 +141,24 @@ with open(BASE_PATH + "formula.json.pretty") as formula_file, open(BASE_PATH + "
 drinks_by_level = sorted(drinks_data.items(), reverse=True, key=lambda item: item[1]["barLevel"])
 drink_setf = filter(lambda item: item[1]["barLevel"] <= bar_level, drinks_by_level)
 
+def ingredients_used(l, r):
+    lmats = 0
+    rmats = 0
+    for mat in l[1]["materials"]:
+        lmats += mat[1]
+    for mat in r[1]["materials"]:
+        rmats += mat[1]
+    return lmats - rmats
+
+filtered_drinks = list(drink_setf)
+expensive_drinks_first = sorted(filtered_drinks, key=functools.cmp_to_key(ingredients_used))
+
 drink_set = []
 drink_to_index = {}
-for i, drink in enumerate(drink_setf):
+for i, drink in enumerate(expensive_drinks_first):
     drink_set.append(drink[1]["id"])
     drink_to_index[drink[1]["id"]] = i
+
 DRINK_SET = tuple(drink_set)
     
 print(f"Bar level: {bar_level}, max drinks: {max_drinks_by_bar_level[bar_level]}, available drinks: {len(drink_set)}") 
