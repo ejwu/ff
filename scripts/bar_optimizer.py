@@ -3,14 +3,10 @@
 import argparse
 import json
 import multiprocessing
-import resource
-import sys
 import time
 from collections import Counter
 from collections import defaultdict
 from multiprocessing import Pool
-from multiprocessing import Process
-from multiprocessing import JoinableQueue
 
 # TODO: Update when bar level increases
 MAT_SHOP = {
@@ -92,6 +88,7 @@ def update_mat_shop_for_level_11():
 def parse_args():
     parser = argparse.ArgumentParser(description="Find various maxima for bar menus")
     parser.add_argument("--barlevel", help="Level of the bar", type=int, default=4)
+    parser.add_argument("--workerDepth", help="Depth of the subtrees to process from workers", type=int, default=6)
     return parser.parse_args()
 
 bar_level = parse_args().barlevel
@@ -148,6 +145,7 @@ drink_to_index = {}
 for i, drink in enumerate(drink_setf):
     drink_set.append(drink[1]["id"])
     drink_to_index[drink[1]["id"]] = i
+DRINK_SET = tuple(drink_set)
     
 print(f"Bar level: {bar_level}, max drinks: {max_drinks_by_bar_level[bar_level]}, available drinks: {len(drink_set)}") 
     
@@ -167,6 +165,16 @@ def can_make_drinks(drinks):
             return False
     return True
 
+def coalesce_names(drink_names):
+    counter = Counter(drink_names)
+    drink_strs = []
+    for drink, count in counter.items():
+        if count > 1:
+            drink_strs.append(f"{count}x {drink}")
+        else:
+            drink_strs.append(drink)
+    return ", ".join(drink_strs)
+
 def print_combo(combo):
     drink_names = []
     counter = Counter()
@@ -174,7 +182,8 @@ def print_combo(combo):
         drink_names.append(drink_id_to_name[drink])
         for material in drinks_data[drink_id_to_name[drink]]["materials"]:
             counter[material_costs[material[0]]["name"]] += material[1]
-    print(drink_names)
+    print(coalesce_names(drink_names))
+
     ingredients = []
     unused_ingredients = [mat[0] for mat in MAT_SHOP.items() if mat[1]["level"] <= bar_level]
     for material, count in sorted(counter.items(), key=lambda x: material_costs[material_name_to_id[x[0]]]["type"]):
@@ -429,33 +438,31 @@ def sort_by_overall_effic(l, r):
     return 0
 
 
+DRINKS_TO_PROCESS = parse_args().workerDepth
+FORK_LEVEL = DRINKS_TO_PROCESS + 1
 MAX_DRINKS = max_drinks_by_bar_level[bar_level]
 # Number of drinks in the combos from the generator
-HELPER_DEPTH = 8
-# Indexing in the recursion is weird
-FORK_LEVEL = MAX_DRINKS - HELPER_DEPTH + 1
-DRINKS_TO_PROCESS = MAX_DRINKS - HELPER_DEPTH
-DRINK_SET = drink_set
+HELPER_DEPTH = MAX_DRINKS - DRINKS_TO_PROCESS
 
 print(f"generating combos of size {HELPER_DEPTH}, pool processing subtrees of depth {DRINKS_TO_PROCESS}")
 
-def all_combos_generator(num_drinks_remaining, drinks_made, drink_set):
+def all_combos_generator(num_drinks_remaining, drinks_made):
     if num_drinks_remaining == 0:
         raise Error()
     combos = []
     minimum = get_drink_set_min(drinks_made)
-    for drink in drink_set:
+    for drink in DRINK_SET:
         if drink_to_index[drink] <= minimum:
             made = drinks_made + (drink,)
             if can_make_drinks(made):
                 combos.append(made)
 
-    if num_drinks_remaining == FORK_LEVEL:
+    if num_drinks_remaining == DRINKS_TO_PROCESS + 1:
         for combo in combos:
             yield combo
     else:
         for combo in combos:
-            yield from all_combos_generator(num_drinks_remaining - 1, combo, drink_set)
+            yield from all_combos_generator(num_drinks_remaining - 1, combo)
 
 def partial_combo_handler(drinks_made):
     combos = partial_combo_handler_helper(drinks_made, DRINKS_TO_PROCESS)
@@ -489,7 +496,7 @@ if __name__ == '__main__':
     jobs = 0
     combo_count = 0
 
-    for i in pool.imap_unordered(partial_combo_handler, all_combos_generator(MAX_DRINKS, (), drink_set), chunksize=100):
+    for i in pool.imap_unordered(partial_combo_handler, all_combos_generator(MAX_DRINKS, ()), chunksize=100):
         jobs += 1
         stats.add(i)
         combo_count += i.num_processed
