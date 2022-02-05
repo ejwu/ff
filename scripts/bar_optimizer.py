@@ -40,10 +40,9 @@ MAT_SHOP = {
     'Honey': {'cost': 20, 'num': 4, 'level': 4},
     'Sugar': {'cost': 20, 'num': 4, 'level': 4},
     'Cream': {'cost': 20, 'num': 4, 'level': 5},
+    'Fruit Syrup': {'cost': 40, 'num': 4, 'level': 11},
 
     # Assumptions
-    # 11, other
-    'Fruit Syrup': {'cost': 40, 'num': 4, 'level': 11},
     # 12
     'Chartreuse': {'cost': 40, 'num': 4, 'level': 12},
     # 13
@@ -90,6 +89,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Find various maxima for bar menus")
     parser.add_argument("--barlevel", help="Level of the bar", type=int, default=4)
     parser.add_argument("--workerDepth", help="Depth of the subtrees to process from workers", type=int, default=6)
+    parser.add_argument("--numWorkers", help="Number of worker threads", type=int, default=7)
+    parser.add_argument("--cacheDepth", help="Depth of the valid subtrees to cache", type=int, default=5)
     return parser.parse_args()
 
 bar_level = parse_args().barlevel
@@ -141,6 +142,7 @@ with open(BASE_PATH + "formula.json.pretty") as formula_file, open(BASE_PATH + "
 drinks_by_level = sorted(drinks_data.items(), reverse=True, key=lambda item: item[1]["barLevel"])
 drink_setf = filter(lambda item: item[1]["barLevel"] <= bar_level, drinks_by_level)
 
+# Sort by ingredients used first, in hopes of pruning the tree better.  May not do much after level 11
 def ingredients_used(l, r):
     lmats = 0
     rmats = 0
@@ -148,34 +150,59 @@ def ingredients_used(l, r):
         lmats += mat[1]
     for mat in r[1]["materials"]:
         rmats += mat[1]
-    return lmats - rmats
+    return rmats - lmats
+
+# 3.25 is close to the ratio of max_tickets to max_fame at bar level 9
+OVERALL_COEFF = 3.25
+
+# Just greedily sort by overall score, ignoring ingredients
+def overall_score(l, r):
+    l_overall = l[1]["barFame"] * OVERALL_COEFF + l[1]["tickets"]
+    r_overall = r[1]["barFame"] * OVERALL_COEFF + r[1]["tickets"]
+    return r_overall - l_overall
 
 filtered_drinks = list(drink_setf)
-expensive_drinks_first = sorted(filtered_drinks, key=functools.cmp_to_key(ingredients_used))
-
+overall_drinks_first = sorted(filtered_drinks, key=functools.cmp_to_key(overall_score))
 drink_set = []
+# Drink ID to index
 drink_to_index = {}
-for i, drink in enumerate(expensive_drinks_first):
+for i, drink in enumerate(overall_drinks_first):
     drink_set.append(drink[1]["id"])
     drink_to_index[drink[1]["id"]] = i
 
 DRINK_SET = tuple(drink_set)
     
-print(f"Bar level: {bar_level}, max drinks: {max_drinks_by_bar_level[bar_level]}, available drinks: {len(drink_set)}") 
-    
+print(f"Bar level: {bar_level}, max drinks: {max_drinks_by_bar_level[bar_level]}, available drinks: {len(drink_set)}, workers: {parse_args().numWorkers}") 
+
+def print_index_and_mats(i, drink):
+    mat_strings = []
+    for material, count in drink["materials"]:
+        mat_strings.append(f"{count} {material_costs[material]['name']}")
+    print(f"{i:<3} {drink_id_to_name[drink['id']]:<20} - {', '.join(mat_strings)}")
+
+for drink, index in drink_to_index.items():
+    print_index_and_mats(index, drinks_data[drink_id_to_name[drink]])
+#    print(index, drink_id_to_name[drink], drinks_data[drink_id_to_name[drink]])
+#    exit()
+
+
 materials_available = {}
 for key, material in material_costs.items():
-    if "num" in material:
-        materials_available[key] = material["num"]
-        
+    materials_available[key] = material["num"]
+
 def can_make_drinks(drinks):
     materials_used = defaultdict(int)
     for drink in drinks:
         for material in drinks_data[drink_id_to_name[drink]]["materials"]:
             materials_used[material[0]] += material[1]
+# this slows things down
+#            if materials_used[material[0]] > materials_available[material[0]]:
+#                return False
 
     for material, num_used in materials_used.items():
         if num_used > materials_available[material]:
+#            print("not enough", material_costs[material]["name"], "for")
+#            print_names(drinks)
             return False
     return True
 
@@ -189,6 +216,18 @@ def coalesce_names(drink_names):
             drink_strs.append(drink)
     return ", ".join(drink_strs)
 
+def print_indices(combo):
+    indices = []
+    for drink in combo:
+        indices.append(str(drink_to_index[drink]))
+    print(",".join(indices))
+
+def print_names(combo):
+    drink_names = []
+    for drink in combo:
+        drink_names.append(drink_id_to_name[drink])
+    print(coalesce_names(drink_names))
+    
 def print_combo(combo):
     drink_names = []
     counter = Counter()
@@ -339,8 +378,6 @@ def get_fame_effic_diff(l_info, r_info):
         return -1
     return (l_info[1] / l_info[0]) - (r_info[1] / r_info[0])
 
-# 3.25 is close to the ratio of max_tickets to max_fame at bar level 9
-OVERALL_COEFF = 3.25
 def get_overall_diff(l_info, r_info):
     return (l_info[1] * OVERALL_COEFF + l_info[2]) - (r_info[1] * OVERALL_COEFF + r_info[2])
 
@@ -460,44 +497,95 @@ HELPER_DEPTH = MAX_DRINKS - DRINKS_TO_PROCESS
 
 print(f"generating combos of size {HELPER_DEPTH}, pool processing subtrees of depth {DRINKS_TO_PROCESS}")
 
-def all_combos_generator(num_drinks_remaining, drinks_made):
+SKIPPED = defaultdict(int)
+
+def all_combos_generator(num_drinks_remaining, drinks_made, worker_depth):
+    global SKIPPED
     if num_drinks_remaining == 0:
         raise Error()
     combos = []
     minimum = get_drink_set_min(drinks_made)
+
     for drink in DRINK_SET:
         if drink_to_index[drink] <= minimum:
             made = drinks_made + (drink,)
             if can_make_drinks(made):
                 combos.append(made)
+            else:
+                if num_drinks_remaining == worker_depth + 1:
+                    if drink_to_index[drinks_made[0]] < 8:
+                        print_indices(made)
+                    SKIPPED[drink_to_index[drinks_made[0]]] += 1
 
-    if num_drinks_remaining == DRINKS_TO_PROCESS + 1:
+    if num_drinks_remaining == worker_depth + 1:
         for combo in combos:
             yield combo
     else:
         for combo in combos:
-            yield from all_combos_generator(num_drinks_remaining - 1, combo)
+            yield from all_combos_generator(num_drinks_remaining - 1, combo, worker_depth)
+
+def precalculate_cache(num_drinks):
+    start_time = time.time()
+    cache = defaultdict(list)
+    entries = 0
+    for combo in all_combos_generator(num_drinks, (), 1):
+        key = drink_to_index[combo[0]]
+        cache[key].append(combo)
+        entries += 1
+
+    for key in sorted(cache.keys()):
+        print(key, len(cache[key]))
+
+    print(f"Initialized cache with {len(cache)} keys, {entries:,} total entries in {time.time() - start_time} seconds")
+    return cache
+
+CACHE_DEPTH = parse_args().cacheDepth
+CACHE = precalculate_cache(CACHE_DEPTH)
+#print(SKIPPED)
+#exit()
 
 def partial_combo_handler(drinks_made):
     combos = partial_combo_handler_helper(drinks_made, DRINKS_TO_PROCESS)
     stats = Stats()
     for combo in combos:
         stats.offer_all(combo)
-    return stats
+    first_combo = None
+    if len(combos) > 0:
+        first_combo = combos[0]
+    else:
+        pass
+        #        print("nothing to process", drinks_made)
+#        for drink in drinks_made:
+#            print(drink_id_to_name[drink])
+
+    return (stats, first_combo)
 
 def partial_combo_handler_helper(drinks_made, num_drinks_remaining):
+    global CACHE
+    global CACHE_DEPTH
+
     combos = []
     if num_drinks_remaining == 0:
         return [drinks_made]
     
     minimum = get_drink_set_min(drinks_made)
+    to_return = []
+
+    if num_drinks_remaining + 1 == CACHE_DEPTH:
+        for key, cached_partial_combos in CACHE.items():
+            if key <= minimum:
+                for partial_combo in cached_partial_combos:
+                    made = drinks_made + partial_combo
+                    if can_make_drinks(made):
+                        to_return.append(made)
+        return to_return
+                    
     for drink in DRINK_SET:
         if drink_to_index[drink] <= minimum:
             made = drinks_made + (drink,)
             if can_make_drinks(made):
                 combos.append(made)
 
-    to_return = []
 
     for combo in combos:
         to_return += partial_combo_handler_helper(combo, num_drinks_remaining - 1)
@@ -505,21 +593,29 @@ def partial_combo_handler_helper(drinks_made, num_drinks_remaining):
     return to_return
 
 if __name__ == '__main__':
-    pool = multiprocessing.Pool(7)
+    pool = multiprocessing.Pool(parse_args().numWorkers)
     stats = Stats()
     jobs = 0
+    non_empty_jobs = 0
     combo_count = 0
 
-    for i in pool.imap_unordered(partial_combo_handler, all_combos_generator(MAX_DRINKS, ()), chunksize=100):
+    for partial_stats, first_combo in pool.imap_unordered(partial_combo_handler, all_combos_generator(MAX_DRINKS, (), DRINKS_TO_PROCESS), chunksize=1000):
         jobs += 1
-        stats.add(i)
-        combo_count += i.num_processed
-        if jobs % 1000000 == 0:
-            print(f"{jobs:,} jobs processed, {combo_count:,} combos processed, {time.asctime()}")
-        if jobs % 10000000 == 0:
-            stats.print()
+        stats.add(partial_stats)
+        combo_count += partial_stats.num_processed
+        if first_combo is not None:
+            non_empty_jobs += 1
+            if non_empty_jobs % 5000 == 0:
+                fc_drink_names = []
+                for drink in first_combo:
+                    fc_drink_names.append(drink_id_to_name[drink])
+                stats.print()
+                print(jobs, non_empty_jobs, ", ".join(fc_drink_names))
+                print_indices(first_combo)
+
+        if jobs % 100000 == 0:
+            print(f"{jobs:,} jobs processed, {non_empty_jobs:,} non-empty, {combo_count:,} combos processed, {time.asctime()}")
 
     stats.print()
-    print(f"Final: {jobs:,} jobs processed, {combo_count:,} combos processed")
-
+    print(f"Final: {jobs:,} jobs processed, {non_empty_jobs:,} non-empty, {combo_count:,} combos processed")
 
