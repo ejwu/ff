@@ -1,0 +1,951 @@
+{
+    "1": {
+        "level": 1,
+        "barPopularity": "0",
+        "consumeGoods": [],
+        "seatNum": "3",
+        "stockNum": "5",
+        "barEntranceIcon": "0",
+        "barEntrancePosition": {
+            "x": "0",
+            "y": "0"
+        },
+        "marketRefreshTimes": "999"
+    },
+    "2": {
+        "level": 2,
+        "barPopularity": "160",
+        "consumeGoods": [
+            {
+                "goodsId": 170001,
+                "type": 17,
+                "num": 30
+            },
+            {
+                "goodsId": 170005,
+                "type": 17,
+                "num": 30
+            },
+            {
+                "goodsId": 170009,
+                "type": 17,
+                "num": 30
+            },
+            {
+                "goodsId": 170013,
+                "type": 17,
+                "num": 30
+            },
+            {
+                "goodsId": 900002,
+                "type": 90,
+                "num": 50000
+            }
+        ],
+        "seatNum": "3",
+        "stockNum": "6",
+        "barEntranceIcon": "0",
+        "barEntrancePosition": {
+            "x": "0",
+            "y": "0"
+        },
+        "marketRefreshTimes": "999"
+    },
+    "3": {
+        "level": 3,
+        "barPopularity": "200",
+        "consumeGoods": [
+            {
+                "goodsId": 170001,
+                "type": 17,
+                "num": 40
+            },
+            {
+                "goodsId": 170005,
+                "type": 17,
+                "num": 40
+            },
+            {
+                "goodsId": 170009,
+                "type": 17,
+                "num": 40
+            },
+            {
+                "goodsId": 170013,
+                "type": 17,
+                "num": 40
+            },
+            {
+                "goodsId": 900002,
+                "type": 90,
+                "num": 60000
+            }
+        ],
+        "seatNum": "3",
+        "stockNum": "7",
+        "barEntranceIcon": "0",
+        "barEntrancePosition": {
+            "x": "0",
+            "y": "0"
+        },
+        "marketRefreshTimes": "999"
+    },
+    "4": {
+        "level": 4,
+        "barPopularity": "400",
+        "consumeGoods": [
+            {
+                "goodsId": 170001,
+                "type": 17,
+                "num": 50
+            },
+            {
+                "goodsId": 170005,
+                "type": 17,
+                "num": 50
+            },
+            {
+                "goodsId": 170009,
+                "type": 17,
+                "num": 50
+            },
+            {
+                "goodsId": 170013,
+                "type": 17,
+                "num": 50
+            },
+            {
+                "goodsId": 900002,
+                "type": 90,
+                "num": 70000
+            }
+        ],
+        "seatNum": "3",
+        "stockNum": "8",
+        "barEntranceIcon": "0",
+        "barEntrancePosition": {
+            "x": "0",
+            "y": "0"
+        },
+        "marketRefreshTimes": "999"
+    },
+    "5": {
+        "level": 5,
+        "barPopularity": "600",
+        "consumeGoods": [
+            {
+                "goodsId": 170001,
+                "type": 17,
+                "num": 60
+            },
+            {
+                "goodsId": 170005,
+                "type": 17,
+                "num": 60
+            },
+            {
+                "goodsId": 170009,
+                "type": 17,
+                "num": 60
+            },
+            {
+                "goodsId": 170013,
+                "type": 17,
+                "num": 60
+            },
+            {
+                "goodsId": 900002,
+                "type": 90,
+                "num": 100000
+            }
+        ],
+        "seatNum": "3",
+        "stockNum": "9",
+        "barEntranceIcon": "0",
+        "barEntrancePosition": {
+            "x": "0",
+            "y": "0"
+        },
+        "marketRefreshTimes": "999"
+    },
+    "6": {
+        "level": 6,
+        "barPopularity": "1000",
+        "consumeGoods": [
+            {
+                "goodsId": 170002,
+                "type": 17,
+                "num": 20
+            },
+            {
+                "goodsId": 170006,
+                "type": 17,
+                "num": 20
+            },
+            {
+                "goodsId": 170010,
+                "type": 17,
+                "num": 20
+            },
+            {
+                "goodsId": 170014,
+                "type": 17,
+                "num": 20
+            },
+            {
+                "goodsId": 900002,
+                "type": 90,
+                "num": 150000
+            }
+        ],
+        "seatNum": "4",
+        "stockNum": "10",
+        "barEntranceIcon": "0",
+        "barEntrancePosition": {
+            "x": "0",
+            "y": "0"
+        },
+        "marketRefreshTimes": "999"
+    },
+    "7": {
+        "level": 7,
+        "barPopularity": "1300",
+        "consumeGoods": [
+            {
+                "goodsId": 170002,
+                "type": 17,
+                "num": 30
+            },
+            {
+                "goodsId": 170006,
+                "type": 17,
+                "num": 30
+            },
+            {
+                "goodsId": 170010,
+                "type": 17,
+                "num": 30
+            },
+            {
+                "goodsId": 170014,
+                "type": 17,
+                "num": 30
+            },
+            {
+                "goodsId": 900002,
+                "type": 90,
+                "num": 200000
+            }
+        ],
+        "seatNum": "4",
+        "stockNum": "11",
+        "barEntranceIcon": "0",
+        "barEntrancePosition": {
+            "x": "0",
+            "y": "0"
+        },
+        "marketRefreshTimes": "999"
+    },
+    "8": {
+        "level": 8,
+        "barPopularity": "1400",
+        "consumeGoods": [
+            {
+                "goodsId": 170002,
+                "type": 17,
+                "num": 40
+            },
+            {
+                "goodsId": 170006,
+                "type": 17,
+                "num": 40
+            },
+            {
+                "goodsId": 170010,
+                "type": 17,
+                "num": 40
+            },
+            {
+                "goodsId": 170014,
+                "type": 17,
+                "num": 40
+            },
+            {
+                "goodsId": 900002,
+                "type": 90,
+                "num": 250000
+            }
+        ],
+        "seatNum": "4",
+        "stockNum": "12",
+        "barEntranceIcon": "0",
+        "barEntrancePosition": {
+            "x": "0",
+            "y": "0"
+        },
+        "marketRefreshTimes": "999"
+    },
+    "9": {
+        "level": 9,
+        "barPopularity": "2300",
+        "consumeGoods": [
+            {
+                "goodsId": 170002,
+                "type": 17,
+                "num": 50
+            },
+            {
+                "goodsId": 170006,
+                "type": 17,
+                "num": 50
+            },
+            {
+                "goodsId": 170010,
+                "type": 17,
+                "num": 50
+            },
+            {
+                "goodsId": 170014,
+                "type": 17,
+                "num": 50
+            },
+            {
+                "goodsId": 900002,
+                "type": 90,
+                "num": 300000
+            }
+        ],
+        "seatNum": "4",
+        "stockNum": "13",
+        "barEntranceIcon": "0",
+        "barEntrancePosition": {
+            "x": "0",
+            "y": "0"
+        },
+        "marketRefreshTimes": "999"
+    },
+    "10": {
+        "level": 10,
+        "barPopularity": "2500",
+        "consumeGoods": [
+            {
+                "goodsId": 170002,
+                "type": 17,
+                "num": 60
+            },
+            {
+                "goodsId": 170006,
+                "type": 17,
+                "num": 60
+            },
+            {
+                "goodsId": 170010,
+                "type": 17,
+                "num": 60
+            },
+            {
+                "goodsId": 170014,
+                "type": 17,
+                "num": 60
+            },
+            {
+                "goodsId": 900002,
+                "type": 90,
+                "num": 350000
+            }
+        ],
+        "seatNum": "4",
+        "stockNum": "14",
+        "barEntranceIcon": "0",
+        "barEntrancePosition": {
+            "x": "0",
+            "y": "0"
+        },
+        "marketRefreshTimes": "999"
+    },
+    "11": {
+        "level": 11,
+        "barPopularity": "2700",
+        "consumeGoods": [
+            {
+                "goodsId": 170002,
+                "type": 17,
+                "num": 70
+            },
+            {
+                "goodsId": 170006,
+                "type": 17,
+                "num": 70
+            },
+            {
+                "goodsId": 170010,
+                "type": 17,
+                "num": 70
+            },
+            {
+                "goodsId": 170014,
+                "type": 17,
+                "num": 70
+            },
+            {
+                "goodsId": 900002,
+                "type": 90,
+                "num": 400000
+            }
+        ],
+        "seatNum": "5",
+        "stockNum": "15",
+        "barEntranceIcon": "0",
+        "barEntrancePosition": {
+            "x": "0",
+            "y": "0"
+        },
+        "marketRefreshTimes": "999"
+    },
+    "12": {
+        "level": 12,
+        "barPopularity": "4500",
+        "consumeGoods": [
+            {
+                "goodsId": 170002,
+                "type": 17,
+                "num": 80
+            },
+            {
+                "goodsId": 170006,
+                "type": 17,
+                "num": 80
+            },
+            {
+                "goodsId": 170010,
+                "type": 17,
+                "num": 80
+            },
+            {
+                "goodsId": 170014,
+                "type": 17,
+                "num": 80
+            },
+            {
+                "goodsId": 900002,
+                "type": 90,
+                "num": 450000
+            }
+        ],
+        "seatNum": "5",
+        "stockNum": "16",
+        "barEntranceIcon": "0",
+        "barEntrancePosition": {
+            "x": "0",
+            "y": "0"
+        },
+        "marketRefreshTimes": "999"
+    },
+    "13": {
+        "level": 13,
+        "barPopularity": "4800",
+        "consumeGoods": [
+            {
+                "goodsId": 170003,
+                "type": 17,
+                "num": 20
+            },
+            {
+                "goodsId": 170007,
+                "type": 17,
+                "num": 20
+            },
+            {
+                "goodsId": 170011,
+                "type": 17,
+                "num": 20
+            },
+            {
+                "goodsId": 170015,
+                "type": 17,
+                "num": 20
+            },
+            {
+                "goodsId": 900002,
+                "type": 90,
+                "num": 500000
+            }
+        ],
+        "seatNum": "5",
+        "stockNum": "17",
+        "barEntranceIcon": "0",
+        "barEntrancePosition": {
+            "x": "0",
+            "y": "0"
+        },
+        "marketRefreshTimes": "999"
+    },
+    "14": {
+        "level": 14,
+        "barPopularity": "5100",
+        "consumeGoods": [
+            {
+                "goodsId": 170003,
+                "type": 17,
+                "num": 30
+            },
+            {
+                "goodsId": 170007,
+                "type": 17,
+                "num": 30
+            },
+            {
+                "goodsId": 170011,
+                "type": 17,
+                "num": 30
+            },
+            {
+                "goodsId": 170015,
+                "type": 17,
+                "num": 30
+            },
+            {
+                "goodsId": 900002,
+                "type": 90,
+                "num": 600000
+            }
+        ],
+        "seatNum": "5",
+        "stockNum": "18",
+        "barEntranceIcon": "0",
+        "barEntrancePosition": {
+            "x": "0",
+            "y": "0"
+        },
+        "marketRefreshTimes": "999"
+    },
+    "15": {
+        "level": 15,
+        "barPopularity": "6750",
+        "consumeGoods": [
+            {
+                "goodsId": 170003,
+                "type": 17,
+                "num": 40
+            },
+            {
+                "goodsId": 170007,
+                "type": 17,
+                "num": 40
+            },
+            {
+                "goodsId": 170011,
+                "type": 17,
+                "num": 40
+            },
+            {
+                "goodsId": 170015,
+                "type": 17,
+                "num": 40
+            },
+            {
+                "goodsId": 900002,
+                "type": 90,
+                "num": 700000
+            }
+        ],
+        "seatNum": "5",
+        "stockNum": "19",
+        "barEntranceIcon": "0",
+        "barEntrancePosition": {
+            "x": "0",
+            "y": "0"
+        },
+        "marketRefreshTimes": "999"
+    },
+    "16": {
+        "level": 16,
+        "barPopularity": "7100",
+        "consumeGoods": [
+            {
+                "goodsId": 170003,
+                "type": 17,
+                "num": 50
+            },
+            {
+                "goodsId": 170007,
+                "type": 17,
+                "num": 50
+            },
+            {
+                "goodsId": 170011,
+                "type": 17,
+                "num": 50
+            },
+            {
+                "goodsId": 170015,
+                "type": 17,
+                "num": 50
+            },
+            {
+                "goodsId": 900002,
+                "type": 90,
+                "num": 800000
+            }
+        ],
+        "seatNum": "5",
+        "stockNum": "20",
+        "barEntranceIcon": "0",
+        "barEntrancePosition": {
+            "x": "0",
+            "y": "0"
+        },
+        "marketRefreshTimes": "999"
+    },
+    "17": {
+        "level": 17,
+        "barPopularity": "8500",
+        "consumeGoods": [
+            {
+                "goodsId": 170003,
+                "type": 17,
+                "num": 60
+            },
+            {
+                "goodsId": 170007,
+                "type": 17,
+                "num": 60
+            },
+            {
+                "goodsId": 170011,
+                "type": 17,
+                "num": 60
+            },
+            {
+                "goodsId": 170015,
+                "type": 17,
+                "num": 60
+            },
+            {
+                "goodsId": 900002,
+                "type": 90,
+                "num": 900000
+            }
+        ],
+        "seatNum": "5",
+        "stockNum": "21",
+        "barEntranceIcon": "0",
+        "barEntrancePosition": {
+            "x": "0",
+            "y": "0"
+        },
+        "marketRefreshTimes": "999"
+    },
+    "18": {
+        "level": 18,
+        "barPopularity": "11000",
+        "consumeGoods": [
+            {
+                "goodsId": 170003,
+                "type": 17,
+                "num": 70
+            },
+            {
+                "goodsId": 170007,
+                "type": 17,
+                "num": 70
+            },
+            {
+                "goodsId": 170011,
+                "type": 17,
+                "num": 70
+            },
+            {
+                "goodsId": 170015,
+                "type": 17,
+                "num": 70
+            },
+            {
+                "goodsId": 900002,
+                "type": 90,
+                "num": 1000000
+            }
+        ],
+        "seatNum": "5",
+        "stockNum": "22",
+        "barEntranceIcon": "0",
+        "barEntrancePosition": {
+            "x": "0",
+            "y": "0"
+        },
+        "marketRefreshTimes": "999"
+    },
+    "19": {
+        "level": 19,
+        "barPopularity": "11000",
+        "consumeGoods": [
+            {
+                "goodsId": 170003,
+                "type": 17,
+                "num": 80
+            },
+            {
+                "goodsId": 170007,
+                "type": 17,
+                "num": 80
+            },
+            {
+                "goodsId": 170011,
+                "type": 17,
+                "num": 80
+            },
+            {
+                "goodsId": 170015,
+                "type": 17,
+                "num": 80
+            },
+            {
+                "goodsId": 900002,
+                "type": 90,
+                "num": 2000000
+            }
+        ],
+        "seatNum": "5",
+        "stockNum": "23",
+        "barEntranceIcon": "0",
+        "barEntrancePosition": {
+            "x": "0",
+            "y": "0"
+        },
+        "marketRefreshTimes": "999"
+    },
+    "20": {
+        "level": 20,
+        "barPopularity": "12000",
+        "consumeGoods": [
+            {
+                "goodsId": 170003,
+                "type": 17,
+                "num": 100
+            },
+            {
+                "goodsId": 170007,
+                "type": 17,
+                "num": 100
+            },
+            {
+                "goodsId": 170011,
+                "type": 17,
+                "num": 100
+            },
+            {
+                "goodsId": 170015,
+                "type": 17,
+                "num": 100
+            },
+            {
+                "goodsId": 900002,
+                "type": 90,
+                "num": 3000000
+            }
+        ],
+        "seatNum": "5",
+        "stockNum": "24",
+        "barEntranceIcon": "0",
+        "barEntrancePosition": {
+            "x": "0",
+            "y": "0"
+        },
+        "marketRefreshTimes": "999"
+    },
+    "21": {
+        "level": 21,
+        "barPopularity": "14000",
+        "consumeGoods": [
+            {
+                "goodsId": 170004,
+                "type": 17,
+                "num": 25
+            },
+            {
+                "goodsId": 170008,
+                "type": 17,
+                "num": 25
+            },
+            {
+                "goodsId": 170012,
+                "type": 17,
+                "num": 25
+            },
+            {
+                "goodsId": 170016,
+                "type": 17,
+                "num": 25
+            },
+            {
+                "goodsId": 900002,
+                "type": 90,
+                "num": 4000000
+            }
+        ],
+        "seatNum": "5",
+        "stockNum": "25",
+        "barEntranceIcon": "0",
+        "barEntrancePosition": {
+            "x": "0",
+            "y": "0"
+        },
+        "marketRefreshTimes": "999"
+    },
+    "22": {
+        "level": 22,
+        "barPopularity": "17500",
+        "consumeGoods": [
+            {
+                "goodsId": 170004,
+                "type": 17,
+                "num": 40
+            },
+            {
+                "goodsId": 170008,
+                "type": 17,
+                "num": 40
+            },
+            {
+                "goodsId": 170012,
+                "type": 17,
+                "num": 40
+            },
+            {
+                "goodsId": 170016,
+                "type": 17,
+                "num": 40
+            },
+            {
+                "goodsId": 900002,
+                "type": 90,
+                "num": 5000000
+            }
+        ],
+        "seatNum": "5",
+        "stockNum": "25",
+        "barEntranceIcon": "0",
+        "barEntrancePosition": {
+            "x": "0",
+            "y": "0"
+        },
+        "marketRefreshTimes": "999"
+    },
+    "23": {
+        "level": 23,
+        "barPopularity": "17500",
+        "consumeGoods": [
+            {
+                "goodsId": 170004,
+                "type": 17,
+                "num": 55
+            },
+            {
+                "goodsId": 170008,
+                "type": 17,
+                "num": 55
+            },
+            {
+                "goodsId": 170012,
+                "type": 17,
+                "num": 55
+            },
+            {
+                "goodsId": 170016,
+                "type": 17,
+                "num": 55
+            },
+            {
+                "goodsId": 900002,
+                "type": 90,
+                "num": 10000000
+            }
+        ],
+        "seatNum": "5",
+        "stockNum": "25",
+        "barEntranceIcon": "0",
+        "barEntrancePosition": {
+            "x": "0",
+            "y": "0"
+        },
+        "marketRefreshTimes": "999"
+    },
+    "24": {
+        "level": 24,
+        "barPopularity": "20000",
+        "consumeGoods": [
+            {
+                "goodsId": 170004,
+                "type": 17,
+                "num": 70
+            },
+            {
+                "goodsId": 170008,
+                "type": 17,
+                "num": 70
+            },
+            {
+                "goodsId": 170012,
+                "type": 17,
+                "num": 70
+            },
+            {
+                "goodsId": 170016,
+                "type": 17,
+                "num": 70
+            },
+            {
+                "goodsId": 900002,
+                "type": 90,
+                "num": 10000000
+            }
+        ],
+        "seatNum": "5",
+        "stockNum": "25",
+        "barEntranceIcon": "0",
+        "barEntrancePosition": {
+            "x": "0",
+            "y": "0"
+        },
+        "marketRefreshTimes": "999"
+    },
+    "25": {
+        "level": 25,
+        "barPopularity": "20000",
+        "consumeGoods": [
+            {
+                "goodsId": 170004,
+                "type": 17,
+                "num": 100
+            },
+            {
+                "goodsId": 170008,
+                "type": 17,
+                "num": 100
+            },
+            {
+                "goodsId": 170012,
+                "type": 17,
+                "num": 100
+            },
+            {
+                "goodsId": 170016,
+                "type": 17,
+                "num": 100
+            },
+            {
+                "goodsId": 900002,
+                "type": 90,
+                "num": 10000000
+            }
+        ],
+        "seatNum": "5",
+        "stockNum": "25",
+        "barEntranceIcon": "0",
+        "barEntrancePosition": {
+            "x": "0",
+            "y": "0"
+        },
+        "marketRefreshTimes": "999"
+    }
+}

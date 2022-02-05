@@ -1,0 +1,200 @@
+{
+    "410101": {
+        "id": 410101,
+        "name": "Rum",
+        "materialType": "1",
+        "openBarLevel": "1"
+    },
+    "410102": {
+        "id": 410102,
+        "name": "Vodka",
+        "materialType": "1",
+        "openBarLevel": "1"
+    },
+    "410103": {
+        "id": 410103,
+        "name": "Brandy",
+        "materialType": "1",
+        "openBarLevel": "1"
+    },
+    "410104": {
+        "id": 410104,
+        "name": "Tequila",
+        "materialType": "1",
+        "openBarLevel": "1"
+    },
+    "410105": {
+        "id": 410105,
+        "name": "Gin",
+        "materialType": "1",
+        "openBarLevel": "1"
+    },
+    "410106": {
+        "id": 410106,
+        "name": "Whisky",
+        "materialType": "1",
+        "openBarLevel": "1"
+    },
+    "410201": {
+        "id": 410201,
+        "name": "Coffee Liqueur",
+        "materialType": "2",
+        "openBarLevel": "2"
+    },
+    "410202": {
+        "id": 410202,
+        "name": "Baileys",
+        "materialType": "2",
+        "openBarLevel": "9"
+    },
+    "410203": {
+        "id": 410203,
+        "name": "Chartreuse",
+        "materialType": "2",
+        "openBarLevel": "12"
+    },
+    "410204": {
+        "id": 410204,
+        "name": "Aperol",
+        "materialType": "2",
+        "openBarLevel": "13"
+    },
+    "410205": {
+        "id": 410205,
+        "name": "Campari",
+        "materialType": "2",
+        "openBarLevel": "10"
+    },
+    "410206": {
+        "id": 410206,
+        "name": "Wine",
+        "materialType": "2",
+        "openBarLevel": "14"
+    },
+    "410207": {
+        "id": 410207,
+        "name": "Orange Curacao",
+        "materialType": "2",
+        "openBarLevel": "6"
+    },
+    "410208": {
+        "id": 410208,
+        "name": "Vermouth",
+        "materialType": "2",
+        "openBarLevel": "7"
+    },
+    "410209": {
+        "id": 410209,
+        "name": "Bitters",
+        "materialType": "2",
+        "openBarLevel": "8"
+    },
+    "410210": {
+        "id": 410210,
+        "name": "Fruit Liqueur",
+        "materialType": "2",
+        "openBarLevel": "15"
+    },
+    "410211": {
+        "id": 410211,
+        "name": "Ginger Beer",
+        "materialType": "2",
+        "openBarLevel": "16"
+    },
+    "410212": {
+        "id": 410212,
+        "name": "Benedictine",
+        "materialType": "2",
+        "openBarLevel": "18"
+    },
+    "410301": {
+        "id": 410301,
+        "name": "Cola",
+        "materialType": "3",
+        "openBarLevel": "1"
+    },
+    "410302": {
+        "id": 410302,
+        "name": "Lemon Juice",
+        "materialType": "3",
+        "openBarLevel": "2"
+    },
+    "410303": {
+        "id": 410303,
+        "name": "Pineapple Juice",
+        "materialType": "3",
+        "openBarLevel": "1"
+    },
+    "410304": {
+        "id": 410304,
+        "name": "Fruit Juice",
+        "materialType": "3",
+        "openBarLevel": "19"
+    },
+    "410305": {
+        "id": 410305,
+        "name": "Fruit Syrup",
+        "materialType": "3",
+        "openBarLevel": "11"
+    },
+    "410306": {
+        "id": 410306,
+        "name": "Cane Syrup",
+        "materialType": "3",
+        "openBarLevel": "3"
+    },
+    "410307": {
+        "id": 410307,
+        "name": "Mint Leaf",
+        "materialType": "3",
+        "openBarLevel": "17"
+    },
+    "410308": {
+        "id": 410308,
+        "name": "Sugar",
+        "materialType": "3",
+        "openBarLevel": "4"
+    },
+    "410309": {
+        "id": 410309,
+        "name": "Honey",
+        "materialType": "3",
+        "openBarLevel": "4"
+    },
+    "410310": {
+        "id": 410310,
+        "name": "Cream",
+        "materialType": "3",
+        "openBarLevel": "5"
+    },
+    "410311": {
+        "id": 410311,
+        "name": "Soda Water",
+        "materialType": "3",
+        "openBarLevel": "1"
+    },
+    "410312": {
+        "id": 410312,
+        "name": "Soda",
+        "materialType": "3",
+        "openBarLevel": "17"
+    },
+    "410313": {
+        "id": 410313,
+        "name": "Orange Juice",
+        "materialType": "3",
+        "openBarLevel": "1"
+    },
+    "410314": {
+        "id": 410314,
+        "name": "Tomato Juice",
+        "materialType": "3",
+        "openBarLevel": "20"
+    },
+    "410315": {
+        "id": 410315,
+        "name": "Hot Sauce",
+        "materialType": "3",
+        "openBarLevel": "20"
+    }
+}
