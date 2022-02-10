@@ -4,6 +4,8 @@ import argparse
 import functools
 import json
 import multiprocessing
+from stats import OVERALL_COEFF
+from stats import Stats
 import time
 from collections import Counter
 from collections import defaultdict
@@ -156,9 +158,6 @@ def ingredients_used(l, r):
         rmats += mat[1]
     return rmats - lmats
 
-# 3.25 is close to the ratio of max_tickets to max_fame at bar level 9
-OVERALL_COEFF = 3.25
-
 # Just greedily sort by overall score, ignoring ingredients
 def overall_score(l, r):
     l_overall = l[1]["barFame"] * OVERALL_COEFF + l[1]["tickets"]
@@ -188,7 +187,6 @@ for drink, index in drink_to_index.items():
     print_index_and_mats(index, drinks_data[drink_id_to_name[drink]])
 #    print(index, drink_id_to_name[drink], drinks_data[drink_id_to_name[drink]])
 #    exit()
-
 
 materials_available = {}
 for key, material in material_costs.items():
@@ -285,213 +283,37 @@ def check(drinks):
     print("Checking")
     print_combo(drink_strs_to_ids(drinks))
 
-class BestDrinkSet:
-    def __init__(self, comp):
-        # Comparator for drink sets
-        self.comp = comp
-        # Best drink set so far
-        self.best = []
+def print_stats(stats):
+    print("------------------------------------------")
+    print(f"max cost: {get_drink_set_info(stats.bdc_cost.best)[0]}")
+    print_combo(stats.bdc_cost.best)
 
-        
-    def offer(self, drinks):
-        """
-        Compare the given set of drinks to the currently known best one according to the comparator and replace it if afppropriate.
-        """
-        if self.comp(drinks, self.best) > 0:
-            self.best = drinks
+    [c, f, t] = get_drink_set_info(stats.bdc_fame.best)
+    print(f"\n\nmax fame: {f}, tickets {t}, cost {c}")
+    print_combo(stats.bdc_fame.best)
 
-class Stats:
-    def __init__(self):
-        self.bdc_cost = BestDrinkSet(sort_by_cost)
-        self.bdc_fame = BestDrinkSet(sort_by_fame)
-        self.bdc_fame_effic = BestDrinkSet(sort_by_fame_effic)
-        self.bdc_tickets = BestDrinkSet(sort_by_tickets)
-        self.bdc_tickets_effic = BestDrinkSet(sort_by_tickets_effic)
-        self.bdc_overall = BestDrinkSet(sort_by_overall)
-        self.bdc_overall_effic = BestDrinkSet(sort_by_overall_effic)
-        self.num_processed = 0
+    [c, f, t] = get_drink_set_info(stats.bdc_fame_effic.best)
+    print(f"\n\nmax fame efficiency: {f}, tickets {t}, cost {c}")
+    print_combo(stats.bdc_fame_effic.best)
 
-    def offer_all(self, drinks):
-        self.bdc_cost.offer(drinks)
-        self.bdc_fame.offer(drinks)
-        self.bdc_fame_effic.offer(drinks)
-        self.bdc_tickets.offer(drinks)
-        self.bdc_tickets_effic.offer(drinks)
-        self.bdc_overall.offer(drinks)
-        self.bdc_overall_effic.offer(drinks)
-        self.num_processed += len(drinks)
+    [c, f, t] = get_drink_set_info(stats.bdc_tickets.best)
+    print(f"\n\nmax tickets: {t}, fame {f}, cost {c}")
+    print_combo(stats.bdc_tickets.best)
 
-    def add(self, stats):
-        self.bdc_cost.offer(stats.bdc_cost.best)
-        self.bdc_fame.offer(stats.bdc_fame.best)
-        self.bdc_fame_effic.offer(stats.bdc_fame_effic.best)
-        self.bdc_tickets.offer(stats.bdc_tickets.best)
-        self.bdc_tickets_effic.offer(stats.bdc_tickets_effic.best)
-        self.bdc_overall.offer(stats.bdc_overall.best)
-        self.bdc_overall_effic.offer(stats.bdc_overall_effic.best)
-        self.num_processed += stats.num_processed
+    [c, f, t] = get_drink_set_info(stats.bdc_tickets_effic.best)
+    print(f"\n\nmax tickets efficiency: {t}, fame {f}, cost {c}")
+    print_combo(stats.bdc_tickets_effic.best)
 
-    def print(self):
-        print("------------------------------------------")
-        print(f"max cost: {get_drink_set_info(self.bdc_cost.best)[0]}")
-        print_combo(self.bdc_cost.best)
+    [c, f, t] = get_drink_set_info(stats.bdc_overall.best)
+    print(f"\n\nmax overall:")
+    print_combo(stats.bdc_overall.best)
 
-        [c, f, t] = get_drink_set_info(self.bdc_fame.best)
-        print(f"\n\nmax fame: {f}, tickets {t}, cost {c}")
-        print_combo(self.bdc_fame.best)
+    [c, f, t] = get_drink_set_info(stats.bdc_tickets_effic.best)
+    print(f"\n\nmax overall efficiency:")
+    print_combo(stats.bdc_overall_effic.best)
 
-        [c, f, t] = get_drink_set_info(self.bdc_fame_effic.best)
-        print(f"\n\nmax fame efficiency: {f}, tickets {t}, cost {c}")
-        print_combo(self.bdc_fame_effic.best)
-
-        [c, f, t] = get_drink_set_info(self.bdc_tickets.best)
-        print(f"\n\nmax tickets: {t}, fame {f}, cost {c}")
-        print_combo(self.bdc_tickets.best)
-
-        [c, f, t] = get_drink_set_info(self.bdc_tickets_effic.best)
-        print(f"\n\nmax tickets efficiency: {t}, fame {f}, cost {c}")
-        print_combo(self.bdc_tickets_effic.best)
-
-        [c, f, t] = get_drink_set_info(self.bdc_overall.best)
-        print(f"\n\nmax overall:")
-        print_combo(self.bdc_overall.best)
-
-        [c, f, t] = get_drink_set_info(self.bdc_tickets_effic.best)
-        print(f"\n\nmax overall efficiency:")
-        print_combo(self.bdc_overall_effic.best)
-
-        print(f"\n\n{self.num_processed:,} combos processed")
-        print("------------------------------------------")
-        
-# Drink info is [cost, fame, tickets]
-def get_cost_diff_desc(l_info, r_info):
-    return l_info[0] - r_info[0]
-
-# In the usual case we want lowest cost
-def get_cost_diff(l_info, r_info):
-    return get_cost_diff_desc(l_info, r_info) * -1
-
-def get_fame_diff(l_info, r_info):
-    return l_info[1] - r_info[1]
-
-def get_fame_effic_diff(l_info, r_info):
-    # The starting empty drink set has no cost
-    if r_info[0] == 0:
-        return 1
-    if l_info[0] == 0:
-        return -1
-    return (l_info[1] / l_info[0]) - (r_info[1] / r_info[0])
-
-def get_overall_diff(l_info, r_info):
-    return (l_info[1] * OVERALL_COEFF + l_info[2]) - (r_info[1] * OVERALL_COEFF + r_info[2])
-
-def get_overall_effic_diff(l_info, r_info):
-    # The starting empty drink set has no cost
-    if r_info[0] == 0:
-        return 1
-    if l_info[0] == 0:
-        return -1
-    return ((l_info[1] * OVERALL_COEFF + l_info[2]) / l_info[0]) - ((r_info[1] * OVERALL_COEFF + r_info[2]) / r_info[0])
-    
-def get_tickets_diff(l_info, r_info):
-    return l_info[2] - r_info[2]
-
-def get_tickets_effic_diff(l_info, r_info):
-    # The starting empty drink set has no cost
-    if r_info[0] == 0:
-        return 1
-    if l_info[0] == 0:
-        return -1
-    return (l_info[2] / l_info[0]) - (r_info[2] / r_info[0])
-
-def sort_by_cost(l, r):
-    l_info = get_drink_set_info(l)
-    r_info = get_drink_set_info(r)
-    
-    if get_cost_diff_desc(l_info, r_info) != 0:
-        return get_cost_diff_desc(l_info, r_info)
-    if get_fame_diff(l_info, r_info) != 0:
-        return get_fame_diff(l_info, r_info)
-    if get_tickets_diff(l_info, r_info) != 0:
-        return get_tickets_diff(l_info, r_info)
-    return 0
-
-def sort_by_fame(l, r):
-    l_info = get_drink_set_info(l)
-    r_info = get_drink_set_info(r)
-    
-    if get_fame_diff(l_info, r_info) != 0:
-        return get_fame_diff(l_info, r_info)
-    if get_tickets_diff(l_info, r_info) != 0:
-        return get_tickets_diff(l_info, r_info)
-    if get_cost_diff(l_info, r_info) != 0:
-        return get_cost_diff(l_info, r_info)
-    return 0
-
-def sort_by_fame_effic(l, r):
-    l_info = get_drink_set_info(l)
-    r_info = get_drink_set_info(r)
-    
-    if get_fame_effic_diff(l_info, r_info) != 0:
-        return get_fame_effic_diff(l_info, r_info)
-    if get_fame_diff(l_info, r_info) != 0:
-        return get_fame_diff(l_info, r_info)
-    if get_tickets_diff(l_info, r_info) != 0:
-        return get_tickets_diff(l_info, r_info)
-    # Fairly sure ticket_effic and cost don't matter here
-    if get_cost_diff(l_info, r_info) != 0:
-        return get_cost_diff(l_info, r_info)
-    return 0
-
-def sort_by_tickets(l, r):
-    l_info = get_drink_set_info(l)
-    r_info = get_drink_set_info(r)
-    
-    if get_tickets_diff(l_info, r_info) != 0:
-        return get_tickets_diff(l_info, r_info)
-    if get_fame_diff(l_info, r_info) != 0:
-        return get_fame_diff(l_info, r_info)
-    if get_cost_diff(l_info, r_info) != 0:
-        return get_cost_diff(l_info, r_info)
-    return 0
-
-def sort_by_tickets_effic(l, r):
-    l_info = get_drink_set_info(l)
-    r_info = get_drink_set_info(r)
-    
-    if get_tickets_effic_diff(l_info, r_info) != 0:
-        return get_tickets_effic_diff(l_info, r_info)
-    if get_tickets_diff(l_info, r_info) != 0:
-        return get_tickets_diff(l_info, r_info)
-    if get_fame_diff(l_info, r_info) != 0:
-        return get_fame_diff(l_info, r_info)
-    # Fairly sure ticket_effic and cost don't matter here
-    if get_cost_diff(l_info, r_info) != 0:
-        return get_cost_diff(l_info, r_info)
-    return 0
-
-def sort_by_overall(l, r):
-    l_info = get_drink_set_info(l)
-    r_info = get_drink_set_info(r)
-
-    if get_overall_diff(l_info, r_info) != 0:
-        return get_overall_diff(l_info, r_info)
-    if get_overall_effic_diff(l_info, r_info) != 0:
-        return get_overall_effic_diff(l_info, r_info)
-    if get_fame_diff(l_info, r_info) != 0:
-        return get_fame_diff(l_info, r_info)
-    return 0
-
-def sort_by_overall_effic(l, r):
-    l_info = get_drink_set_info(l)
-    r_info = get_drink_set_info(r)
-
-    if get_overall_effic_diff(l_info, r_info) != 0:
-        return get_overall_effic_diff(l_info, r_info)
-    if get_overall_diff(l_info, r_info) != 0:
-        return get_overall_diff(l_info, r_info)
-    return 0
-
+    print(f"\n\n{stats.num_processed:,} combos processed")
+    print("------------------------------------------")
 
 DRINKS_TO_PROCESS = parse_args().workerDepth
 FORK_LEVEL = DRINKS_TO_PROCESS + 1
@@ -568,7 +390,7 @@ CACHE = precalculate_cache(CACHE_DEPTH)
 
 def partial_combo_handler(drinks_made):
     combos = partial_combo_handler_helper(drinks_made, DRINKS_TO_PROCESS)
-    stats = Stats()
+    stats = Stats(drinks_data, drink_id_to_name, material_costs)
     for combo in combos:
         stats.offer_all(combo)
     first_combo = None
@@ -614,7 +436,7 @@ def partial_combo_handler_helper(drinks_made, num_drinks_remaining):
 
 if __name__ == '__main__':
     pool = multiprocessing.Pool(parse_args().numWorkers)
-    stats = Stats()
+    stats = Stats(drinks_data, drink_id_to_name, material_costs)
     jobs = 0
     non_empty_jobs = 0
     combo_count = 0
@@ -630,7 +452,7 @@ if __name__ == '__main__':
                 fc_drink_names = []
                 for drink in first_combo:
                     fc_drink_names.append(drink_id_to_name[drink])
-                stats.print()
+                print_stats(stats)
                 print(jobs, non_empty_jobs, ", ".join(fc_drink_names))
                 print_indices(first_combo)
                 print(time.asctime())
@@ -638,6 +460,6 @@ if __name__ == '__main__':
         if jobs % 100000 == 0:
             print(f"{jobs:,} jobs processed, {non_empty_jobs:,} non-empty, {combo_count:,} combos processed, {time.asctime()}")
 
-    stats.print()
+    print_stats(stats)
     print(f"Final: {jobs:,} jobs processed, {non_empty_jobs:,} non-empty, {combo_count:,} combos processed")
 
