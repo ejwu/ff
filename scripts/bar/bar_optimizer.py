@@ -2,6 +2,7 @@
 
 import argparse
 import functools
+import gc
 import json
 import multiprocessing
 from stats import OVERALL_COEFF
@@ -30,6 +31,7 @@ MAT_SHOP = {
     'Bitters': {'cost': 40, 'num': 4, 'level': 8},
     'Baileys': {'cost': 40, 'num': 4, 'level': 9},
     'Campari': {'cost': 40, 'num': 4, 'level': 10},
+    'Chartreuse': {'cost': 40, 'num': 4, 'level': 12},
 
     # Other
     'Cola': {'cost': 20, 'num': 4, 'level': 1},
@@ -45,8 +47,6 @@ MAT_SHOP = {
     'Fruit Syrup': {'cost': 40, 'num': 4, 'level': 11},
 
     # Assumptions
-    # 12
-    'Chartreuse': {'cost': 40, 'num': 4, 'level': 12},
     # 13
     'Aperol': {'cost': 40, 'num': 4, 'level': 13},
     # 14
@@ -56,15 +56,15 @@ MAT_SHOP = {
     # 16
     'Ginger Beer': {'cost': 40, 'num': 4, 'level': 16},
     # 17, other
-    'Soda': {'cost': 20, 'num': 4, 'level': 17},
+    'Soda': {'cost': 40, 'num': 4, 'level': 17},
     # 18
     'Benedictine': {'cost': 40, 'num': 4, 'level': 18},
     # 19, other
-    'Fruit Juice': {'cost': 20, 'num': 4, 'level': 19},
+    'Fruit Juice': {'cost': 40, 'num': 4, 'level': 19},
     # 20, other
-    'Hot Sauce': {'cost': 20, 'num': 4, 'level': 20},
+    'Hot Sauce': {'cost': 40, 'num': 4, 'level': 20},
     # 20, other
-    'Tomato Juice': {'cost': 20, 'num': 4, 'level': 20},
+    'Tomato Juice': {'cost': 40, 'num': 4, 'level': 20},
 }
 
 def update_mat_shop_for_level_11():
@@ -339,10 +339,13 @@ def combo_is_after(combo, thresholds):
         # If current drink is at the threshold, continue looping
     return True
 
-def all_combos_generator(num_drinks_remaining, drinks_made, worker_depth, thresholds=[]):
+def all_combos_generator(num_drinks_remaining, drinks_made, worker_depth, thresholds=[], cache={}):
     global SKIPPED
+
+    # Shouldn't ever get here
     if num_drinks_remaining == 0:
         raise Error()
+
     combos = []
     minimum = get_drink_set_min(drinks_made)
 
@@ -356,40 +359,45 @@ def all_combos_generator(num_drinks_remaining, drinks_made, worker_depth, thresh
                     if num_drinks_remaining == worker_depth + 1:
                         SKIPPED[drink_to_index[drinks_made[0]]] += 1
     else:
+        # Skip all combos that are lexicographically before the thresholds
         pass
         #print("skipping")
         #print_indices(drinks_made)
 
     if num_drinks_remaining == worker_depth + 1:
         for combo in combos:
-            yield combo
+            yield (combo, cache)
     else:
         for combo in combos:
-            yield from all_combos_generator(num_drinks_remaining - 1, combo, worker_depth, thresholds)
+            yield from all_combos_generator(num_drinks_remaining - 1, combo, worker_depth, thresholds, cache)
 
 def precalculate_cache(num_drinks, startFrom=[]):
     start_time = time.time()
     cache = defaultdict(list)
     entries = 0
-    for combo in all_combos_generator(num_drinks, (), 1, startFrom):
+    for (combo, _) in all_combos_generator(num_drinks, (), 1, startFrom):
         key = drink_to_index[combo[0]]
         cache[key].append(combo)
         entries += 1
 
     for key in sorted(cache.keys()):
         print(key, len(cache[key]))
+        # Try to squeeze out a little more memory and runtime efficiency
+        cache[key] = tuple(cache[key])
 
+    gc.collect()
     print(f"Initialized cache with {len(cache)} keys, {entries:,} total entries in {time.time() - start_time} seconds")
     return cache
 
 CACHE_DEPTH = parse_args().cacheDepth
-CACHE = precalculate_cache(CACHE_DEPTH)
 
 #print(SKIPPED)
 #exit()
 
-def partial_combo_handler(drinks_made):
-    combos = partial_combo_handler_helper(drinks_made, DRINKS_TO_PROCESS)
+def partial_combo_handler(t):
+    drinks_made = t[0]
+    cache = t[1]
+    combos = partial_combo_handler_helper(drinks_made, DRINKS_TO_PROCESS, cache)
     stats = Stats(drinks_data, drink_id_to_name, material_costs)
     for combo in combos:
         stats.offer_all(combo)
@@ -402,19 +410,18 @@ def partial_combo_handler(drinks_made):
 
     return (stats, first_combo)
 
-def partial_combo_handler_helper(drinks_made, num_drinks_remaining):
-    global CACHE
+def partial_combo_handler_helper(drinks_made, num_drinks_remaining, cache):
     global CACHE_DEPTH
 
     combos = []
     if num_drinks_remaining == 0:
         return [drinks_made]
-    
+
     minimum = get_drink_set_min(drinks_made)
     to_return = []
 
     if num_drinks_remaining + 1 == CACHE_DEPTH:
-        for key, cached_partial_combos in CACHE.items():
+        for key, cached_partial_combos in cache.items():
             if key <= minimum:
                 for partial_combo in cached_partial_combos:
                     made = drinks_made + partial_combo
@@ -430,19 +437,23 @@ def partial_combo_handler_helper(drinks_made, num_drinks_remaining):
 
 
     for combo in combos:
-        to_return += partial_combo_handler_helper(combo, num_drinks_remaining - 1)
+        to_return += partial_combo_handler_helper(combo, num_drinks_remaining - 1, cache)
 
     return to_return
 
 if __name__ == '__main__':
-    pool = multiprocessing.Pool(parse_args().numWorkers)
+    cache = precalculate_cache(CACHE_DEPTH)
+    # Doesn't work under pypy, could save a lot of memory in python
+    #    gc.freeze()
+    
+    pool = Pool(parse_args().numWorkers)
     stats = Stats(drinks_data, drink_id_to_name, material_costs)
     jobs = 0
     non_empty_jobs = 0
     combo_count = 0
 
     print("starting from", parse_args().startFrom)
-    for partial_stats, first_combo in pool.imap_unordered(partial_combo_handler, all_combos_generator(MAX_DRINKS, (), DRINKS_TO_PROCESS, parse_args().startFrom), chunksize=100):
+    for partial_stats, first_combo in pool.imap_unordered(partial_combo_handler, all_combos_generator(MAX_DRINKS, (), DRINKS_TO_PROCESS, parse_args().startFrom, cache), chunksize=100):
         jobs += 1
         stats.add(partial_stats)
         combo_count += partial_stats.num_processed
