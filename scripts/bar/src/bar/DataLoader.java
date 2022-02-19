@@ -1,10 +1,8 @@
 package bar;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableBiMap;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.MapMaker;
+import com.google.common.base.Stopwatch;
+import com.google.common.collect.*;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -14,12 +12,13 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 public class DataLoader {
 
     // All sorts of things will go wrong if this isn't initialized first
-    private static int BAR_LEVEL = BarOptimizer.BAR_LEVEL;
+    private static final int BAR_LEVEL = BarOptimizer.BAR_LEVEL;
     private static final String BASE_PATH = "data/";
     public static final ImmutableMap<String, MaterialShop> MAT_SHOP = loadMatShop();
     public static final ImmutableMap<Integer, Integer> MAX_DRINKS_BY_BAR_LEVEL = loadMaxDrinksByBarLevel();
@@ -30,6 +29,8 @@ public class DataLoader {
     public static final ImmutableMap<Integer, String> DRINK_ID_TO_NAME = loadDrinkIdToName();
     public static ImmutableBiMap<Integer, Drink> INDEX_DRINK;
     public static ImmutableList<Drink> DRINKS_BY_LEVEL;
+    // Map of prefixes to all possible combos of a certain size that start with that prefix
+    public static ImmutableMultimap<Integer, Combo> CACHE;
 
     public static final double OVERALL_COEFF = 3.25;
 
@@ -46,6 +47,27 @@ public class DataLoader {
         INDEX_DRINK = builder.build();
     }
 
+    public static void precalculateCache() {
+        Stopwatch sw = Stopwatch.createStarted();
+        ImmutableMultimap.Builder<Integer, Combo> builder = ImmutableMultimap.builder();
+        ComboGenerator generator = new ComboGenerator(BarOptimizer.CACHE_DEPTH, Combo.of());
+        Combo combo = generator.next();
+        while (combo != null) {
+            builder.put(combo.getMax(), combo);
+            combo = generator.next();
+        }
+        CACHE = builder.build();
+
+        int total = 0;
+        System.out.println("Cache:");
+        for (Integer prefix : CACHE.keySet().stream().sorted().toList()) {
+            System.out.println(prefix + ": " + CACHE.get(prefix).size());
+            total += CACHE.get(prefix).size();
+        }
+        System.out.println("Total entries: " + total);
+        System.out.println(sw.elapsed(TimeUnit.SECONDS) + " to create cache");
+    }
+
     public record MaterialShop(int cost, int num, int level) {}
     public record Material(String name, int cost, int num, int type, int level) {}
     public record FormulaMaterial(int id, int num) {}
@@ -54,6 +76,7 @@ public class DataLoader {
             return OVERALL_COEFF * fame + tickets;
         }
 
+        @SuppressWarnings("ConstantConditions")
         String getMaterialListString() {
             List<String> materialNames = new ArrayList<>();
             for (FormulaMaterial material : materials) {
@@ -74,7 +97,7 @@ public class DataLoader {
 
     private static ImmutableMap<String, MaterialShop> loadMatShop() {
         System.out.println(BAR_LEVEL);
-        Map<String, MaterialShop> baseShop = new HashMap<>();
+        Map<String, MaterialShop> baseShop = new LinkedHashMap<>();
         // Base spirits
         baseShop.put("Rum", new MaterialShop(50, 10, 1));
         baseShop.put("Vodka", new MaterialShop(50, 10, 1));
@@ -103,6 +126,21 @@ public class DataLoader {
         baseShop.put("Cream", new MaterialShop(20, 4, 5));
         baseShop.put("Fruit Syrup", new MaterialShop(20, 4, 11));
 
+        // Assumptions for the future
+        baseShop.put("Aperol", new MaterialShop(40, 4, 13));
+        baseShop.put("Wine", new MaterialShop(40, 4, 14));
+        baseShop.put("Fruit Liqueur", new MaterialShop(40, 4, 15));
+        baseShop.put("Ginger Beer", new MaterialShop(40, 4, 16));
+        // other
+        baseShop.put("Soda", new MaterialShop(40, 4, 17));
+        baseShop.put("Benedictine", new MaterialShop(40, 4, 18));
+        // other
+        baseShop.put("Fruit Juice", new MaterialShop(40, 4, 19));
+        // other
+        baseShop.put("Hot Sauce", new MaterialShop(40, 4, 20));
+        // other
+        baseShop.put("Tomato Juice", new MaterialShop(40, 4, 20));
+
         // Clear out anything not available at the current level
         List<String> toRemove = new ArrayList<>();
         for (Map.Entry<String, MaterialShop> entry : baseShop.entrySet()) {
@@ -114,7 +152,18 @@ public class DataLoader {
             baseShop.remove(matToRemove);
         }
 
-        // TODO: Add level 11 changes
+        if (BAR_LEVEL >= 11) {
+            for (String spirit : List.of("Rum", "Vodka", "Brandy", "Gin", "Tequila", "Whisky")) {
+                baseShop.put(spirit, new MaterialShop(75, 15, baseShop.get(spirit).level));
+            }
+            for (String flavor : List.of("Baileys", "Bitters")) {
+                baseShop.put(flavor, new MaterialShop(30, 6, baseShop.get(flavor).level));
+            }
+            for (String other : List.of("Cola", "Orange Juice", "Pineapple Juice", "Soda Water", "Cane Syrup", "Lemon Juice", "Mint Leaf", "Honey", "Sugar", "Cream")) {
+                baseShop.put(other, new MaterialShop(30, 6, baseShop.get(other).level));
+            }
+        }
+
         return ImmutableMap.copyOf(baseShop);
     }
 
@@ -133,6 +182,7 @@ public class DataLoader {
         }
     }
 
+    @SuppressWarnings("ConstantConditions")
     private static ImmutableMap<Integer, Material> loadMaterialCosts() {
         try (BufferedReader reader = new BufferedReader(new FileReader(BASE_PATH + "material.json.pretty"))) {
             ImmutableMap.Builder<Integer, Material> builder = ImmutableMap.builder();
@@ -153,6 +203,7 @@ public class DataLoader {
         }
     }
 
+    @SuppressWarnings("ConstantConditions")
     private static ImmutableMap<Integer, Integer> loadMaterialsAvailable() {
         ImmutableMap.Builder<Integer, Integer> builder = ImmutableMap.builder();
         for (int materialId : MATERIAL_COSTS.keySet()) {
@@ -194,6 +245,7 @@ public class DataLoader {
         }
     }
 
+    @SuppressWarnings("ConstantConditions")
     public static ImmutableMap<Integer, String> loadDrinkIdToName() {
         ImmutableMap.Builder<Integer, String> builder = ImmutableMap.builder();
         for (Drink drink : DRINK_DATA.values()) {
@@ -203,42 +255,37 @@ public class DataLoader {
     }
 
     // Highest overall return first
-    private static Comparator<Drink> sortByOverall = new Comparator<Drink>() {
-        @Override
-        public int compare(Drink l, Drink r) {
-            if (l.getOverall() > r.getOverall()) {
-                return -1;
-            } else if (l.getOverall() < r.getOverall()) {
-                return 1;
-            }
-            return 0;
+    private static final Comparator<Drink> sortByOverall = (l, r) -> {
+        if (l.getOverall() > r.getOverall()) {
+            return -1;
+        } else if (l.getOverall() < r.getOverall()) {
+            return 1;
         }
+        return 0;
     };
 
+    @SuppressWarnings("ConstantConditions")
     public static List<Drink> getDrinksByLevel(int barLevel) {
         List<Drink> sorted = DRINK_DATA.values().stream()
-                .sorted(new Comparator<Drink>() {
-                    @Override
-                    public int compare(Drink o1, Drink o2) {
-                        return o1.level - o2.level;
-                    }
-                })
-                .filter(new Predicate<Drink>() {
-                    @Override
-                    public boolean test(Drink drink) {
-                        return drink.level <= barLevel;
-                    }
-                })
+                .sorted(Comparator.comparingInt(o -> o.level))
+                .filter(drink -> drink.level <= barLevel)
                 .sorted(sortByOverall)
                 .toList();
-        if (barLevel == 3) {
+        boolean debug = false;
+        if (debug && (barLevel == 3 || barLevel == 6)) {
             Map<String, Drink> map = new HashMap<>();
             for (Drink drink : sorted) {
                 map.put(drink.name, drink);
             }
             List<Drink> toReturn = new ArrayList<>();
-            for (String name : List.of("Vodka Sour", "Tequila Sour", "Mojito", "Black Russian", "Screwdriver", "Sour Pineapple Juice", "Coffee Martini", "Rattlesnake", "Rum", "Tequila", "Gin", "Vodka", "Whisky", "Brandy", "Cola", "Pineapple Juice", "Soda Water", "Orange Juice")) {
-                toReturn.add(map.get(name));
+            if (barLevel == 3) {
+                for (String name : List.of("Vodka Sour", "Tequila Sour", "Mojito", "Black Russian", "Screwdriver", "Sour Pineapple Juice", "Coffee Martini", "Rattlesnake", "Rum", "Tequila", "Gin", "Vodka", "Whisky", "Brandy", "Cola", "Pineapple Juice", "Soda Water", "Orange Juice")) {
+                    toReturn.add(map.get(name));
+                }
+            } else if (barLevel == 6) {
+                for (String name : List.of("Singapore Sling", "Daiquiri", "Matador", "Lynchburg Lemonade", "Fog Cutter", "Palm Beach", "Between the Sheets", "Zombie", "Gin Basil Smash", "Brandy Crusta", "Cantaritos", "Thorn", "Cuba Libre", "Fish House Punch", "Honey Soda", "Bernice", "Sweet Orange", "Vodka Sour", "Tequila Sour", "Dirty Banana", "French 75", "Sweet Lemon", "Brandy Alexander", "Mayan", "Long Island Iced Tea", "Mojito", "Black Russian", "Screwdriver", "Blue Blazer", "Sour Pineapple Juice", "Coffee Martini", "Rattlesnake", "Rum", "Tequila", "Gin", "Vodka", "Whisky", "Brandy", "Cola", "Pineapple Juice", "Soda Water", "Orange Juice")) {
+                    toReturn.add(map.get(name));
+                }
             }
             return toReturn;
         }
@@ -249,6 +296,7 @@ public class DataLoader {
         return INDEX_DRINK.get(i);
     }
 
+    @SuppressWarnings("ConstantConditions")
     public static Material getMaterialById(int id) {
         return MATERIAL_COSTS.get(id);
     }

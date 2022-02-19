@@ -26,6 +26,7 @@ public class ComboGenerator implements Iterator<Combo> {
     // Only use if numDrinksRemaining > 1?
     private Combo nextToReturn = null;
 
+    @SuppressWarnings("ConstantConditions")
     public ComboGenerator(int numDrinksRemaining, Combo drinksMade) {
         if (numDrinksRemaining == 0) {
             throw new IllegalStateException();
@@ -92,29 +93,19 @@ public class ComboGenerator implements Iterator<Combo> {
                 return null;
             }
             Combo toReturn = toYield.pop();
-            if ("9, 9, 0".equals(toReturn.toIndexString())) {
-//                System.out.println("debug");
-            }
 //            System.out.println("returning " + toReturn.toIndexString() + ", more? " + hasNext());
             return toReturn;
-//            return toYield.pop();
         } else { // 2 or more drinks remaining
             if (!createdGenerators) {
                 initializeGenerators();
                 initializeNext();
             }
 
-            if ("".equals(drinksMade.toIndexString())) {
-//                System.out.println("x");
-            }
-
-            Combo x = populateNextToReturn();
-//            System.out.println("from " + drinksMade + " returning " + x + ", next: " + nextToReturn);
-            return x;
-//            return populateNextToReturn();
+            return populateNextToReturn();
         }
     }
 
+    @SuppressWarnings("ConstantConditions")
     private void initializeGenerators() {
 //        System.out.println("----init generators---- " + drinksMade);
         for (Drink toAdd : DataLoader.DRINKS_BY_LEVEL) {

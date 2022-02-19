@@ -18,6 +18,11 @@ public final class Combo {
     // An array with one slot for every drink available, storing the number of drinks in each slot
     private final int[] drinks;
 
+    private static final int UNSET = -1;
+    private int cachedCost = UNSET;
+    private int cachedFame = UNSET;
+    private int cachedTickets = UNSET;
+
     // TODO: See if this representation is faster
     //    private final List<Integer> drinkIndices;
 
@@ -31,6 +36,20 @@ public final class Combo {
 //        drinkIndices = new ArrayList<>(NUM_DRINKS_AVAILABLE);
     }
 
+    private Combo(int[] drinks) {
+        this.drinks = Arrays.copyOf(drinks, NUM_DRINKS_AVAILABLE);
+    }
+
+    public Combo mergeWith(Combo other) {
+        int[] mergedDrinks = Arrays.copyOf(drinks, NUM_DRINKS_AVAILABLE);
+        for (int i = 0; i < drinks.length; i++) {
+            if (other.getArray()[i] != 0) {
+                mergedDrinks[i] += other.getArray()[i];
+            }
+        }
+        return new Combo(mergedDrinks);
+    }
+
     private Combo(Combo original, int indexToAdd) {
         drinks = Arrays.copyOf(original.getArray(), NUM_DRINKS_AVAILABLE);
         drinks[indexToAdd] += 1;
@@ -38,6 +57,8 @@ public final class Combo {
 //        // TODO: sort?
 //        drinkIndices.add(indexToAdd);
     }
+
+
 
     private int[] getArray() {
         return drinks;
@@ -67,6 +88,16 @@ public final class Combo {
         return Integer.MAX_VALUE;
     }
 
+    public int getMax() {
+        for (int i = drinks.length - 1; i >= 0; i--) {
+            if (drinks[i] != 0) {
+                return i;
+            }
+        }
+        return Integer.MIN_VALUE;
+    }
+
+    // Add one drink to a combo
     public Combo plus(int index) {
         return new Combo(this, index);
     }
@@ -84,6 +115,7 @@ public final class Combo {
         return materialsUsed;
     }
 
+    @SuppressWarnings("ConstantConditions")
     public boolean canBeMade() {
         for (Map.Entry<Integer, Integer> entry : getMaterialsUsed().entrySet()) {
             if (DataLoader.MATERIALS_AVAILABLE.get(entry.getKey()) < entry.getValue()) {
@@ -124,23 +156,60 @@ public final class Combo {
         return Joiner.on(", ").join(countAndNames);
     }
 
+    public String toMaterials() {
+//        Set<String> materialsUsed = new HashSet<>();
+        Map<String, Integer> materialsUsed = new HashMap<>();
+        for (Map.Entry<Integer, Integer> entry : getMaterialsUsed().entrySet()) {
+            materialsUsed.put(DataLoader.getMaterialById(entry.getKey()).name(), entry.getValue());
+        }
+        List<String> toReturn = new ArrayList<>();
+        List<String> buyAllExcept = new ArrayList<>();
+        boolean includeNegativeForm = DataLoader.MAT_SHOP.size() - materialsUsed.size() <= 5;
+        for (String material : DataLoader.MAT_SHOP.keySet()) {
+            if (materialsUsed.containsKey(material)) {
+                if (materialsUsed.get(material) > 1) {
+                    toReturn.add(materialsUsed.get(material) + "x " + material);
+                } else {
+                    toReturn.add(material);
+                }
+            } else if (includeNegativeForm) {
+                buyAllExcept.add(material);
+            }
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(Joiner.on(", ").join(toReturn)).append("\n");
+        if (includeNegativeForm) {
+            sb.append("Buy everything except ").append(buyAllExcept).append("\n");
+        }
+
+        return sb.toString();
+    }
+
     public int getCost() {
+        if (cachedCost != UNSET) {
+            return cachedCost;
+        }
         int cost = 0;
 
         for (Integer materialId : getMaterialsUsed().keySet()) {
             cost += DataLoader.getMaterialById(materialId).cost();
         }
+        cachedCost = cost;
         return cost;
     }
 
     public int getFame() {
+        if (cachedFame != UNSET) {
+            return cachedFame;
+        }
         int fame = 0;
         for (int i = 0; i < drinks.length; i++) {
             if (drinks[i] > 0) {
-                Drink drink = DataLoader.getDrinkByIndex(i);
                 fame += DataLoader.getDrinkByIndex(i).fame() * drinks[i];
             }
         }
+        cachedFame = fame;
         return fame;
     }
 
@@ -153,12 +222,16 @@ public final class Combo {
     }
 
     public int getTickets() {
+        if (cachedTickets != UNSET) {
+            return cachedTickets;
+        }
         int tickets = 0;
         for (int i = 0; i < drinks.length; i++) {
             if (drinks[i] > 0) {
                 tickets += DataLoader.getDrinkByIndex(i).tickets() * drinks[i];
             }
         }
+        cachedTickets = tickets;
         return tickets;
     }
 
@@ -187,6 +260,7 @@ public final class Combo {
         StringBuilder sb = new StringBuilder();
         sb.append(toIndexString()).append("\n");
         sb.append(toNames()).append("\n");
+        sb.append(toMaterials()).append("\n");
         sb.append(String.format("Cost %d, fame %d, tickets %d, overall %.1f, %.3f fame/cost, %.3f tickets/cost, %.3f overall/cost\n",
                 getCost(), getFame(), getTickets(), getOverall(), getFameEfficiency(), getTicketsEfficiency(), getOverallEfficiency()));
         return sb.toString();

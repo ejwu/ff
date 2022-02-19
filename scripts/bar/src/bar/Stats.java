@@ -157,10 +157,11 @@ public class Stats {
         sb.append(tickets.best);
         sb.append("\nBest ticket efficiency: %.3f\n".formatted(ticketsEfficiency.best.getTicketsEfficiency()));
         sb.append(ticketsEfficiency.best);
-        sb.append("\nBest overall: %f\n".formatted(overall.best.getOverall()));
+        sb.append("\nBest overall: %.2f\n".formatted(overall.best.getOverall()));
         sb.append(overall.best);
         sb.append("\nBest overall efficiency: %.3f\n".formatted(overallEfficiency.best.getOverallEfficiency()));
         sb.append(overallEfficiency.best);
+        sb.append("\nTotal combos: %,d\n".formatted(numProcessed));
         sb.append("----------------------------------------------------------------\n");
         return sb.toString();
     }
