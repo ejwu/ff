@@ -104,7 +104,7 @@ public final class Combo {
 
     // Returns a map of materialId->numUsed
     private Map<Integer, Integer> getMaterialsUsed() {
-        Map<Integer, Integer> materialsUsed = new HashMap<>();
+        Map<Integer, Integer> materialsUsed = new HashMap<>(32);
         for (int i = 0; i < drinks.length; i++) {
             if (drinks[i] != 0) {
                 for (FormulaMaterial material : DataLoader.getDrinkByIndex(i).materials()) {

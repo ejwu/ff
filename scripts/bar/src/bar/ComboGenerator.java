@@ -151,7 +151,6 @@ public class ComboGenerator implements Iterator<Combo> {
 //                System.out.println("popping generator");
                 currentGenerator = generatorsToYield.pop();
             }
-            boolean mightHaveNext = currentGenerator.mightHaveNext();
             if (currentGenerator.mightHaveNext()) {
                 nextToReturn = currentGenerator.next();
                 if (nextToReturn == null) {

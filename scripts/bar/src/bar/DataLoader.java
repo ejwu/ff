@@ -2,7 +2,10 @@ package bar;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableBiMap;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -11,9 +14,13 @@ import org.json.simple.parser.ParseException;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
 
 public class DataLoader {
 
@@ -65,7 +72,7 @@ public class DataLoader {
             total += CACHE.get(prefix).size();
         }
         System.out.println("Total entries: " + total);
-        System.out.println(sw.elapsed(TimeUnit.SECONDS) + " to create cache");
+        System.out.println(sw.elapsed(TimeUnit.SECONDS) + " seconds to create cache");
     }
 
     public record MaterialShop(int cost, int num, int level) {}
@@ -124,7 +131,7 @@ public class DataLoader {
         baseShop.put("Honey", new MaterialShop(20, 4, 4));
         baseShop.put("Sugar", new MaterialShop(20, 4, 4));
         baseShop.put("Cream", new MaterialShop(20, 4, 5));
-        baseShop.put("Fruit Syrup", new MaterialShop(20, 4, 11));
+        baseShop.put("Fruit Syrup", new MaterialShop(40, 4, 11));
 
         // Assumptions for the future
         baseShop.put("Aperol", new MaterialShop(40, 4, 13));
@@ -157,6 +164,9 @@ public class DataLoader {
                 baseShop.put(spirit, new MaterialShop(75, 15, baseShop.get(spirit).level));
             }
             for (String flavor : List.of("Baileys", "Bitters")) {
+                baseShop.put(flavor, new MaterialShop(60, 6, baseShop.get(flavor).level));
+            }
+            for (String flavor : List.of("Vermouth", "Orange Curacao", "Coffee Liqueur")) {
                 baseShop.put(flavor, new MaterialShop(30, 6, baseShop.get(flavor).level));
             }
             for (String other : List.of("Cola", "Orange Juice", "Pineapple Juice", "Soda Water", "Cane Syrup", "Lemon Juice", "Mint Leaf", "Honey", "Sugar", "Cream")) {
