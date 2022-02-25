@@ -57,7 +57,7 @@ public class DataLoader {
     public static void precalculateCache() {
         Stopwatch sw = Stopwatch.createStarted();
         ImmutableMultimap.Builder<Integer, Combo> builder = ImmutableMultimap.builder();
-        ComboGenerator generator = new ComboGenerator(BarOptimizer.CACHE_DEPTH, Combo.of());
+        ComboGenerator generator = new ComboGenerator(BarOptimizer.CACHE_DEPTH, getEmptyCombo());
         Combo combo = generator.next();
         while (combo != null) {
             builder.put(combo.getMax(), combo);
@@ -309,5 +309,9 @@ public class DataLoader {
     @SuppressWarnings("ConstantConditions")
     public static Material getMaterialById(int id) {
         return MATERIAL_COSTS.get(id);
+    }
+
+    public static Combo getEmptyCombo() {
+        return ArrayCombo.of();
     }
 }

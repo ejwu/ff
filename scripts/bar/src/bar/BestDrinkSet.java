@@ -8,7 +8,7 @@ public class BestDrinkSet {
 
     public BestDrinkSet(Comparator<Combo> comp) {
         this.comp = comp;
-        best = Combo.of();
+        best = DataLoader.getEmptyCombo();
     }
 
     public void offer(Combo combo) {

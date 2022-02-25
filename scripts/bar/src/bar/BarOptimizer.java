@@ -76,7 +76,7 @@ public class BarOptimizer {
 
         // Some contortions here to pretend that an argument is constant
         DataLoader.init();
-        Combo.init(DataLoader.getDrinksByLevel(barLevel).size());
+        ArrayCombo.init(DataLoader.getDrinksByLevel(barLevel).size());
 
         MAX_DRINKS = DataLoader.MAX_DRINKS_BY_BAR_LEVEL.get(BAR_LEVEL);
         if (workerDepth + cacheDepth > DataLoader.MAX_DRINKS_BY_BAR_LEVEL.get(barLevel)) {
@@ -119,7 +119,7 @@ public class BarOptimizer {
 
         consumer.start();
 
-        ComboGenerator generator = new ComboGenerator(WORKER_DEPTH, Combo.of());
+        ComboGenerator generator = new ComboGenerator(WORKER_DEPTH, DataLoader.getEmptyCombo());
         Combo prefix = generator.next();
         String lastProcessed = "";
         try {
