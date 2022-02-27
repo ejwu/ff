@@ -312,6 +312,7 @@ public class DataLoader {
     }
 
     public static Combo getEmptyCombo() {
-        return ArrayCombo.of();
+        return new IndexListCombo();
+//        return ArrayCombo.of();
     }
 }

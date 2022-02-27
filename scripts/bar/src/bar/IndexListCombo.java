@@ -15,7 +15,7 @@ public class IndexListCombo extends AbstractCombo implements Combo {
     // A list of indices in descending order
     final ImmutableList<Integer> drinks;
 
-    private IndexListCombo() {
+    public IndexListCombo() {
         drinks = ImmutableList.of();
     }
 
@@ -52,11 +52,17 @@ public class IndexListCombo extends AbstractCombo implements Combo {
 
     @Override
     public int getMin() {
+        if (drinks.isEmpty()) {
+            return Integer.MAX_VALUE;
+        }
         return drinks.get(drinks.size() - 1);
     }
 
     @Override
     public int getMax() {
+        if (drinks.isEmpty()) {
+            return Integer.MIN_VALUE;
+        }
         return drinks.get(0);
     }
 
@@ -64,12 +70,18 @@ public class IndexListCombo extends AbstractCombo implements Combo {
     public Combo plus(int index) {
         ImmutableList.Builder<Integer> builder = ImmutableList.builder();
         boolean inserted = false;
+        if (drinks.isEmpty()) {
+            return new IndexListCombo(ImmutableList.of(index));
+        }
         for (Integer i : drinks) {
             if (!inserted && index >= i) {
                 builder.add(index);
                 inserted = true;
             }
             builder.add(i);
+        }
+        if (!inserted) {
+            builder.add(index);
         }
         return new IndexListCombo(builder.build());
     }

@@ -19,11 +19,11 @@ import java.util.concurrent.atomic.AtomicLong;
 @Parameters(separators="=")
 public class BarOptimizer {
     @Parameter(names={"--barLevel"})
-    public int barLevel = 11;
+    public int barLevel = 12;
     @Parameter(names={"--cacheDepth"})
-    int cacheDepth = 6;
+    int cacheDepth = 7;
     @Parameter(names={"--workerDepth"})
-    int workerDepth = 6;
+    int workerDepth = 7;
 
     public static void main(String... argv) {
         BarOptimizer barOptimizer = new BarOptimizer();
@@ -79,7 +79,7 @@ public class BarOptimizer {
         ArrayCombo.init(DataLoader.getDrinksByLevel(barLevel).size());
 
         MAX_DRINKS = DataLoader.MAX_DRINKS_BY_BAR_LEVEL.get(BAR_LEVEL);
-        if (workerDepth + cacheDepth > DataLoader.MAX_DRINKS_BY_BAR_LEVEL.get(barLevel)) {
+        if (workerDepth + cacheDepth >= DataLoader.MAX_DRINKS_BY_BAR_LEVEL.get(barLevel)) {
             throw new IllegalArgumentException("worker + cache is too deep");
         }
 
@@ -150,14 +150,13 @@ public class BarOptimizer {
                 }
             }
             doneSubmitting.set(true);
-            System.out.println("======================generator finished");
         } catch (Exception e) {
             e.printStackTrace();
         }
 
 
         System.out.println(stats);
-        System.out.println("Ended: " + LocalDateTime.now());
+        System.out.println("Ended generating: " + LocalDateTime.now());
         System.out.println(sw.elapsed(TimeUnit.SECONDS) + " seconds taken");
 
         System.out.println("not actually done yet");
