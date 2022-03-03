@@ -19,7 +19,7 @@ public class IndexListCombo extends AbstractCombo implements Combo {
         drinks = ImmutableList.of();
     }
 
-    private IndexListCombo(ImmutableList<Integer> drinks) {
+    public IndexListCombo(ImmutableList<Integer> drinks) {
         this.drinks = drinks;
     }
 

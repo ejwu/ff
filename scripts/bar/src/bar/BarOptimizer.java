@@ -4,6 +4,7 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.ImmutableList;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -19,11 +20,13 @@ import java.util.concurrent.atomic.AtomicLong;
 @Parameters(separators="=")
 public class BarOptimizer {
     @Parameter(names={"--barLevel"})
-    public int barLevel = 12;
+    public int barLevel = 11;
     @Parameter(names={"--cacheDepth"})
     int cacheDepth = 7;
     @Parameter(names={"--workerDepth"})
-    int workerDepth = 7;
+    int workerDepth = 6;
+
+    public static final ImmutableList<Integer> START_FROM = ImmutableList.of();
 
     public static void main(String... argv) {
         BarOptimizer barOptimizer = new BarOptimizer();
@@ -46,6 +49,8 @@ public class BarOptimizer {
         ComboGenerator generator = new ComboGenerator(MAX_DRINKS - WORKER_DEPTH - CACHE_DEPTH, prefix);
         Stats stats = new Stats();
 
+//        Combo lastProcessed = prefix;
+
         Combo partialAtCacheLevel = generator.next();
         while (partialAtCacheLevel != null) {
             for (Integer cachePrefix : DataLoader.CACHE.keySet().stream().sorted(Collections.reverseOrder()).toList()) {
@@ -55,11 +60,13 @@ public class BarOptimizer {
                         if (combined.canBeMade()) {
                             stats.offerAll(combined);
                         }
+//                        lastProcessed = combined;
                     }
                 }
             }
             partialAtCacheLevel = generator.next();
         }
+//        System.out.println("last processed: %s".formatted(lastProcessed.toIndexString()));
         return stats;
     }
 
@@ -119,7 +126,7 @@ public class BarOptimizer {
 
         consumer.start();
 
-        ComboGenerator generator = new ComboGenerator(WORKER_DEPTH, DataLoader.getEmptyCombo());
+        ComboGenerator generator = new ComboGenerator(WORKER_DEPTH, new IndexListCombo(START_FROM));
         Combo prefix = generator.next();
         String lastProcessed = "";
         try {
@@ -127,6 +134,7 @@ public class BarOptimizer {
                 while (prefix != null && jobCount.longValue() - numProcessed.longValue() < 10000) {
                     int batchCount = 0;
                     while (prefix != null && batchCount < 20000) {
+                        // effectively final for use as lambda argument
                         Combo finalPrefix = prefix;
                         cs.submit(() -> getAllCompletions(finalPrefix));
                         jobCount.incrementAndGet();
