@@ -103,6 +103,11 @@ public class IndexListCombo extends AbstractCombo implements Combo {
     }
 
     @Override
+    public List<Integer> toIndices() {
+        return drinks;
+    }
+
+    @Override
     public String toNames() {
         Map<String, Integer> names = new LinkedHashMap<>();
         for (Integer i : drinks) {

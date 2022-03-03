@@ -39,6 +39,8 @@ public class DataLoader {
     // Map of prefixes to all possible combos of a certain size that start with that prefix
     public static ImmutableMultimap<Integer, Combo> CACHE;
 
+    public static ImmutableMultimap<Integer, ImmutableMultimap<Integer, ?>> TREE_CACHE;
+
     public static final double OVERALL_COEFF = 3.25;
 
     // This needs to happen first to initialize BAR_LEVEL
@@ -59,8 +61,13 @@ public class DataLoader {
         ImmutableMultimap.Builder<Integer, Combo> builder = ImmutableMultimap.builder();
         ComboGenerator generator = new ComboGenerator(BarOptimizer.CACHE_DEPTH, getEmptyCombo());
         Combo combo = generator.next();
+
+
+        TreeCache treeCache = new TreeCache(BarOptimizer.CACHE_DEPTH);
+
         while (combo != null) {
             builder.put(combo.getMax(), combo);
+//            treeCache.addCombo(combo);
             combo = generator.next();
         }
         CACHE = builder.build();

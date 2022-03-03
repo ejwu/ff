@@ -118,6 +118,11 @@ public final class ArrayCombo extends AbstractCombo implements Combo {
 
     @Override
     public String toIndexString() {
+        return Joiner.on(", ").join(toIndices());
+    }
+
+    @Override
+    public List<Integer> toIndices() {
         List<Integer> indices = new ArrayList<>();
         for (int i = drinks.length - 1; i >= 0; i--) {
             if (drinks[i] != 0) {
@@ -126,7 +131,7 @@ public final class ArrayCombo extends AbstractCombo implements Combo {
                 }
             }
         }
-        return Joiner.on(", ").join(indices);
+        return indices;
     }
 
     @Override

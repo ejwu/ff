@@ -1,5 +1,7 @@
 package bar;
 
+import java.util.List;
+
 public interface Combo {
 
     Combo mergeWith(Combo other);
@@ -16,6 +18,8 @@ public interface Combo {
     boolean canBeMade();
 
     String toIndexString();
+
+    List<Integer> toIndices();
 
     String toNames();
 
