@@ -8,6 +8,7 @@ import com.google.common.collect.ImmutableList;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
@@ -20,11 +21,11 @@ import java.util.concurrent.atomic.AtomicLong;
 @Parameters(separators="=")
 public class BarOptimizer {
     @Parameter(names={"--barLevel"})
-    public int barLevel = 11;
+    public int barLevel = 10;
     @Parameter(names={"--cacheDepth"})
     int cacheDepth = 7;
     @Parameter(names={"--workerDepth"})
-    int workerDepth = 6;
+    int workerDepth = 4;
 
     public static final ImmutableList<Integer> START_FROM = ImmutableList.of();
 
@@ -53,21 +54,45 @@ public class BarOptimizer {
 
         Combo partialAtCacheLevel = generator.next();
         while (partialAtCacheLevel != null) {
-            for (Integer cachePrefix : DataLoader.CACHE.keySet().stream().sorted(Collections.reverseOrder()).toList()) {
+            for (Integer cachePrefix : DataLoader.TREE_CACHE.getKeys()) {
+                int treeCount = 0;
                 if (partialAtCacheLevel.getMin() >= cachePrefix) {
-                    for (Combo toAdd : DataLoader.CACHE.get(cachePrefix)) {
-                        Combo combined = partialAtCacheLevel.mergeWith(toAdd);
+                    Iterator<Combo> it = DataLoader.TREE_CACHE.getSubtree(cachePrefix);
+                    while (it.hasNext()) {
+                        treeCount++;
+                        Combo toAdd = it.next();
+                        Combo toAdd2 = new IndexListCombo(ImmutableList.<Integer>builder().add(cachePrefix).addAll(toAdd.toIndices()).build());
+                        Combo combined = partialAtCacheLevel.mergeWith(toAdd2);
+                        if (combined.toIndices().size() != MAX_DRINKS) {
+                            throw new IllegalStateException();
+                        }
                         if (combined.canBeMade()) {
                             stats.offerAll(combined);
                         }
-//                        lastProcessed = combined;
                     }
                 }
             }
+
+//            for (Integer cachePrefix : DataLoader.CACHE.keySet().stream().sorted(Collections.reverseOrder()).toList()) {
+//                if (partialAtCacheLevel.getMin() >= cachePrefix) {
+//                    System.out.println("Cache at " + cachePrefix + ": " + DataLoader.CACHE.get(cachePrefix));
+//                    for (Combo toAdd : DataLoader.CACHE.get(cachePrefix)) {
+//                        Combo combined = partialAtCacheLevel.mergeWith(toAdd);
+//                        if (combined.canBeMade()) {
+//                            stats.offerAll(combined);
+//                        }
+////                        lastProcessed = combined;
+//                    }
+//                }
+//            }
             partialAtCacheLevel = generator.next();
         }
 //        System.out.println("last processed: %s".formatted(lastProcessed.toIndexString()));
         return stats;
+    }
+
+    public static void initForTest(int barLevel) {
+        BAR_LEVEL = barLevel;
     }
 
     @SuppressWarnings("ConstantConditions")

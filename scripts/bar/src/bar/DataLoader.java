@@ -37,9 +37,8 @@ public class DataLoader {
     public static ImmutableBiMap<Integer, Drink> INDEX_DRINK;
     public static ImmutableList<Drink> DRINKS_BY_LEVEL;
     // Map of prefixes to all possible combos of a certain size that start with that prefix
-    public static ImmutableMultimap<Integer, Combo> CACHE;
-
-    public static ImmutableMultimap<Integer, ImmutableMultimap<Integer, ?>> TREE_CACHE;
+//    public static ImmutableMultimap<Integer, Combo> CACHE;
+    public static TreeCache TREE_CACHE;
 
     public static final double OVERALL_COEFF = 3.25;
 
@@ -58,7 +57,7 @@ public class DataLoader {
 
     public static void precalculateCache() {
         Stopwatch sw = Stopwatch.createStarted();
-        ImmutableMultimap.Builder<Integer, Combo> builder = ImmutableMultimap.builder();
+//        ImmutableMultimap.Builder<Integer, Combo> builder = ImmutableMultimap.builder();
         ComboGenerator generator = new ComboGenerator(BarOptimizer.CACHE_DEPTH, getEmptyCombo());
         Combo combo = generator.next();
 
@@ -66,19 +65,22 @@ public class DataLoader {
         TreeCache treeCache = new TreeCache(BarOptimizer.CACHE_DEPTH);
 
         while (combo != null) {
-            builder.put(combo.getMax(), combo);
-//            treeCache.addCombo(combo);
+//            builder.put(combo.getMax(), combo);
+            treeCache.addCombo(combo);
             combo = generator.next();
         }
-        CACHE = builder.build();
+//        CACHE = builder.build();
 
-        int total = 0;
-        System.out.println("Cache:");
-        for (Integer prefix : CACHE.keySet().stream().sorted().toList()) {
-            System.out.println(prefix + ": " + CACHE.get(prefix).size());
-            total += CACHE.get(prefix).size();
-        }
-        System.out.println("Total entries: " + total);
+//        int total = 0;
+//        System.out.println("Cache:");
+//        for (Integer prefix : CACHE.keySet().stream().sorted().toList()) {
+//            System.out.println(prefix + ": " + CACHE.get(prefix).size());
+//            total += CACHE.get(prefix).size();
+//        }
+//        System.out.println("Total entries: " + total);
+        System.out.println("Tree entries: " + treeCache.getSize());
+        System.out.println(treeCache.getSlowSize());
+        TREE_CACHE = treeCache;
         System.out.println(sw.elapsed(TimeUnit.SECONDS) + " seconds to create cache");
     }
 
@@ -127,6 +129,8 @@ public class DataLoader {
         baseShop.put("Baileys", new MaterialShop(40, 4, 9));
         baseShop.put("Campari", new MaterialShop(40, 4, 10));
         baseShop.put("Chartreuse", new MaterialShop(40, 4, 12));
+        baseShop.put("Aperol", new MaterialShop(40, 4, 13));
+        baseShop.put("Wine", new MaterialShop(40, 4, 14));
         // Other
         baseShop.put("Cola", new MaterialShop(20, 4, 1));
         baseShop.put("Orange Juice", new MaterialShop(20, 4, 1));
@@ -141,8 +145,6 @@ public class DataLoader {
         baseShop.put("Fruit Syrup", new MaterialShop(40, 4, 11));
 
         // Assumptions for the future
-        baseShop.put("Aperol", new MaterialShop(40, 4, 13));
-        baseShop.put("Wine", new MaterialShop(40, 4, 14));
         baseShop.put("Fruit Liqueur", new MaterialShop(40, 4, 15));
         baseShop.put("Ginger Beer", new MaterialShop(40, 4, 16));
         // other
