@@ -49,7 +49,7 @@ public abstract class AbstractCombo implements Combo {
         }
         List<String> toReturn = new ArrayList<>();
         List<String> buyAllExcept = new ArrayList<>();
-        boolean includeNegativeForm = DataLoader.MAT_SHOP.size() - materialsUsed.size() <= 5;
+        boolean includeNegativeForm = DataLoader.MAT_SHOP.size() - materialsUsed.size() <= 10;
         for (String material : DataLoader.MAT_SHOP.keySet()) {
             if (materialsUsed.containsKey(material)) {
                 if (materialsUsed.get(material) > 1) {
@@ -79,7 +79,20 @@ public abstract class AbstractCombo implements Combo {
         int cost = 0;
 
         for (Integer materialId : getMaterialsUsed().keySet()) {
-            cost += DataLoader.getMaterialById(materialId).cost();
+            // Special case for Fruit Liqueur and Ginger Beer, because the market is dumb and has it twice
+            // 4 for 60, or 6 for 90
+            if (materialId == 410210 || materialId == 410211) {
+                int quantity = getMaterialsUsed().get(materialId);
+                if (quantity <= 4) {
+                    cost += 60;
+                } else if (quantity <= 6) {
+                    cost += 90;
+                } else {
+                    cost += 150;
+                }
+            } else {
+                cost += DataLoader.getMaterialById(materialId).cost();
+            }
         }
         cachedCost = cost;
         return cost;

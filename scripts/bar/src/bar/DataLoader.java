@@ -5,7 +5,6 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMultimap;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -37,7 +36,6 @@ public class DataLoader {
     public static ImmutableBiMap<Integer, Drink> INDEX_DRINK;
     public static ImmutableList<Drink> DRINKS_BY_LEVEL;
     // Map of prefixes to all possible combos of a certain size that start with that prefix
-//    public static ImmutableMultimap<Integer, Combo> CACHE;
     public static TreeCache TREE_CACHE;
 
     public static final double OVERALL_COEFF = 3.25;
@@ -55,29 +53,18 @@ public class DataLoader {
         INDEX_DRINK = builder.build();
     }
 
+    // TODO: Extract this in a way that caching can be used to generate this cache as well
     public static void precalculateCache() {
         Stopwatch sw = Stopwatch.createStarted();
-//        ImmutableMultimap.Builder<Integer, Combo> builder = ImmutableMultimap.builder();
         ComboGenerator generator = new ComboGenerator(BarOptimizer.CACHE_DEPTH, getEmptyCombo());
         Combo combo = generator.next();
-
 
         TreeCache treeCache = new TreeCache(BarOptimizer.CACHE_DEPTH);
 
         while (combo != null) {
-//            builder.put(combo.getMax(), combo);
             treeCache.addCombo(combo);
             combo = generator.next();
         }
-//        CACHE = builder.build();
-
-//        int total = 0;
-//        System.out.println("Cache:");
-//        for (Integer prefix : CACHE.keySet().stream().sorted().toList()) {
-//            System.out.println(prefix + ": " + CACHE.get(prefix).size());
-//            total += CACHE.get(prefix).size();
-//        }
-//        System.out.println("Total entries: " + total);
         System.out.println("Tree entries: " + treeCache.getSize());
         System.out.println(treeCache.getSlowSize());
         TREE_CACHE = treeCache;
@@ -131,6 +118,15 @@ public class DataLoader {
         baseShop.put("Chartreuse", new MaterialShop(40, 4, 12));
         baseShop.put("Aperol", new MaterialShop(40, 4, 13));
         baseShop.put("Wine", new MaterialShop(40, 4, 14));
+        // This is dumb, but the market sells 4 for 60, and also 6 for 90.
+        // Use 10 for 150 as a placeholder and fix the actual cost later
+        // TODO: Only used 1x in Jammie Dodger (level 15) and 2x in Crystal Coral (17),
+        // see if there's some optimization to be done.
+        baseShop.put("Fruit Liqueur", new MaterialShop(150, 10, 15));
+        // This is dumb, but the market sells 4 for 60, and also 6 for 90.
+        // Use 10 for 150 as a placeholder and fix the actual cost later
+        baseShop.put("Ginger Beer", new MaterialShop(159, 10, 16));
+
         // Other
         baseShop.put("Cola", new MaterialShop(20, 4, 1));
         baseShop.put("Orange Juice", new MaterialShop(20, 4, 1));
@@ -145,8 +141,6 @@ public class DataLoader {
         baseShop.put("Fruit Syrup", new MaterialShop(40, 4, 11));
 
         // Assumptions for the future
-        baseShop.put("Fruit Liqueur", new MaterialShop(40, 4, 15));
-        baseShop.put("Ginger Beer", new MaterialShop(40, 4, 16));
         // other
         baseShop.put("Soda", new MaterialShop(40, 4, 17));
         baseShop.put("Benedictine", new MaterialShop(40, 4, 18));
@@ -180,6 +174,27 @@ public class DataLoader {
             }
             for (String other : List.of("Cola", "Orange Juice", "Pineapple Juice", "Soda Water", "Cane Syrup", "Lemon Juice", "Mint Leaf", "Honey", "Sugar", "Cream")) {
                 baseShop.put(other, new MaterialShop(30, 6, baseShop.get(other).level));
+            }
+        }
+
+        if (BAR_LEVEL >= 16) {
+            for (String spirit : List.of("Rum", "Vodka", "Brandy", "Gin", "Tequila", "Whisky")) {
+                baseShop.put(spirit, new MaterialShop(100, 20, baseShop.get(spirit).level));
+            }
+            for (String flavor : List.of("Baileys", "Bitters")) {
+                baseShop.put(flavor, new MaterialShop(80, 8, baseShop.get(flavor).level));
+            }
+            for (String flavor : List.of("Vermouth", "Orange Curacao", "Coffee Liqueur")) {
+                baseShop.put(flavor, new MaterialShop(40, 8, baseShop.get(flavor).level));
+            }
+            for (String flavor : List.of("Wine", "Chartreuse", "Aperol", "Campari")) {
+                baseShop.put(flavor, new MaterialShop(60, 6, baseShop.get(flavor).level));
+            }
+            for (String other : List.of("Cola", "Orange Juice", "Pineapple Juice", "Soda Water", "Cane Syrup", "Lemon Juice", "Mint Leaf", "Honey", "Sugar", "Cream")) {
+                baseShop.put(other, new MaterialShop(40, 8, baseShop.get(other).level));
+            }
+            for (String other : List.of("Fruit Syrup")) {
+                baseShop.put(other, new MaterialShop(60, 6, baseShop.get(other).level));
             }
         }
 
