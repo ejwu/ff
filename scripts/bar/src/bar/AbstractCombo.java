@@ -79,9 +79,9 @@ public abstract class AbstractCombo implements Combo {
         int cost = 0;
 
         for (Integer materialId : getMaterialsUsed().keySet()) {
-            // Special case for Fruit Liqueur and Ginger Beer, because the market is dumb and has it twice
+            // Special case for Fruit Liqueur, Ginger Beer, and Soda because the market is dumb and has them twice
             // 4 for 60, or 6 for 90
-            if (materialId == 410210 || materialId == 410211) {
+            if (materialId == 410210 || materialId == 410211 || materialId == 410312) {
                 int quantity = getMaterialsUsed().get(materialId);
                 if (quantity <= 4) {
                     cost += 60;

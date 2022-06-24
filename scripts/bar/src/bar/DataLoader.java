@@ -125,7 +125,7 @@ public class DataLoader {
         baseShop.put("Fruit Liqueur", new MaterialShop(150, 10, 15));
         // This is dumb, but the market sells 4 for 60, and also 6 for 90.
         // Use 10 for 150 as a placeholder and fix the actual cost later
-        baseShop.put("Ginger Beer", new MaterialShop(159, 10, 16));
+        baseShop.put("Ginger Beer", new MaterialShop(150, 10, 16));
 
         // Other
         baseShop.put("Cola", new MaterialShop(20, 4, 1));
@@ -139,10 +139,12 @@ public class DataLoader {
         baseShop.put("Sugar", new MaterialShop(20, 4, 4));
         baseShop.put("Cream", new MaterialShop(20, 4, 5));
         baseShop.put("Fruit Syrup", new MaterialShop(40, 4, 11));
+        // This is dumb, but the market sells 4 for 60, and also 6 for 90.
+        // Use 10 for 150 as a placeholder and fix the actual cost later
+        baseShop.put("Soda", new MaterialShop(150, 10, 17));
 
         // Assumptions for the future
         // other
-        baseShop.put("Soda", new MaterialShop(40, 4, 17));
         baseShop.put("Benedictine", new MaterialShop(40, 4, 18));
         // other
         baseShop.put("Fruit Juice", new MaterialShop(40, 4, 19));
@@ -297,6 +299,8 @@ public class DataLoader {
         }
         return 0;
     };
+
+    // TODO: contemplate an efficiency sort order, which is complicated at the individual drink level
 
     @SuppressWarnings("ConstantConditions")
     public static List<Drink> getDrinksByLevel(int barLevel) {
