@@ -1,6 +1,7 @@
 package bar;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableSet;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,6 +16,20 @@ public abstract class AbstractCombo implements Combo {
     int cachedCost = UNSET;
     int cachedFame = UNSET;
     int cachedTickets = UNSET;
+
+    // Going to make a lot of assumptions that all the degenerate materials that appear multiple times in the shop
+    // behave the same way.  For now, that means they exist twice at 4x for 60 and 6x for 90.
+    // Bad things will happen if these two collections get out of sync.
+    // TODO: See if there's a sane way to store all this, including the actual cost breakdowns
+    private static final ImmutableSet<String> MULTI_MAT_NAMES = ImmutableSet.<String>builder()
+            .add("Fruit Liqueur")
+            .add("Ginger Beer")
+            .add("Soda").build();
+
+    private static final ImmutableSet<Integer> MULTI_MAT_IDS = ImmutableSet.<Integer>builder()
+            .add(410210)
+            .add(410211)
+            .add(410312).build();
 
     abstract Map<Integer, Integer> getMaterialsUsed();
 
@@ -49,7 +64,6 @@ public abstract class AbstractCombo implements Combo {
         }
         List<String> toReturn = new ArrayList<>();
         List<String> buyAllExcept = new ArrayList<>();
-        boolean includeNegativeForm = DataLoader.MAT_SHOP.size() - materialsUsed.size() <= 10;
         for (String material : DataLoader.MAT_SHOP.keySet()) {
             if (materialsUsed.containsKey(material)) {
                 if (materialsUsed.get(material) > 1) {
@@ -57,16 +71,21 @@ public abstract class AbstractCombo implements Combo {
                 } else {
                     toReturn.add(material);
                 }
-            } else if (includeNegativeForm) {
+                if (MULTI_MAT_NAMES.contains(material)) {
+                    if (materialsUsed.get(material) <= 4) {
+                        buyAllExcept.add("6x " + material);
+                    } else if (materialsUsed.get(material) <= 6) {
+                        buyAllExcept.add("4x " + material);
+                    }
+                }
+            } else {
                 buyAllExcept.add(material);
             }
         }
 
         StringBuilder sb = new StringBuilder();
         sb.append(Joiner.on(", ").join(toReturn)).append("\n");
-        if (includeNegativeForm) {
-            sb.append("Buy everything except ").append(buyAllExcept).append("\n");
-        }
+        sb.append("Buy everything except ").append(buyAllExcept).append("\n");
 
         return sb.toString();
     }
@@ -81,7 +100,7 @@ public abstract class AbstractCombo implements Combo {
         for (Integer materialId : getMaterialsUsed().keySet()) {
             // Special case for Fruit Liqueur, Ginger Beer, and Soda because the market is dumb and has them twice
             // 4 for 60, or 6 for 90
-            if (materialId == 410210 || materialId == 410211 || materialId == 410312) {
+            if (MULTI_MAT_IDS.contains(materialId)) {
                 int quantity = getMaterialsUsed().get(materialId);
                 if (quantity <= 4) {
                     cost += 60;
