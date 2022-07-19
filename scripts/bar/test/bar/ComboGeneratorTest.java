@@ -13,7 +13,7 @@ public class ComboGeneratorTest {
         int x = BarOptimizer.CACHE_DEPTH;
         BarOptimizer.initForTest(4);
         DataLoader.init();
-        ComboGenerator generator = new ComboGenerator(2, new IndexListCombo(ImmutableList.of(21)));
+        ComboGenerator generator = new ComboGenerator(2, new IndexListCombo(ImmutableList.of(21)), true);
         Combo combo = generator.next();
         boolean hasSeen22 = false;
         while (combo != null) {

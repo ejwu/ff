@@ -54,9 +54,9 @@ public class DataLoader {
     }
 
     // TODO: Extract this in a way that caching can be used to generate this cache as well
-    public static void precalculateCache() {
+    public static void precalculateCache(boolean allowDuplicateDrinks) {
         Stopwatch sw = Stopwatch.createStarted();
-        ComboGenerator generator = new ComboGenerator(BarOptimizer.CACHE_DEPTH, getEmptyCombo());
+        ComboGenerator generator = new ComboGenerator(BarOptimizer.CACHE_DEPTH, getEmptyCombo(), allowDuplicateDrinks);
         Combo combo = generator.next();
 
         TreeCache treeCache = new TreeCache(BarOptimizer.CACHE_DEPTH);

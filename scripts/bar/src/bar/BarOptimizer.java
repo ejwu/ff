@@ -21,11 +21,14 @@ import java.util.concurrent.atomic.AtomicLong;
 @Parameters(separators="=")
 public class BarOptimizer {
     @Parameter(names={"--barLevel"})
-    public int barLevel = 10;
+    public int barLevel = 17;
     @Parameter(names={"--cacheDepth"})
-    int cacheDepth = 7;
+    int cacheDepth = 6;
     @Parameter(names={"--workerDepth"})
-    int workerDepth = 4;
+    int workerDepth = 7;
+    @Parameter(names={"--allowDuplicateDrinks"})
+    boolean allowDuplicateDrinks = true;
+
 
     public static final ImmutableList<Integer> START_FROM = ImmutableList.of();
 
@@ -47,7 +50,7 @@ public class BarOptimizer {
     // 31, 31, 26, 26, 24, 18, 13, 13, 8, 8, 6, 4, 3, 1, 1
 
     Stats getAllCompletions(Combo prefix) {
-        ComboGenerator generator = new ComboGenerator(MAX_DRINKS - WORKER_DEPTH - CACHE_DEPTH, prefix);
+        ComboGenerator generator = new ComboGenerator(MAX_DRINKS - WORKER_DEPTH - CACHE_DEPTH, prefix, allowDuplicateDrinks);
         Stats stats = new Stats();
 
 //        Combo lastProcessed = prefix;
@@ -66,7 +69,7 @@ public class BarOptimizer {
                         if (combined.toIndices().size() != MAX_DRINKS) {
                             throw new IllegalStateException();
                         }
-                        if (combined.canBeMade()) {
+                        if (combined.canBeMade() && (allowDuplicateDrinks || !hasDupes(combined))) {
                             stats.offerAll(combined);
                         }
                     }
@@ -95,6 +98,17 @@ public class BarOptimizer {
         BAR_LEVEL = barLevel;
     }
 
+    private boolean hasDupes(Combo combo) {
+        int lastIndex = -1;
+        for (int index : combo.toIndices()) {
+            if (index == lastIndex) {
+                return true;
+            }
+            lastIndex = index;
+        }
+        return false;
+    }
+
     @SuppressWarnings("ConstantConditions")
     public void run() {
         Stopwatch sw = Stopwatch.createStarted();
@@ -104,7 +118,8 @@ public class BarOptimizer {
         WORKER_DEPTH = workerDepth;
 
         System.out.println("Started at: " + LocalDateTime.now());
-        System.out.printf("Bar level: %d, %d max drinks, %d workerDepth, cacheDepth: %d%n", barLevel, DataLoader.MAX_DRINKS_BY_BAR_LEVEL.get(barLevel), workerDepth, cacheDepth);
+        System.out.printf("Bar level: %d, %d max drinks, %d workerDepth, cacheDepth: %d, allowDuplicateDrinks: %b%n",
+                barLevel, DataLoader.MAX_DRINKS_BY_BAR_LEVEL.get(barLevel), workerDepth, cacheDepth, allowDuplicateDrinks);
 
         // Some contortions here to pretend that an argument is constant
         DataLoader.init();
@@ -115,7 +130,7 @@ public class BarOptimizer {
             throw new IllegalArgumentException("worker + cache is too deep");
         }
 
-        DataLoader.precalculateCache();
+        DataLoader.precalculateCache(allowDuplicateDrinks);
 
         final CompletionService<Stats> cs = new ExecutorCompletionService<>(Executors.newWorkStealingPool());
 
@@ -151,7 +166,7 @@ public class BarOptimizer {
 
         consumer.start();
 
-        ComboGenerator generator = new ComboGenerator(WORKER_DEPTH, new IndexListCombo(START_FROM));
+        ComboGenerator generator = new ComboGenerator(WORKER_DEPTH, new IndexListCombo(START_FROM), allowDuplicateDrinks);
         Combo prefix = generator.next();
         String lastProcessed = "";
         try {
