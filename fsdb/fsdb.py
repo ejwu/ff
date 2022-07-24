@@ -31,7 +31,7 @@ BUFF_TYPES = {
     "49": "ATK_ISD_CHARGE", "50": "ATK_HEAL_CHARGE",
     "51": "ATK_ENERGY_CHARGE", "52": "IMMUNE_ATTACK_PHYSICAL", "53": "IMMUNE_SKILL_PHYSICAL",
     "54": "IMMUNE_ATTACK_HEAL", "55": "IMMUNE_SKILL_HEAL",
-    "56": " IMMUNE_HEAL", "57": "GET_DAMAGE_ATTACK", "58": "GET_DAMAGE_SKILL", "59": "GET_DAMAGE_PHYSICAL",
+    "56": "IMMUNE_HEAL", "57": "GET_DAMAGE_ATTACK", "58": "GET_DAMAGE_SKILL", "59": "GET_DAMAGE_PHYSICAL",
     "60": "CAUSE_DAMAGE_ATTACK",
     "61": "CAUSE_DAMAGE_SKILL", "62": "CAUSE_DAMAGE_PHYSICAL",
     "111": "CHANGE_SKILL_TRIGGER", "112": "CHANGE_PP",
@@ -52,7 +52,7 @@ SEEK_SORT_RULES = {
 
 #ConfigSeekTargetRule
 TARGET_TYPES = {
-    "1": "T_OBJ_SELF", "2": "T_OBJ_ENEMY", "3": "T_OBJ_FRIEND", "4": "T_OBJ_ALL"}
+    "1": "T_OBJ_SELF", "2": "T_OBJ_ENEMY", "3": "T_OBJ_FRIEND", "4": "T_OBJ_ALL", "5": "T_OBJ_FRIEND_TANK", "6": "T_OBJ_FRIEND_MELEE", "7": "T_OBJ_FRIEND_REMOTE", "8": "T_OBJ_FRIEND_HEALER", "9": "T_OBJ_ENEMY_TANK", "10": "T_OBJ_ENEMY_MELEE", "11": "T_OBJ_ENEMY_REMOTE", "12": "T_OBJ_ENEMY_HEALER"}
 
 # Just by inspection
 TOGI_TYPES = {
@@ -202,6 +202,10 @@ def parse_artifacts():
     all_artifacts = json.load(open(ARTIFACT_MAPPING_FILE))
     skill_groups = json.load(open(ARTIFACT_SKILL_GROUP_FILE))
     for fsid in all_artifacts.keys():
+        if fsid == "200028":
+            print("skipping Moon Cake because something's gone wrong in the mappings")
+            continue
+        
         artifact_map = all_artifacts[fsid]
 
         # There seems to be an explicit mapping in cardArtifactGemstoneSkill.json as well.
@@ -267,12 +271,15 @@ def assert_files_exist():
         sys.exit(f"Can't find gemstoneSkillGroup.json.pretty at {ARTIFACT_SKILL_GROUP_FILE}")
     
 args = parse_args()
+#path = Path(args.dir) / "com.egg.foodandroid" / "files" / "res_sub" / "conf" / "en-us"
+# Based on ankimo event, this is the path shown in game
 path = Path(args.dir) / "com.egg.foodandroid" / "files" / "publish" / "conf" / "en-us"
 FS_FILE = path / "card" / "card.json.pretty"
 SKILLS_FILE = path / "card" / "skill.json.pretty"
 MONSTER_FILE = path / "monster" / "monster.json.pretty"
 
-ARTIFACT_PATH = path / "artifact"
+# Artifacts may only exist here?
+ARTIFACT_PATH = Path(args.dir) / "com.egg.foodandroid" / "files" / "res_sub" / "conf" / "en-us" / "artifact"
 # This appears to be the togi map for every FS
 ARTIFACT_MAPPING_FILE = ARTIFACT_PATH / "talentPoint.json.pretty"
 # Togi map refers to a skill group, which maps to individual skills for all 10 togi levels
