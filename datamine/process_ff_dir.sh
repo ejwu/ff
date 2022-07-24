@@ -31,7 +31,7 @@ process_lua() {
         # The ^ anchor doesn't work for lib/libcocos2dlua.so
         if [[ $(head -c6 $file) = doboyu ]]; then
             echo $file
-            /home/ejwu/src/xxtea/decode.py $file > /dev/null
+            /home/ejwu/src/ff/datamine/decode.py $file > /dev/null
 
             if [[ ! -f $file-unxxtea ]]; then
                 echo $file-unxxtea does not exist
@@ -39,7 +39,7 @@ process_lua() {
             else
                 if [[ $file == *lua ]]; then
                     # Overwrite back into the original file
-                    java -jar /home/ejwu/src/unluac/bin/unluac.jar $file-unxxtea > $file-unlua
+                    java -jar /home/ejwu/src/ff/datamine/unluac/bin/unluac.jar $file-unxxtea > $file-unlua
                     rm $file-unxxtea
                     if [[ ! -f $file-unlua ]]; then
                         echo $file-unlua does not exist
@@ -61,7 +61,7 @@ process_data() {
         # The ^ anchor doesn't work for lib/libcocos2dlua.so
         if [[ $(head -c10 $file) = doboyugame ]]; then
             echo $file
-            /home/ejwu/src/xxtea/decode.py $file > /dev/null
+            /home/ejwu/src/ff/datamine/decode.py $file > /dev/null
 
             if [[ -f $file-unxxtea ]]; then
                 mv $file-unxxtea $file
@@ -103,27 +103,27 @@ unpack_textures() {
         echo $file
         pvr=${file%.ccz}
         prefix=${file%.pvr.ccz}
-        dotnet run $prefix --project ~/cczp/DecryptCocos2dAsset/DecryptCocos2dAsset
+        dotnet run $prefix --project /home/ejwu/src/ff/datamine/cczp/DecryptCocos2dAsset
         if [ $? -ne 0 ]; then
             echo unccz $file failed from .NET >> $LOG
             errors=$errors"\nunccz $file failed from .NET"
         else
             if [ -f $pvr ]; then
                 rm $file
-                TexturePacker $pvr --data $prefix --algorithm Basic --no-trim --png-opt-level 0 --disable-auto-alias --extrude 0 > /dev/null
-                if [ $? -ne 0 ]; then
-                    echo failed to unpack texture $pvr
-                    exit 1
-                else
-                    rm $pvr
-                    if [ -f $prefix ]; then
+#                TexturePacker $pvr --data $prefix --algorithm Basic --no-trim --png-opt-level 0 --disable-auto-alias --extrude 0 > /dev/null
+#                if [ $? -ne 0 ]; then
+#                    echo failed to unpack texture $pvr
+#                    exit 1
+#                else
+#                    rm $pvr
+#                    if [ -f $prefix ]; then
                         # This line changes every time a .pvr is unpacked, making the diffs unhelpful
-                        sed '/\$TexturePacker\:SmartUpdate/d' -i $prefix
-                    fi
-                fi                    
+#                        sed '/\$TexturePacker\:SmartUpdate/d' -i $prefix
+#                    fi
+#                fi                    
             else
                 echo unccz $file failed to generate $pvr
-                exit 1
+#                exit 1
             fi
         fi
 
