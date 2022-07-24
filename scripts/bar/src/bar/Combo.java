@@ -4,6 +4,10 @@ import java.util.List;
 
 public interface Combo {
 
+    /**
+     * Merge another combo with this combo.
+     * @return A new combo including all the drinks from both combos
+     */
     Combo mergeWith(Combo other);
 
     // Get the minimum index of a drink set
@@ -19,6 +23,9 @@ public interface Combo {
 
     String toIndexString();
 
+    /**
+     * @return The indices of the drinks in descending order
+     */
     List<Integer> toIndices();
 
     String toNames();

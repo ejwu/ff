@@ -7,7 +7,6 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
@@ -25,12 +24,12 @@ public class BarOptimizer {
     @Parameter(names={"--cacheDepth"})
     int cacheDepth = 6;
     @Parameter(names={"--workerDepth"})
-    int workerDepth = 7;
+    int workerDepth = 8;
     @Parameter(names={"--allowDuplicateDrinks"})
     boolean allowDuplicateDrinks = true;
 
 
-    public static final ImmutableList<Integer> START_FROM = ImmutableList.of();
+    public static final ImmutableList<Integer> START_FROM = ImmutableList.of(40);
 
     public static void main(String... argv) {
         BarOptimizer barOptimizer = new BarOptimizer();
@@ -58,14 +57,13 @@ public class BarOptimizer {
         Combo partialAtCacheLevel = generator.next();
         while (partialAtCacheLevel != null) {
             for (Integer cachePrefix : DataLoader.TREE_CACHE.getKeys()) {
-                int treeCount = 0;
                 if (partialAtCacheLevel.getMin() >= cachePrefix) {
                     Iterator<Combo> it = DataLoader.TREE_CACHE.getSubtree(cachePrefix);
                     while (it.hasNext()) {
-                        treeCount++;
-                        Combo toAdd = it.next();
-                        Combo toAdd2 = new IndexListCombo(ImmutableList.<Integer>builder().add(cachePrefix).addAll(toAdd.toIndices()).build());
-                        Combo combined = partialAtCacheLevel.mergeWith(toAdd2);
+                        Combo combined = partialAtCacheLevel.mergeWith(
+                                new IndexListCombo(ImmutableList.<Integer>builder()
+                                        .add(cachePrefix)
+                                        .addAll(it.next().toIndices()).build()));
                         if (combined.toIndices().size() != MAX_DRINKS) {
                             throw new IllegalStateException();
                         }
@@ -106,6 +104,24 @@ public class BarOptimizer {
             }
             lastIndex = index;
         }
+        return false;
+    }
+
+    private boolean shouldSkip(Combo combo, ImmutableList<Integer> threshold) {
+        int position = 0;
+        for (Integer drinkIndex : combo.toIndices()) {
+            // Threshold not specified to this level
+            if (threshold.size() <= position) {
+                return false;
+            }
+            // Current drink comes before the matching leveled drink in the threshold
+            if (drinkIndex < threshold.get(position)) {
+                return true;
+            }
+            position++;
+        }
+
+        // No reason to skip?
         return false;
     }
 
@@ -153,7 +169,7 @@ public class BarOptimizer {
                     if (numProcessed.longValue() % 100000 == 0) {
                         System.out.println(stats);
                         System.out.println(LocalDateTime.now());
-                        System.out.println("%,d jobs processed, %,d empty jobs, %,d combos processed, %,d submitted".formatted(numProcessed.longValue(), empty, stats.numProcessed, jobCount.longValue()));
+                        System.out.println("%,d jobs processed, %,d empty jobs, %,d combos processed, %,d submitted, %d jobs processed/minute, %d combos processed/minute".formatted(numProcessed.longValue(), empty, stats.numProcessed, jobCount.longValue(), numProcessed.longValue() / sw.elapsed(TimeUnit.MINUTES), stats.numProcessed / sw.elapsed(TimeUnit.MINUTES)));
                     }
                 } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
@@ -168,6 +184,18 @@ public class BarOptimizer {
 
         ComboGenerator generator = new ComboGenerator(WORKER_DEPTH, new IndexListCombo(START_FROM), allowDuplicateDrinks);
         Combo prefix = generator.next();
+        long skipped = 0;
+        if (!START_FROM.isEmpty()) {
+            System.out.println("skipping from " + START_FROM);
+            Stopwatch skipwatch = Stopwatch.createStarted();
+            while (shouldSkip(prefix, START_FROM)) {
+                prefix = generator.next();
+                skipped++;
+            }
+            System.out.println(skipped);
+            System.out.println(skipwatch.elapsed(TimeUnit.SECONDS));
+            System.out.println("starting from " + prefix);
+        }
         String lastProcessed = "";
         try {
             while (prefix != null) {

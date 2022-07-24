@@ -4,13 +4,15 @@ import bar.DataLoader.FormulaMaterial;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * A combo representation of a list of drinks according to their indices in descending order.
+ */
 public class IndexListCombo extends AbstractCombo implements Combo {
     // A list of indices in descending order
     final ImmutableList<Integer> drinks;
