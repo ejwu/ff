@@ -1,0 +1,7 @@
+__pycache__
+bar/.idea
+bar/__pycache__
+bar/bar.iml
+bar/out
+bar/skip
+bar/src/bar/*.log
