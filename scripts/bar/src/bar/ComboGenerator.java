@@ -9,9 +9,13 @@ import java.util.*;
  * ComboGenerators with 2 or more drinks remaining lazily recursively generate more ComboGenerators with n-1 drinks remaining to avoid blowing out all the memory.
  */
 public class ComboGenerator implements Iterator<Combo> {
+    public static final int RUN_FULLY = -1;
+
     private final int numDrinksRemaining;
     private final Combo drinksMade;
     private final boolean allowDuplicateDrinks;
+    // Don't generate any combos using drinks with indices higher than this.
+    private final int lastDrinkIndex;
 
     // Internal queue of fully constructed Combos to be yielded
     private final Deque<Combo> toYield = new ArrayDeque<>();
@@ -28,7 +32,7 @@ public class ComboGenerator implements Iterator<Combo> {
     private Combo nextToReturn = null;
 
     @SuppressWarnings("ConstantConditions")
-    public ComboGenerator(int numDrinksRemaining, Combo drinksMade, boolean allowDuplicateDrinks) {
+    public ComboGenerator(int numDrinksRemaining, Combo drinksMade, boolean allowDuplicateDrinks, int lastDrinkIndex) {
         if (numDrinksRemaining == 0) {
             throw new IllegalStateException();
         }
@@ -36,11 +40,15 @@ public class ComboGenerator implements Iterator<Combo> {
         this.numDrinksRemaining = numDrinksRemaining;
         this.drinksMade = drinksMade;
         this.allowDuplicateDrinks = allowDuplicateDrinks;
+        this.lastDrinkIndex = lastDrinkIndex;
 
         // Fully materialize this generator if it's at the final level and only creates combos instead of generators
         if (numDrinksRemaining == 1) {
             for (Drink toAdd : DataLoader.DRINKS_BY_LEVEL) {
                 int toAddIndex = DataLoader.INDEX_DRINK.inverse().get(toAdd);
+                if (lastDrinkIndex != RUN_FULLY && toAddIndex > lastDrinkIndex) {
+                    continue;
+                }
                 // TODO: avoiding duplicates could be faster than this hack
                 if (!allowDuplicateDrinks && drinksMade.toIndices().contains(toAddIndex)) {
                     continue;
@@ -128,6 +136,9 @@ public class ComboGenerator implements Iterator<Combo> {
         for (Drink toAdd : DataLoader.DRINKS_BY_LEVEL) {
             int toAddIndex = DataLoader.INDEX_DRINK.inverse().get(toAdd);
             if (toAddIndex <= drinksMade.getMin()) {
+                if (lastDrinkIndex != RUN_FULLY && toAddIndex > lastDrinkIndex) {
+                    continue;
+                }
                 // TODO: avoiding duplicates could be faster than this hack
                 if (!allowDuplicateDrinks && drinksMade.toIndices().contains(toAddIndex)) {
                     continue;
@@ -135,7 +146,7 @@ public class ComboGenerator implements Iterator<Combo> {
                 Combo potential = drinksMade.plus(toAddIndex);
                 if (potential.canBeMade()) {
 //                    System.out.println("can make generator " + potential.toIndexString());
-                    ComboGenerator generator = new ComboGenerator(numDrinksRemaining - 1, potential, allowDuplicateDrinks);
+                    ComboGenerator generator = new ComboGenerator(numDrinksRemaining - 1, potential, allowDuplicateDrinks, lastDrinkIndex);
                     // Prune some generators early if possible
                     // TODO: Precaching next value means this will dive all the way down, which could be very expensive
                     // TODO: maybe only do this for the first one?

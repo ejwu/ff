@@ -20,16 +20,21 @@ import java.util.concurrent.atomic.AtomicLong;
 @Parameters(separators="=")
 public class BarOptimizer {
     @Parameter(names={"--barLevel"})
-    public int barLevel = 17;
+    public int barLevel = 18;
     @Parameter(names={"--cacheDepth"})
-    int cacheDepth = 6;
+    int cacheDepth = 7;
     @Parameter(names={"--workerDepth"})
     int workerDepth = 8;
     @Parameter(names={"--allowDuplicateDrinks"})
     boolean allowDuplicateDrinks = true;
+    // Stop running after processing all combos using drinks <= this index.
+    // This allows reducing cache size (and increasing cache depth).
+    // -1 to run to completion (ComboGenerator.RUN_FULLY)
+    @Parameter(names={"--runUntil"})
+    int lastDrinkIndex = -1;
 
 
-    public static final ImmutableList<Integer> START_FROM = ImmutableList.of(40);
+    public static final ImmutableList<Integer> START_FROM = ImmutableList.of();
 
     public static void main(String... argv) {
         BarOptimizer barOptimizer = new BarOptimizer();
@@ -49,7 +54,7 @@ public class BarOptimizer {
     // 31, 31, 26, 26, 24, 18, 13, 13, 8, 8, 6, 4, 3, 1, 1
 
     Stats getAllCompletions(Combo prefix) {
-        ComboGenerator generator = new ComboGenerator(MAX_DRINKS - WORKER_DEPTH - CACHE_DEPTH, prefix, allowDuplicateDrinks);
+        ComboGenerator generator = new ComboGenerator(MAX_DRINKS - WORKER_DEPTH - CACHE_DEPTH, prefix, allowDuplicateDrinks, lastDrinkIndex);
         Stats stats = new Stats();
 
 //        Combo lastProcessed = prefix;
@@ -146,7 +151,7 @@ public class BarOptimizer {
             throw new IllegalArgumentException("worker + cache is too deep");
         }
 
-        DataLoader.precalculateCache(allowDuplicateDrinks);
+        DataLoader.precalculateCache(allowDuplicateDrinks, lastDrinkIndex);
 
         final CompletionService<Stats> cs = new ExecutorCompletionService<>(Executors.newWorkStealingPool());
 
@@ -182,7 +187,7 @@ public class BarOptimizer {
 
         consumer.start();
 
-        ComboGenerator generator = new ComboGenerator(WORKER_DEPTH, new IndexListCombo(START_FROM), allowDuplicateDrinks);
+        ComboGenerator generator = new ComboGenerator(WORKER_DEPTH, new IndexListCombo(START_FROM), allowDuplicateDrinks, lastDrinkIndex);
         Combo prefix = generator.next();
         long skipped = 0;
         if (!START_FROM.isEmpty()) {
