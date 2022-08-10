@@ -142,10 +142,9 @@ public class DataLoader {
         // This is dumb, but the market sells 4 for 60, and also 6 for 90.
         // Use 10 for 150 as a placeholder and fix the actual cost later
         baseShop.put("Soda", new MaterialShop(150, 10, 17));
+        baseShop.put("Benedictine", new MaterialShop(150, 10, 18));
 
         // Assumptions for the future
-        // other
-        baseShop.put("Benedictine", new MaterialShop(40, 4, 18));
         // other
         baseShop.put("Fruit Juice", new MaterialShop(40, 4, 19));
         // other
