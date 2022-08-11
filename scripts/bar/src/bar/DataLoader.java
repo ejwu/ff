@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +68,16 @@ public class DataLoader {
         }
         System.out.println("Tree entries: " + treeCache.getSize());
         System.out.println(treeCache.getSlowSize());
+        for (int key : treeCache.getKeys()) {
+            int count = 0;
+            Iterator<Combo> i = treeCache.getSubtree(key);
+            Combo cacheCombo = i.next();
+            while (cacheCombo != null) {
+                count++;
+                cacheCombo = i.next();
+            }
+            System.out.println(key + ": " + count);
+        }
         TREE_CACHE = treeCache;
         System.out.println(sw.elapsed(TimeUnit.SECONDS) + " seconds to create cache");
     }

@@ -33,6 +33,13 @@ public class BarOptimizer {
     @Parameter(names={"--runUntil"})
     int lastDrinkIndex = -1;
 
+    private void setTempValues(int barLevel, int cacheDepth, int workerDepth, boolean allowDuplicateDrinks, int lastDrinkIndex) {
+        this.barLevel = barLevel;
+        this.cacheDepth = cacheDepth;
+        this.workerDepth = workerDepth;
+        this.allowDuplicateDrinks = allowDuplicateDrinks;
+        this.lastDrinkIndex = lastDrinkIndex;
+    }
 
     public static final ImmutableList<Integer> START_FROM = ImmutableList.of();
 
@@ -132,6 +139,8 @@ public class BarOptimizer {
 
     @SuppressWarnings("ConstantConditions")
     public void run() {
+//        setTempValues(4, 3, 1, true, 15);
+
         Stopwatch sw = Stopwatch.createStarted();
         // This needs to happen before any reference to DataLoader is made
         BAR_LEVEL = barLevel;
