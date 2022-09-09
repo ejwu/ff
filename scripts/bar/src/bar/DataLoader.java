@@ -13,6 +13,7 @@ import org.json.simple.parser.ParseException;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -62,7 +63,12 @@ public class DataLoader {
 
         TreeCache treeCache = new TreeCache(BarOptimizer.CACHE_DEPTH);
 
+        int currentKey = -1;
         while (combo != null) {
+            if (combo.toIndices().get(0) > currentKey) {
+                currentKey = combo.toIndices().get(0);
+                System.out.println(currentKey + ": " + LocalDateTime.now());
+            }
             treeCache.addCombo(combo);
             combo = generator.next();
         }
@@ -137,6 +143,7 @@ public class DataLoader {
         // This is dumb, but the market sells 4 for 60, and also 6 for 90.
         // Use 10 for 150 as a placeholder and fix the actual cost later
         baseShop.put("Ginger Beer", new MaterialShop(150, 10, 16));
+        baseShop.put("Benedictine", new MaterialShop(150, 10, 18));
 
         // Other
         baseShop.put("Cola", new MaterialShop(20, 4, 1));
@@ -153,11 +160,9 @@ public class DataLoader {
         // This is dumb, but the market sells 4 for 60, and also 6 for 90.
         // Use 10 for 150 as a placeholder and fix the actual cost later
         baseShop.put("Soda", new MaterialShop(150, 10, 17));
-        baseShop.put("Benedictine", new MaterialShop(150, 10, 18));
+        baseShop.put("Fruit Juice", new MaterialShop(150, 10, 19));
 
         // Assumptions for the future
-        // other
-        baseShop.put("Fruit Juice", new MaterialShop(40, 4, 19));
         // other
         baseShop.put("Hot Sauce", new MaterialShop(40, 4, 20));
         // other
