@@ -8,6 +8,7 @@ import com.google.common.collect.ImmutableList;
 
 import java.time.LocalDateTime;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
@@ -20,13 +21,13 @@ import java.util.concurrent.atomic.AtomicLong;
 @Parameters(separators="=")
 public class BarOptimizer {
     @Parameter(names={"--barLevel"})
-    public int barLevel = 18;
+    public int barLevel = 19;
     @Parameter(names={"--cacheDepth"})
-    int cacheDepth = 7;
+    int cacheDepth = 6;
     @Parameter(names={"--workerDepth"})
     int workerDepth = 8;
     @Parameter(names={"--allowDuplicateDrinks"})
-    boolean allowDuplicateDrinks = true;
+    boolean allowDuplicateDrinks = false;
     // Stop running after processing all combos using drinks <= this index.
     // This allows reducing cache size (and increasing cache depth).
     // -1 to run to completion (ComboGenerator.RUN_FULLY)
@@ -139,7 +140,8 @@ public class BarOptimizer {
 
     @SuppressWarnings("ConstantConditions")
     public void run() {
-//        setTempValues(4, 3, 1, true, 15);
+        // barLevel, cacheLevel, workerDepth, allowDuplicateDrinks, runUntil
+//        setTempValues(6, 5, 2, false, -1);
 
         Stopwatch sw = Stopwatch.createStarted();
         // This needs to happen before any reference to DataLoader is made
@@ -211,9 +213,16 @@ public class BarOptimizer {
             System.out.println("starting from " + prefix);
         }
         String lastProcessed = "";
+        long skippedNoDupe = 0;
         try {
             while (prefix != null) {
                 while (prefix != null && jobCount.longValue() - numProcessed.longValue() < 10000) {
+                    if (!allowDuplicateDrinks && prefix.toIndices().get(prefix.toIndices().size() - 1) < MAX_DRINKS - prefix.toIndices().size()) {
+//                        System.out.println("Skipping " + prefix.toIndices() + " because last index smaller than " + (MAX_DRINKS - prefix.toIndices().size()));
+                        skippedNoDupe++;
+                        prefix = generator.next();
+                        continue;
+                    }
                     int batchCount = 0;
                     while (prefix != null && batchCount < 20000) {
                         // effectively final for use as lambda argument
@@ -231,6 +240,9 @@ public class BarOptimizer {
                     if (!noChange) {
                         System.out.println(jobCount.longValue() + " " + numProcessed.longValue());
                         System.out.println(jobCount.longValue() - numProcessed.longValue() + " excess jobs, done submitting for now: " + prefix.toIndexString());
+                        if (skippedNoDupe > 0) {
+                            System.out.println("Skipped submitting " + skippedNoDupe + " jobs with no chance of completion");
+                        }
                         Thread.sleep(1000);
                         System.out.println(jobCount.longValue() + " " + numProcessed.longValue());
                         System.out.println(jobCount.longValue() - numProcessed.longValue() + " excess jobs, maybe submitting more");
@@ -240,6 +252,7 @@ public class BarOptimizer {
                 }
             }
             doneSubmitting.set(true);
+            System.out.println(skippedNoDupe + " skipped jobs for no dupes");
         } catch (Exception e) {
             e.printStackTrace();
         }
