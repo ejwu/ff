@@ -164,9 +164,9 @@ public class DataLoader {
 
         // Assumptions for the future
         // other
-        baseShop.put("Hot Sauce", new MaterialShop(40, 4, 20));
+        baseShop.put("Hot Sauce", new MaterialShop(150, 10, 20));
         // other
-        baseShop.put("Tomato Juice", new MaterialShop(40, 4, 20));
+        baseShop.put("Tomato Juice", new MaterialShop(150, 10, 20));
 
         // Clear out anything not available at the current level
         List<String> toRemove = new ArrayList<>();

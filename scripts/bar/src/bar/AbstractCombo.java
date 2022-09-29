@@ -26,14 +26,18 @@ public abstract class AbstractCombo implements Combo {
             .add("Ginger Beer")
             .add("Soda")
             .add("Benedictine")
-            .add("Fruit Juice").build();
+            .add("Fruit Juice")
+            .add("Hot Sauce")
+            .add("Tomato Juice").build();
 
     private static final ImmutableSet<Integer> MULTI_MAT_IDS = ImmutableSet.<Integer>builder()
             .add(410210)
             .add(410211)
             .add(410312)
             .add(410212)
-            .add(410304).build();
+            .add(410304)
+            .add(410315)
+            .add(410314).build();
 
     abstract Map<Integer, Integer> getMaterialsUsed();
 
