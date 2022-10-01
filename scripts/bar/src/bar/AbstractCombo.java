@@ -1,6 +1,7 @@
 package bar;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 import java.util.ArrayList;
@@ -155,6 +156,30 @@ public abstract class AbstractCombo implements Combo {
             return 0;
         }
         return getOverall() / cost;
+    }
+
+    @Override
+    public int getSize() {
+        return toIndices().size();
+    }
+
+    @Override
+    public boolean isBefore(Combo other) {
+        int position = 0;
+        for (Integer drinkIndex : this.toIndices()) {
+            // Threshold not specified to this level
+            if (other.getSize() <= position) {
+                return false;
+            }
+            // Current drink comes before the matching leveled drink in the threshold
+            if (drinkIndex < other.toIndices().get(position)) {
+                return true;
+            }
+            position++;
+        }
+
+        // No reason to skip?
+        return false;
     }
 
     @Override

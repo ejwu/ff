@@ -21,11 +21,11 @@ import java.util.concurrent.atomic.AtomicLong;
 @Parameters(separators="=")
 public class BarOptimizer {
     @Parameter(names={"--barLevel"})
-    public int barLevel = 19;
+    public int barLevel = 20;
     @Parameter(names={"--cacheDepth"})
-    int cacheDepth = 6;
+    int cacheDepth = 7;
     @Parameter(names={"--workerDepth"})
-    int workerDepth = 8;
+    int workerDepth = 9;
     @Parameter(names={"--allowDuplicateDrinks"})
     boolean allowDuplicateDrinks = false;
     // Stop running after processing all combos using drinks <= this index.
@@ -34,15 +34,17 @@ public class BarOptimizer {
     @Parameter(names={"--runUntil"})
     int lastDrinkIndex = -1;
 
-    private void setTempValues(int barLevel, int cacheDepth, int workerDepth, boolean allowDuplicateDrinks, int lastDrinkIndex) {
+    public static Combo START_FROM = new IndexListCombo(ImmutableList.of());
+
+    private void setTempValues(int barLevel, int cacheDepth, int workerDepth, boolean allowDuplicateDrinks, List<Integer> startFrom, int lastDrinkIndex) {
         this.barLevel = barLevel;
         this.cacheDepth = cacheDepth;
         this.workerDepth = workerDepth;
         this.allowDuplicateDrinks = allowDuplicateDrinks;
+        this.START_FROM = new IndexListCombo(ImmutableList.copyOf(startFrom));
         this.lastDrinkIndex = lastDrinkIndex;
     }
 
-    public static final ImmutableList<Integer> START_FROM = ImmutableList.of();
 
     public static void main(String... argv) {
         BarOptimizer barOptimizer = new BarOptimizer();
@@ -62,7 +64,8 @@ public class BarOptimizer {
     // 31, 31, 26, 26, 24, 18, 13, 13, 8, 8, 6, 4, 3, 1, 1
 
     Stats getAllCompletions(Combo prefix) {
-        ComboGenerator generator = new ComboGenerator(MAX_DRINKS - WORKER_DEPTH - CACHE_DEPTH, prefix, allowDuplicateDrinks, lastDrinkIndex);
+//        System.out.println("Generating with " + (MAX_DRINKS - WORKER_DEPTH - CACHE_DEPTH) + " " + prefix.toIndices() + " " + allowDuplicateDrinks + " " + lastDrinkIndex);
+        ComboGenerator generator = new ComboGenerator(MAX_DRINKS - WORKER_DEPTH - CACHE_DEPTH, prefix, allowDuplicateDrinks, START_FROM, lastDrinkIndex);
         Stats stats = new Stats();
 
 //        Combo lastProcessed = prefix;
@@ -73,13 +76,15 @@ public class BarOptimizer {
                 if (partialAtCacheLevel.getMin() >= cachePrefix) {
                     Iterator<Combo> it = DataLoader.TREE_CACHE.getSubtree(cachePrefix);
                     while (it.hasNext()) {
+                        System.out.printf("", partialAtCacheLevel.toIndices().size());
                         Combo combined = partialAtCacheLevel.mergeWith(
                                 new IndexListCombo(ImmutableList.<Integer>builder()
                                         .add(cachePrefix)
                                         .addAll(it.next().toIndices()).build()));
                         if (combined.toIndices().size() != MAX_DRINKS) {
-                            throw new IllegalStateException();
+                            throw new IllegalStateException(combined.toIndexString() + " doesn't have " + MAX_DRINKS + " drinks");
                         }
+                        // TODO: optimize this, should be able to do nodupes without extra checks
                         if (combined.canBeMade() && (allowDuplicateDrinks || !hasDupes(combined))) {
                             stats.offerAll(combined);
                         }
@@ -120,28 +125,10 @@ public class BarOptimizer {
         return false;
     }
 
-    private boolean shouldSkip(Combo combo, ImmutableList<Integer> threshold) {
-        int position = 0;
-        for (Integer drinkIndex : combo.toIndices()) {
-            // Threshold not specified to this level
-            if (threshold.size() <= position) {
-                return false;
-            }
-            // Current drink comes before the matching leveled drink in the threshold
-            if (drinkIndex < threshold.get(position)) {
-                return true;
-            }
-            position++;
-        }
-
-        // No reason to skip?
-        return false;
-    }
-
     @SuppressWarnings("ConstantConditions")
     public void run() {
         // barLevel, cacheLevel, workerDepth, allowDuplicateDrinks, runUntil
-//        setTempValues(6, 5, 2, false, -1);
+//        setTempValues(7, 6, 3, true, List.of(), -1);
 
         Stopwatch sw = Stopwatch.createStarted();
         // This needs to happen before any reference to DataLoader is made
@@ -150,8 +137,8 @@ public class BarOptimizer {
         WORKER_DEPTH = workerDepth;
 
         System.out.println("Started at: " + LocalDateTime.now());
-        System.out.printf("Bar level: %d, %d max drinks, %d workerDepth, cacheDepth: %d, allowDuplicateDrinks: %b%n",
-                barLevel, DataLoader.MAX_DRINKS_BY_BAR_LEVEL.get(barLevel), workerDepth, cacheDepth, allowDuplicateDrinks);
+        System.out.printf("Bar level: %d, %d max drinks, %d workerDepth, cacheDepth: %d, allowDuplicateDrinks: %b, startFrom: %s, runUntil: %s%n",
+                barLevel, DataLoader.MAX_DRINKS_BY_BAR_LEVEL.get(barLevel), workerDepth, cacheDepth, allowDuplicateDrinks, START_FROM, lastDrinkIndex);
 
         // Some contortions here to pretend that an argument is constant
         DataLoader.init();
@@ -198,15 +185,18 @@ public class BarOptimizer {
 
         consumer.start();
 
-        ComboGenerator generator = new ComboGenerator(WORKER_DEPTH, new IndexListCombo(START_FROM), allowDuplicateDrinks, lastDrinkIndex);
+        ComboGenerator generator = new ComboGenerator(WORKER_DEPTH, new IndexListCombo(), allowDuplicateDrinks, START_FROM, lastDrinkIndex);
         Combo prefix = generator.next();
         long skipped = 0;
-        if (!START_FROM.isEmpty()) {
+        if (START_FROM.getSize() > 0) {
             System.out.println("skipping from " + START_FROM);
             Stopwatch skipwatch = Stopwatch.createStarted();
-            while (shouldSkip(prefix, START_FROM)) {
+            while (prefix.isBefore(START_FROM)) {
                 prefix = generator.next();
                 skipped++;
+            }
+            if (skipped > 0) {
+                throw new IllegalStateException("Shouldn't have skipped anything");
             }
             System.out.println(skipped);
             System.out.println(skipwatch.elapsed(TimeUnit.SECONDS));

@@ -45,4 +45,8 @@ public interface Combo {
     double getOverall();
 
     double getOverallEfficiency();
+
+    int getSize();
+
+    boolean isBefore(Combo other);
 }

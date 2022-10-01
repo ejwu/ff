@@ -145,6 +145,11 @@ public class IndexListCombo extends AbstractCombo implements Combo {
     }
 
     @Override
+    public int getSize() {
+        return drinks.size();
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

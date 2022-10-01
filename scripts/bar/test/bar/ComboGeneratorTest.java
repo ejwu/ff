@@ -3,6 +3,8 @@ package bar;
 import com.google.common.collect.ImmutableList;
 import org.junit.Test;
 
+import java.util.List;
+
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
@@ -14,7 +16,8 @@ public class ComboGeneratorTest {
     public void testThree() {
         BarOptimizer.initForTest(4);
         DataLoader.init();
-        ComboGenerator generator = new ComboGenerator(2, new IndexListCombo(ImmutableList.of(21)), true, ComboGenerator.RUN_FULLY);
+        // All combos starting with 21 followed by 2 more drinks, with dupes
+        ComboGenerator generator = new ComboGenerator(2, new IndexListCombo(ImmutableList.of(21)), true, ComboGenerator.RUN_FROM_START, ComboGenerator.RUN_FULLY);
         Combo combo = generator.next();
         boolean hasSeen22 = false;
         int count = 0;
@@ -35,7 +38,8 @@ public class ComboGeneratorTest {
     public void testNoDupes() {
         BarOptimizer.initForTest(4);
         DataLoader.init();
-        ComboGenerator generator = new ComboGenerator(2, new IndexListCombo(ImmutableList.of(21)), false, ComboGenerator.RUN_FULLY);
+        // All combos starting with 21 followed by 2 more drinks, without dupes
+        ComboGenerator generator = new ComboGenerator(2, new IndexListCombo(ImmutableList.of(21)), false, ComboGenerator.RUN_FROM_START, ComboGenerator.RUN_FULLY);
         Combo combo = generator.next();
         int count = 0;
         // First non-dupe
@@ -61,12 +65,13 @@ public class ComboGeneratorTest {
         int lastIndex = 16;
         BarOptimizer.initForTest(4);
         DataLoader.init();
-        ComboGenerator generator = new ComboGenerator(2, new IndexListCombo(), true, lastIndex);
+        ComboGenerator generator = new ComboGenerator(2, new IndexListCombo(), true, ComboGenerator.RUN_FROM_START, lastIndex);
         Combo combo = generator.next();
         int count = 0;
         boolean hasSeenNextIndex = false;
         boolean hasSeenLastIndex = false;
         while (combo != null) {
+            assertEquals(2, combo.getSize());
             if (combo.toIndices().get(0) == lastIndex) {
                 hasSeenLastIndex = true;
             }
@@ -90,7 +95,7 @@ public class ComboGeneratorTest {
         int lastIndex = 16;
         BarOptimizer.initForTest(4);
         DataLoader.init();
-        ComboGenerator generator = new ComboGenerator(2, new IndexListCombo(), false, lastIndex);
+        ComboGenerator generator = new ComboGenerator(2, new IndexListCombo(), false, ComboGenerator.RUN_FROM_START, lastIndex);
         Combo combo = generator.next();
         int count = 0;
         boolean hasSeenNextIndex = false;
@@ -113,4 +118,117 @@ public class ComboGeneratorTest {
         // No idea if this is actually the correct count, but at least we'll know if it changes.
         assertEquals(120, count);
     }
+
+    @Test
+    public void testStartFromNoDupes() {
+        int earliestIndex = 15;
+        int numDrinksRemaining = 2;
+        Combo startFrom = new IndexListCombo(ImmutableList.of(earliestIndex));
+        BarOptimizer.initForTest(4);
+        DataLoader.init();
+        ComboGenerator generator = new ComboGenerator(numDrinksRemaining, new IndexListCombo(), false, startFrom, ComboGenerator.RUN_FULLY);
+        Combo combo = generator.next();
+        int count = 0;
+        boolean indexTooEarly = false;
+        while (combo != null) {
+            if (combo.toIndices().get(0) < earliestIndex) {
+                indexTooEarly = true;
+            }
+            if (combo.getSize() != numDrinksRemaining) {
+                throw new IllegalStateException("Should be " + numDrinksRemaining + " drinks");
+            }
+            System.out.println(combo.toIndexString());
+            count++;
+            combo = generator.next();
+        }
+
+        assertFalse(indexTooEarly);
+        // No idea if this is actually the correct count, but at least we'll know if it changes.
+        assertEquals(145, count);
+    }
+
+    @Test
+    public void testSumsAddUpWithDupes() {
+        // Last drink is 22
+        BarOptimizer.initForTest(4);
+        DataLoader.init();
+        ComboGenerator generator = new ComboGenerator(4, new IndexListCombo(), true, ComboGenerator.RUN_FROM_START, ComboGenerator.RUN_FULLY);
+        Combo combo = generator.next();
+        int totalCount = 0;
+        while (combo != null) {
+            System.out.println(combo.toIndexString());
+            totalCount++;
+            combo = generator.next();
+        }
+        System.out.println(totalCount);
+        assertEquals(7062, totalCount);
+
+        int threshold = 14;
+        ComboGenerator first = new ComboGenerator(4, new IndexListCombo(), true, ComboGenerator.RUN_FROM_START, threshold);
+        combo = first.next();
+        int firstCount = 0;
+        while (combo != null) {
+            System.out.println(combo.toIndexString());
+            firstCount++;
+            combo = first.next();
+        }
+        System.out.println(firstCount);
+        assertEquals(455, firstCount);
+
+        ComboGenerator second = new ComboGenerator(4, new IndexListCombo(), true, new IndexListCombo(ImmutableList.of(threshold + 1)), ComboGenerator.RUN_FULLY);
+        combo = second.next();
+        int secondCount = 0;
+        while (combo != null) {
+            System.out.println(combo.toIndexString());
+            secondCount++;
+            combo = second.next();
+        }
+        System.out.println(secondCount);
+        assertEquals(6607, secondCount);
+
+        assertEquals(totalCount, firstCount + secondCount);
+    }
+
+    @Test
+    public void testSumsAddUpNoDupes() {
+        // Last drink is 22
+        BarOptimizer.initForTest(4);
+        DataLoader.init();
+        ComboGenerator generator = new ComboGenerator(4, new IndexListCombo(), false, ComboGenerator.RUN_FROM_START, ComboGenerator.RUN_FULLY);
+        Combo combo = generator.next();
+        int totalCount = 0;
+        while (combo != null) {
+            System.out.println(combo.toIndexString());
+            totalCount++;
+            combo = generator.next();
+        }
+        System.out.println(totalCount);
+        assertEquals(5493, totalCount);
+
+        int threshold = 14;
+        ComboGenerator first = new ComboGenerator(4, new IndexListCombo(), false, ComboGenerator.RUN_FROM_START, threshold);
+        combo = first.next();
+        int firstCount = 0;
+        while (combo != null) {
+            System.out.println(combo.toIndexString());
+            firstCount++;
+            combo = first.next();
+        }
+        System.out.println(firstCount);
+        assertEquals(411, firstCount);
+
+        ComboGenerator second = new ComboGenerator(4, new IndexListCombo(), false, new IndexListCombo(ImmutableList.of(threshold + 1)), ComboGenerator.RUN_FULLY);
+        combo = second.next();
+        int secondCount = 0;
+        while (combo != null) {
+            System.out.println(combo.toIndexString());
+            secondCount++;
+            combo = second.next();
+        }
+        System.out.println(secondCount);
+        assertEquals(5082, secondCount);
+
+        assertEquals(totalCount, firstCount + secondCount);
+    }
+
 }
