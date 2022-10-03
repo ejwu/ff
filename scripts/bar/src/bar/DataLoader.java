@@ -48,7 +48,8 @@ public class DataLoader {
         int index = 0;
         DRINKS_BY_LEVEL = ImmutableList.copyOf(getDrinksByLevel(BAR_LEVEL));
         for (Drink drink : DRINKS_BY_LEVEL) {
-            System.out.println(index + " " + drink.name() + " (" + drink.getMaterialListString() + ") " + drink.id());
+            System.out.printf("%2d %-20s: %2d fame, %3d tickets - (%s) %d%n",
+                    index, drink.name(), drink.fame(), drink.tickets(), drink.getMaterialListString(), drink.id());
             builder.put(index, drink);
             index++;
         }
@@ -68,7 +69,8 @@ public class DataLoader {
         while (combo != null) {
             if (combo.toIndices().get(0) > currentKey) {
                 if (currentKey >= 0) {
-                    System.out.println(currentKey + ": " + keyCount.getOrDefault(currentKey, 0) + " - " + LocalDateTime.now());
+                    System.out.printf("%2d: %8d - %s%n",
+                            currentKey, keyCount.getOrDefault(currentKey, 0), LocalDateTime.now());
                 }
                 currentKey = combo.toIndices().get(0);
             }
