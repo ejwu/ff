@@ -128,7 +128,7 @@ public class BarOptimizer {
     @SuppressWarnings("ConstantConditions")
     public void run() {
         // barLevel, cacheLevel, workerDepth, allowDuplicateDrinks, runUntil
-//        setTempValues(7, 6, 3, true, List.of(), -1);
+        setTempValues(14, 5, 3, true, List.of(), -1);
 
         Stopwatch sw = Stopwatch.createStarted();
         // This needs to happen before any reference to DataLoader is made
@@ -138,7 +138,7 @@ public class BarOptimizer {
 
         System.out.println("Started at: " + LocalDateTime.now());
         System.out.printf("Bar level: %d, %d max drinks, %d workerDepth, cacheDepth: %d, allowDuplicateDrinks: %b, startFrom: %s, runUntil: %s%n",
-                barLevel, DataLoader.MAX_DRINKS_BY_BAR_LEVEL.get(barLevel), workerDepth, cacheDepth, allowDuplicateDrinks, START_FROM, lastDrinkIndex);
+                barLevel, DataLoader.MAX_DRINKS_BY_BAR_LEVEL.get(barLevel), workerDepth, cacheDepth, allowDuplicateDrinks, START_FROM.toIndexString(), lastDrinkIndex);
 
         // Some contortions here to pretend that an argument is constant
         DataLoader.init();
@@ -172,7 +172,9 @@ public class BarOptimizer {
                     if (numProcessed.longValue() % 100000 == 0) {
                         System.out.println(stats);
                         System.out.println(LocalDateTime.now());
-                        System.out.println("%,d jobs processed, %,d empty jobs, %,d combos processed, %,d submitted, %d jobs processed/minute, %d combos processed/minute".formatted(numProcessed.longValue(), empty, stats.numProcessed, jobCount.longValue(), numProcessed.longValue() / sw.elapsed(TimeUnit.MINUTES), stats.numProcessed / sw.elapsed(TimeUnit.MINUTES)));
+                        long minutes = Math.max(1, sw.elapsed(TimeUnit.MINUTES));
+                        System.out.printf("%,d jobs processed, %,d empty jobs, %,d combos processed, %,d submitted, %d jobs processed/minute, %d combos processed/minute%n",
+                                numProcessed.longValue(), empty, stats.numProcessed, jobCount.longValue(), numProcessed.longValue() / minutes, stats.numProcessed / minutes);
                     }
                 } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();

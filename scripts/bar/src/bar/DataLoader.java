@@ -64,26 +64,21 @@ public class DataLoader {
         TreeCache treeCache = new TreeCache(BarOptimizer.CACHE_DEPTH);
 
         int currentKey = -1;
+        Map<Integer, Integer> keyCount = new HashMap<>();
         while (combo != null) {
             if (combo.toIndices().get(0) > currentKey) {
+                if (currentKey >= 0) {
+                    System.out.println(currentKey + ": " + keyCount.getOrDefault(currentKey, 0) + " - " + LocalDateTime.now());
+                }
                 currentKey = combo.toIndices().get(0);
-                System.out.println(currentKey + ": " + LocalDateTime.now());
             }
             treeCache.addCombo(combo);
+            keyCount.put(currentKey, keyCount.getOrDefault(currentKey, 0) + 1);
             combo = generator.next();
         }
+        System.out.println(currentKey + ": " + keyCount.getOrDefault(currentKey, 0) + " - " + LocalDateTime.now());
+
         System.out.println("Tree entries: " + treeCache.getSize());
-        System.out.println(treeCache.getSlowSize());
-        for (int key : treeCache.getKeys()) {
-            int count = 0;
-            Iterator<Combo> i = treeCache.getSubtree(key);
-            Combo cacheCombo = i.next();
-            while (cacheCombo != null) {
-                count++;
-                cacheCombo = i.next();
-            }
-            System.out.println(key + ": " + count);
-        }
         TREE_CACHE = treeCache;
         System.out.println(sw.elapsed(TimeUnit.SECONDS) + " seconds to create cache");
     }

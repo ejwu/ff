@@ -184,6 +184,9 @@ public abstract class AbstractCombo implements Combo {
 
     @Override
     public String toString() {
+        if (getSize() == 0) {
+            return "empty combo";
+        }
         StringBuilder sb = new StringBuilder();
         sb.append(toIndexString()).append("\n");
         sb.append(toNames()).append("\n");
