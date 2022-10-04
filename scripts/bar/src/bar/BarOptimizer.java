@@ -128,7 +128,7 @@ public class BarOptimizer {
     @SuppressWarnings("ConstantConditions")
     public void run() {
         // barLevel, cacheLevel, workerDepth, allowDuplicateDrinks, runUntil
-        setTempValues(14, 5, 3, true, List.of(), -1);
+        setTempValues(20, 5, 3, true, List.of(), -1);
 
         Stopwatch sw = Stopwatch.createStarted();
         // This needs to happen before any reference to DataLoader is made
