@@ -231,4 +231,65 @@ public class ComboGeneratorTest {
         assertEquals(totalCount, firstCount + secondCount);
     }
 
+    @Test
+    public void testSameStartAndLastIndexNoDupes() {
+        // startFrom = x, runUntil = x should be equivalent to --numDrinksRemaining, drinksMade = x and no thresholds
+        BarOptimizer.initForTest(6);
+        DataLoader.initForTests();
+        int numDrinks = 6;
+        for (int threshold = 0; threshold < DataLoader.getDrinksByLevel(6).size(); threshold++) {
+            System.out.println(threshold);
+            ComboGenerator generator = new ComboGenerator(numDrinks, new IndexListCombo(), false, new IndexListCombo(ImmutableList.of(threshold)), threshold);
+            Combo combo = generator.next();
+            int totalCount = 0;
+            while (combo != null) {
+                System.out.println(combo.toIndexString());
+                totalCount++;
+                combo = generator.next();
+            }
+            System.out.println(totalCount);
+
+            generator = new ComboGenerator(numDrinks - 1, new IndexListCombo(ImmutableList.of(threshold)), false, ComboGenerator.RUN_FROM_START, ComboGenerator.RUN_FULLY);
+            int premadeCount = 0;
+            combo = generator.next();
+            while (combo != null) {
+                System.out.println(combo.toIndexString());
+                premadeCount++;
+                combo = generator.next();
+            }
+            System.out.println(premadeCount);
+            assertEquals(totalCount, premadeCount);
+        }
+    }
+
+    @Test
+    public void testSameStartAndLastIndexWithDupes() {
+        // startFrom = x, runUntil = x should be equivalent to --numDrinksRemaining, drinksMade = x and no thresholds
+        BarOptimizer.initForTest(6);
+        DataLoader.initForTests();
+        int numDrinks = 6;
+        for (int threshold = 0; threshold < DataLoader.getDrinksByLevel(6).size(); threshold++) {
+            System.out.println(threshold);
+            ComboGenerator generator = new ComboGenerator(numDrinks, new IndexListCombo(), true, new IndexListCombo(ImmutableList.of(threshold)), threshold);
+            Combo combo = generator.next();
+            int totalCount = 0;
+            while (combo != null) {
+                System.out.println(combo.toIndexString());
+                totalCount++;
+                combo = generator.next();
+            }
+            System.out.println(totalCount);
+
+            generator = new ComboGenerator(numDrinks - 1, new IndexListCombo(ImmutableList.of(threshold)), true, ComboGenerator.RUN_FROM_START, ComboGenerator.RUN_FULLY);
+            int premadeCount = 0;
+            combo = generator.next();
+            while (combo != null) {
+                System.out.println(combo.toIndexString());
+                premadeCount++;
+                combo = generator.next();
+            }
+            System.out.println(premadeCount);
+            assertEquals(totalCount, premadeCount);
+        }
+    }
 }

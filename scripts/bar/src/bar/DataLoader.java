@@ -26,13 +26,13 @@ import java.util.concurrent.TimeUnit;
 public class DataLoader {
 
     // All sorts of things will go wrong if this isn't initialized first
-    private static final int BAR_LEVEL = BarOptimizer.BAR_LEVEL;
+    private static int BAR_LEVEL = BarOptimizer.BAR_LEVEL;
     private static final String BASE_PATH = "data/";
-    public static final ImmutableMap<String, MaterialShop> MAT_SHOP = loadMatShop();
-    public static final ImmutableMap<Integer, Integer> MAX_DRINKS_BY_BAR_LEVEL = loadMaxDrinksByBarLevel();
-    public static final ImmutableMap<Integer, Material> MATERIAL_COSTS = loadMaterialCosts();
+    public static ImmutableMap<String, MaterialShop> MAT_SHOP = loadMatShop();
+    public static ImmutableMap<Integer, Integer> MAX_DRINKS_BY_BAR_LEVEL = loadMaxDrinksByBarLevel();
+    public static ImmutableMap<Integer, Material> MATERIAL_COSTS = loadMaterialCosts();
     // materialId to count
-    public static final ImmutableMap<Integer, Integer> MATERIALS_AVAILABLE = loadMaterialsAvailable();
+    public static ImmutableMap<Integer, Integer> MATERIALS_AVAILABLE = loadMaterialsAvailable();
     public static final ImmutableMap<String, Drink> DRINK_DATA = loadDrinkData();
     public static final ImmutableMap<Integer, String> DRINK_ID_TO_NAME = loadDrinkIdToName();
     public static ImmutableBiMap<Integer, Drink> INDEX_DRINK;
@@ -41,6 +41,17 @@ public class DataLoader {
     public static TreeCache TREE_CACHE;
 
     public static final double OVERALL_COEFF = 3.25;
+
+    // Tests that muck around with different bar levels in BarOptimizer will need to call this instead of just init
+    // This is a mess, too much static stuff
+    public static void initForTests() {
+        BAR_LEVEL = BarOptimizer.BAR_LEVEL;
+        MAT_SHOP = loadMatShop();
+        MAX_DRINKS_BY_BAR_LEVEL = loadMaxDrinksByBarLevel();
+        MATERIAL_COSTS = loadMaterialCosts();
+        MATERIALS_AVAILABLE = loadMaterialsAvailable();
+        init();
+    }
 
     // This needs to happen first to initialize BAR_LEVEL
     public static void init() {
