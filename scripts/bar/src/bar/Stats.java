@@ -143,8 +143,15 @@ public class Stats {
         numProcessed += other.numProcessed;
     }
 
+    public boolean hasCombo() {
+        return cost.best.getCost() != 0;
+    }
+
     @Override
     public String toString() {
+        if (!hasCombo()) {
+            return "no stats yet";
+        }
         StringBuilder sb = new StringBuilder();
         sb.append("----------------------------------------------------------------\n");
         sb.append("Highest cost: %d\n".formatted(cost.best.getCost()));
