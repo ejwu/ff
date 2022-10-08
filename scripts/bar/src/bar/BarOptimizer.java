@@ -23,7 +23,7 @@ public class BarOptimizer {
     @Parameter(names={"--barLevel"})
     public int barLevel = 20;
     @Parameter(names={"--cacheDepth"})
-    int cacheDepth = 7;
+    int cacheDepth = 6;
     @Parameter(names={"--workerDepth"})
     int workerDepth = 9;
     @Parameter(names={"--allowDuplicateDrinks"})
@@ -32,9 +32,12 @@ public class BarOptimizer {
     // This allows reducing cache size (and increasing cache depth).
     // -1 to run to completion (ComboGenerator.RUN_FULLY)
     @Parameter(names={"--runUntil"})
-    int lastDrinkIndex = -1;
+    int lastDrinkIndex = 50;
 
-    public static Combo START_FROM = new IndexListCombo(ImmutableList.of());
+    long cantBeMade = 0;
+    long rejectedForDupes = 0;
+
+    public static Combo START_FROM = new IndexListCombo(ImmutableList.of(49));
 
     private void setTempValues(int barLevel, int cacheDepth, int workerDepth, boolean allowDuplicateDrinks, List<Integer> startFrom, int lastDrinkIndex) {
         this.barLevel = barLevel;
@@ -65,7 +68,7 @@ public class BarOptimizer {
 
     Stats getAllCompletions(Combo prefix) {
 //        System.out.println("Generating with " + (MAX_DRINKS - WORKER_DEPTH - CACHE_DEPTH) + " " + prefix.toIndices() + " " + allowDuplicateDrinks + " " + lastDrinkIndex);
-        ComboGenerator generator = new ComboGenerator(MAX_DRINKS - WORKER_DEPTH - CACHE_DEPTH, prefix, allowDuplicateDrinks, START_FROM, lastDrinkIndex);
+        ComboGenerator generator = new ComboGenerator(MAX_DRINKS - WORKER_DEPTH - CACHE_DEPTH, prefix, allowDuplicateDrinks, ComboGenerator.RUN_FROM_START, lastDrinkIndex);
         Stats stats = new Stats();
 
 //        Combo lastProcessed = prefix;
@@ -76,7 +79,6 @@ public class BarOptimizer {
                 if (partialAtCacheLevel.getMin() >= cachePrefix) {
                     Iterator<Combo> it = DataLoader.TREE_CACHE.getSubtree(cachePrefix);
                     while (it.hasNext()) {
-                        System.out.printf("", partialAtCacheLevel.toIndices().size());
                         Combo combined = partialAtCacheLevel.mergeWith(
                                 new IndexListCombo(ImmutableList.<Integer>builder()
                                         .add(cachePrefix)
@@ -85,8 +87,16 @@ public class BarOptimizer {
                             throw new IllegalStateException(combined.toIndexString() + " doesn't have " + MAX_DRINKS + " drinks");
                         }
                         // TODO: optimize this, should be able to do nodupes without extra checks
-                        if (combined.canBeMade() && (allowDuplicateDrinks || !hasDupes(combined))) {
-                            stats.offerAll(combined);
+                        if (combined.canBeMade()) {
+                            if (allowDuplicateDrinks || !hasDupes(combined)) {
+                                stats.offerAll(combined);
+                            } else {
+                                if (!allowDuplicateDrinks) {
+                                    rejectedForDupes++;
+                                }
+                            }
+                        } else {
+                            cantBeMade++;
                         }
                     }
                 }
@@ -125,10 +135,17 @@ public class BarOptimizer {
         return false;
     }
 
+    private boolean isValidNoDupePrefix(Combo combo) {
+        if (!allowDuplicateDrinks && combo.toIndices().get(combo.getSize() - 1) < MAX_DRINKS - combo.getSize()) {
+            return false;
+        }
+        return true;
+    }
+
     @SuppressWarnings("ConstantConditions")
     public void run() {
         // barLevel, cacheLevel, workerDepth, allowDuplicateDrinks, runUntil
-        setTempValues(20, 5, 3, true, List.of(), -1);
+//        setTempValues(20, 5, 3, true, List.of(), -1);
 
         Stopwatch sw = Stopwatch.createStarted();
         // This needs to happen before any reference to DataLoader is made
@@ -169,19 +186,20 @@ public class BarOptimizer {
                     } else {
                         stats.mergeFrom(processed);
                     }
-                    if (numProcessed.longValue() % 100000 == 0) {
+                    //100k for dupes
+                    if (numProcessed.longValue() % 5000 == 0) {
                         System.out.println(stats);
                         System.out.println(LocalDateTime.now());
                         long minutes = Math.max(1, sw.elapsed(TimeUnit.MINUTES));
-                        System.out.printf("%,d jobs processed, %,d empty jobs, %,d combos processed, %,d submitted, %d jobs processed/minute, %d combos processed/minute%n",
-                                numProcessed.longValue(), empty, stats.numProcessed, jobCount.longValue(), numProcessed.longValue() / minutes, stats.numProcessed / minutes);
+                        System.out.printf("%,d jobs processed, %,d empty jobs, %,d combos processed, %,d submitted, %,d can't be made, %,d rejected for dupes, %d jobs processed/minute, %d combos processed/minute%n",
+                                numProcessed.longValue(), empty, stats.numProcessed, jobCount.longValue(), cantBeMade, rejectedForDupes, numProcessed.longValue() / minutes, stats.numProcessed / minutes);
                     }
                 } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
                 }
             }
             System.out.println("--------------------------done?");
-            System.out.println("%,d jobs processed, %,d empty jobs, %,d combos processed, %,d submitted".formatted(numProcessed.longValue(), empty, stats.numProcessed, jobCount.longValue()));
+            System.out.println("%,d jobs processed, %,d empty jobs, %,d combos processed, %,d submitted, %,d can't be made, %,d rejected for dupes".formatted(numProcessed.longValue(), empty, stats.numProcessed, jobCount.longValue(), cantBeMade, rejectedForDupes));
 
         });
 
@@ -209,8 +227,8 @@ public class BarOptimizer {
         try {
             while (prefix != null) {
                 while (prefix != null && jobCount.longValue() - numProcessed.longValue() < 10000) {
-                    if (!allowDuplicateDrinks && prefix.toIndices().get(prefix.toIndices().size() - 1) < MAX_DRINKS - prefix.toIndices().size()) {
-//                        System.out.println("Skipping " + prefix.toIndices() + " because last index smaller than " + (MAX_DRINKS - prefix.toIndices().size()));
+                    if (!isValidNoDupePrefix(prefix)) {
+//                        System.out.println("Skipping " + prefix.toIndexString() + " because last index smaller than " + (MAX_DRINKS - prefix.toIndices().size()));
                         skippedNoDupe++;
                         prefix = generator.next();
                         continue;
@@ -222,6 +240,10 @@ public class BarOptimizer {
                         cs.submit(() -> getAllCompletions(finalPrefix));
                         jobCount.incrementAndGet();
                         prefix = generator.next();
+                        while (prefix != null && !isValidNoDupePrefix(prefix)) {
+                            prefix = generator.next();
+                            skippedNoDupe++;
+                        }
                         batchCount++;
                     }
 
@@ -273,6 +295,7 @@ public class BarOptimizer {
             e.printStackTrace();
         }
         System.out.println(stats);
+        System.out.printf("%,d can't be made, %,d rejected for dupes%n", cantBeMade, rejectedForDupes);
         System.out.println("Ended: " + LocalDateTime.now());
         System.out.println(sw.elapsed(TimeUnit.SECONDS) + " seconds taken");
 

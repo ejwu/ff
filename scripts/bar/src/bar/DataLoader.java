@@ -89,7 +89,8 @@ public class DataLoader {
             keyCount.put(currentKey, keyCount.getOrDefault(currentKey, 0) + 1);
             combo = generator.next();
         }
-        System.out.println(currentKey + ": " + keyCount.getOrDefault(currentKey, 0) + " - " + LocalDateTime.now());
+        System.out.printf("%2d: %8d - %s%n",
+                currentKey, keyCount.getOrDefault(currentKey, 0), LocalDateTime.now());
 
         System.out.println("Tree entries: " + treeCache.getSize());
         TREE_CACHE = treeCache;
