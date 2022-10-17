@@ -25,8 +25,44 @@ import java.util.concurrent.TimeUnit;
 
 public class DataLoader {
 
+
+    // TODO: contemplate an efficiency sort order, which is complicated at the individual drink level
+
+    enum SortOrder implements Comparator<Drink> {
+        OVERALL {
+            public int compare(Drink l, Drink r) {
+                if (l.getOverall() > r.getOverall()) {
+                    return -1;
+                } else if (l.getOverall() < r.getOverall()) {
+                    return 1;
+                }
+                return 0;
+            }
+        },
+        CHEAPEST {
+            private static double getCostEstimate(Drink drink) {
+                double cost = 0.0;
+                for (FormulaMaterial material : drink.materials()) {
+                    MaterialShop shop = MAT_SHOP.get(getMaterialById(material.id).name);
+                    cost += (double) material.num / shop.num * shop.cost;
+                }
+                return cost;
+            }
+
+            public int compare(Drink l, Drink r) {
+                if (getCostEstimate(l) > getCostEstimate(r)) {
+                    return 1;
+                } else if (getCostEstimate(l) < getCostEstimate(r)) {
+                    return -1;
+                }
+                return 0;
+            }
+        };
+    }
+
     // All sorts of things will go wrong if this isn't initialized first
     private static int BAR_LEVEL = BarOptimizer.BAR_LEVEL;
+    private static SortOrder SORT_ORDER = BarOptimizer.sortOrder;
     private static final String BASE_PATH = "data/";
     public static ImmutableMap<String, MaterialShop> MAT_SHOP = loadMatShop();
     public static ImmutableMap<Integer, Integer> MAX_DRINKS_BY_BAR_LEVEL = loadMaxDrinksByBarLevel();
@@ -314,43 +350,13 @@ public class DataLoader {
         return builder.build();
     }
 
-    // Highest overall return first
-    private static final Comparator<Drink> sortByOverall = (l, r) -> {
-        if (l.getOverall() > r.getOverall()) {
-            return -1;
-        } else if (l.getOverall() < r.getOverall()) {
-            return 1;
-        }
-        return 0;
-    };
-
-    // TODO: contemplate an efficiency sort order, which is complicated at the individual drink level
-
     @SuppressWarnings("ConstantConditions")
     public static List<Drink> getDrinksByLevel(int barLevel) {
         List<Drink> sorted = DRINK_DATA.values().stream()
                 .sorted(Comparator.comparingInt(o -> o.level))
                 .filter(drink -> drink.level <= barLevel)
-                .sorted(sortByOverall)
+                .sorted(SORT_ORDER)
                 .toList();
-        boolean debug = false;
-        if (debug && (barLevel == 3 || barLevel == 6)) {
-            Map<String, Drink> map = new HashMap<>();
-            for (Drink drink : sorted) {
-                map.put(drink.name, drink);
-            }
-            List<Drink> toReturn = new ArrayList<>();
-            if (barLevel == 3) {
-                for (String name : List.of("Vodka Sour", "Tequila Sour", "Mojito", "Black Russian", "Screwdriver", "Sour Pineapple Juice", "Coffee Martini", "Rattlesnake", "Rum", "Tequila", "Gin", "Vodka", "Whisky", "Brandy", "Cola", "Pineapple Juice", "Soda Water", "Orange Juice")) {
-                    toReturn.add(map.get(name));
-                }
-            } else if (barLevel == 6) {
-                for (String name : List.of("Singapore Sling", "Daiquiri", "Matador", "Lynchburg Lemonade", "Fog Cutter", "Palm Beach", "Between the Sheets", "Zombie", "Gin Basil Smash", "Brandy Crusta", "Cantaritos", "Thorn", "Cuba Libre", "Fish House Punch", "Honey Soda", "Bernice", "Sweet Orange", "Vodka Sour", "Tequila Sour", "Dirty Banana", "French 75", "Sweet Lemon", "Brandy Alexander", "Mayan", "Long Island Iced Tea", "Mojito", "Black Russian", "Screwdriver", "Blue Blazer", "Sour Pineapple Juice", "Coffee Martini", "Rattlesnake", "Rum", "Tequila", "Gin", "Vodka", "Whisky", "Brandy", "Cola", "Pineapple Juice", "Soda Water", "Orange Juice")) {
-                    toReturn.add(map.get(name));
-                }
-            }
-            return toReturn;
-        }
         return sorted;
     }
 
@@ -365,6 +371,5 @@ public class DataLoader {
 
     public static Combo getEmptyCombo() {
         return new IndexListCombo();
-//        return ArrayCombo.of();
     }
 }

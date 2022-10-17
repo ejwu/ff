@@ -33,19 +33,21 @@ public class BarOptimizer {
     // -1 to run to completion (ComboGenerator.RUN_FULLY)
     @Parameter(names={"--runUntil"})
     int lastDrinkIndex = 50;
+    static DataLoader.SortOrder sortOrder = DataLoader.SortOrder.OVERALL;
 
     long cantBeMade = 0;
     long rejectedForDupes = 0;
 
     public static Combo START_FROM = new IndexListCombo(ImmutableList.of(49));
 
-    private void setTempValues(int barLevel, int cacheDepth, int workerDepth, boolean allowDuplicateDrinks, List<Integer> startFrom, int lastDrinkIndex) {
+    private void setTempValues(int barLevel, int cacheDepth, int workerDepth, boolean allowDuplicateDrinks, List<Integer> startFrom, int lastDrinkIndex, DataLoader.SortOrder localSortOrder) {
         this.barLevel = barLevel;
         this.cacheDepth = cacheDepth;
         this.workerDepth = workerDepth;
         this.allowDuplicateDrinks = allowDuplicateDrinks;
         this.START_FROM = new IndexListCombo(ImmutableList.copyOf(startFrom));
         this.lastDrinkIndex = lastDrinkIndex;
+        sortOrder = localSortOrder;
     }
 
 
@@ -145,7 +147,7 @@ public class BarOptimizer {
     @SuppressWarnings("ConstantConditions")
     public void run() {
         // barLevel, cacheLevel, workerDepth, allowDuplicateDrinks, runUntil
-//        setTempValues(20, 5, 3, true, List.of(), -1);
+        setTempValues(6, 3, 3, false, List.of(), -1, DataLoader.SortOrder.CHEAPEST);
 
         Stopwatch sw = Stopwatch.createStarted();
         // This needs to happen before any reference to DataLoader is made
@@ -191,8 +193,8 @@ public class BarOptimizer {
                         System.out.println(stats);
                         System.out.println(LocalDateTime.now());
                         long minutes = Math.max(1, sw.elapsed(TimeUnit.MINUTES));
-                        System.out.printf("%,d jobs processed, %,d empty jobs, %,d combos processed, %,d submitted, %,d can't be made, %,d rejected for dupes, %d jobs processed/minute, %d combos processed/minute%n",
-                                numProcessed.longValue(), empty, stats.numProcessed, jobCount.longValue(), cantBeMade, rejectedForDupes, numProcessed.longValue() / minutes, stats.numProcessed / minutes);
+                        System.out.printf("%,d jobs processed, %,d empty jobs, %,d combos processed, %,d submitted, %,d can't be made, %,d rejected for dupes, %d jobs processed/minute, %d rejected combos processed/minute, %d valid combos processed/minute%n",
+                                numProcessed.longValue(), empty, stats.numProcessed, jobCount.longValue(), cantBeMade, rejectedForDupes, numProcessed.longValue() / minutes, cantBeMade / minutes, stats.numProcessed / minutes);
                     }
                 } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
