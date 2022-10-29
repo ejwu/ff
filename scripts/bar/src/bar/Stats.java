@@ -4,6 +4,7 @@ import java.util.Comparator;
 
 public class Stats {
     BestDrinkSet cost;
+    BestDrinkSet cheap;
     BestDrinkSet fame;
     BestDrinkSet fameEfficiency;
     BestDrinkSet tickets;
@@ -22,6 +23,26 @@ public class Stats {
     }
     private final Comparator<Combo> costComparator = (o1, o2) -> {
         int costDiff = o1.getCost() - o2.getCost();
+        if (costDiff != 0) {
+            return costDiff;
+        }
+        int fameDiff = o1.getFame() - o2.getFame();
+        if (fameDiff != 0) {
+            return fameDiff;
+        }
+        return o1.getTickets() - o2.getTickets();
+    };
+
+    // Cheap comparator isn't just costComparator reversed because we still want fame and tickets as tiebreakers
+    private final Comparator<Combo> cheapComparator = (o1, o2) -> {
+        // Annoying fix for the empty combo having 0 cost and always sorting to the top
+        if (o1.getCost() == 0) {
+            return -1;
+        } else if (o2.getCost() == 0) {
+            return 1;
+        }
+
+        int costDiff = o2.getCost() - o1.getCost();
         if (costDiff != 0) {
             return costDiff;
         }
@@ -112,6 +133,7 @@ public class Stats {
 
     public Stats() {
         cost = new BestDrinkSet(costComparator);
+        cheap = new BestDrinkSet(cheapComparator);
         fame = new BestDrinkSet(fameComparator);
         fameEfficiency = new BestDrinkSet(fameEfficiencyComparator);
         tickets = new BestDrinkSet(ticketComparator);
@@ -123,6 +145,7 @@ public class Stats {
 
     public void offerAll(Combo combo) {
         cost.offer(combo);
+        cheap.offer(combo);
         fame.offer(combo);
         fameEfficiency.offer(combo);
         tickets.offer(combo);
@@ -134,6 +157,7 @@ public class Stats {
 
     public void mergeFrom(Stats other) {
         cost.offer(other.cost.best);
+        cheap.offer(other.cheap.best);
         fame.offer(other.fame.best);
         fameEfficiency.offer(other.fameEfficiency.best);
         tickets.offer(other.tickets.best);
@@ -156,6 +180,8 @@ public class Stats {
         sb.append("----------------------------------------------------------------\n");
         sb.append("Highest cost: %d\n".formatted(cost.best.getCost()));
         sb.append(cost.best);
+        sb.append("\nLowest cost: %d\n".formatted(cheap.best.getCost()));
+        sb.append(cheap.best);
         sb.append("\nBest fame: %d\n".formatted(fame.best.getFame()));
         sb.append(fame.best);
         sb.append("\nBest fame efficiency: %.3f\n".formatted(fameEfficiency.best.getFameEfficiency()));

@@ -17,7 +17,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -206,11 +205,7 @@ public class DataLoader {
         // Use 10 for 150 as a placeholder and fix the actual cost later
         baseShop.put("Soda", new MaterialShop(150, 10, 17));
         baseShop.put("Fruit Juice", new MaterialShop(150, 10, 19));
-
-        // Assumptions for the future
-        // other
         baseShop.put("Hot Sauce", new MaterialShop(150, 10, 20));
-        // other
         baseShop.put("Tomato Juice", new MaterialShop(150, 10, 20));
 
         // Clear out anything not available at the current level

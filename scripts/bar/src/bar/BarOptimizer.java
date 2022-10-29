@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Parameters(separators="=")
 public class BarOptimizer {
     @Parameter(names={"--barLevel"})
-    public int barLevel = 20;
+    public int barLevel = 21;
     @Parameter(names={"--cacheDepth"})
     int cacheDepth = 6;
     @Parameter(names={"--workerDepth"})
@@ -38,7 +38,7 @@ public class BarOptimizer {
     long cantBeMade = 0;
     long rejectedForDupes = 0;
 
-    public static Combo START_FROM = new IndexListCombo(ImmutableList.of(49));
+    public static Combo START_FROM = new IndexListCombo(ImmutableList.of());
 
     private void setTempValues(int barLevel, int cacheDepth, int workerDepth, boolean allowDuplicateDrinks, List<Integer> startFrom, int lastDrinkIndex, DataLoader.SortOrder localSortOrder) {
         this.barLevel = barLevel;
@@ -147,7 +147,7 @@ public class BarOptimizer {
     @SuppressWarnings("ConstantConditions")
     public void run() {
         // barLevel, cacheLevel, workerDepth, allowDuplicateDrinks, runUntil
-        setTempValues(6, 3, 3, false, List.of(), -1, DataLoader.SortOrder.CHEAPEST);
+        setTempValues(21, 6, 9, false, List.of(), 48, DataLoader.SortOrder.CHEAPEST);
 
         Stopwatch sw = Stopwatch.createStarted();
         // This needs to happen before any reference to DataLoader is made
