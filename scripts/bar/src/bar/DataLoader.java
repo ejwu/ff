@@ -255,6 +255,26 @@ public class DataLoader {
             }
         }
 
+        if (BAR_LEVEL >= 21) {
+            for (String spirit : List.of("Rum", "Vodka", "Brandy", "Gin", "Tequila", "Whisky")) {
+                baseShop.put(spirit, new MaterialShop(125, 25, baseShop.get(spirit).level));
+            }
+            for (String flavor : List.of("Wine", "Chartreuse", "Aperol", "Campari")) {
+                baseShop.put(flavor, new MaterialShop(80, 8, baseShop.get(flavor).level));
+            }
+            for (String flavor : List.of("Vermouth", "Orange Curacao", "Coffee Liqueur")) {
+                baseShop.put(flavor, new MaterialShop(50, 10, baseShop.get(flavor).level));
+            }
+            for (String flavor : List.of("Baileys", "Bitters")) {
+                baseShop.put(flavor, new MaterialShop(100, 10, baseShop.get(flavor).level));
+            }
+            for (String other : List.of("Cola", "Orange Juice", "Pineapple Juice", "Soda Water", "Cane Syrup", "Lemon Juice", "Mint Leaf", "Honey", "Sugar", "Cream")) {
+                baseShop.put(other, new MaterialShop(50, 10, baseShop.get(other).level));
+            }
+            for (String other : List.of("Fruit Syrup")) {
+                baseShop.put(other, new MaterialShop(80, 8, baseShop.get(other).level));
+            }
+        }
         return ImmutableMap.copyOf(baseShop);
     }
 
