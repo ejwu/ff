@@ -168,7 +168,11 @@ public class BarOptimizer {
             throw new IllegalArgumentException("worker + cache is too deep");
         }
 
-        DataLoader.precalculateCache(allowDuplicateDrinks, lastDrinkIndex);
+        int cacheLastDrinkIndex = lastDrinkIndex;
+        if (!allowDuplicateDrinks && lastDrinkIndex > 0) {
+            cacheLastDrinkIndex = lastDrinkIndex - (DataLoader.MAX_DRINKS_BY_BAR_LEVEL.get(barLevel) - workerDepth - cacheDepth) - workerDepth;
+        }
+        DataLoader.precalculateCache(allowDuplicateDrinks, cacheLastDrinkIndex);
 
         final CompletionService<Stats> cs = new ExecutorCompletionService<>(Executors.newWorkStealingPool());
 
@@ -193,7 +197,7 @@ public class BarOptimizer {
                         System.out.println(stats);
                         System.out.println(LocalDateTime.now());
                         long minutes = Math.max(1, sw.elapsed(TimeUnit.MINUTES));
-                        System.out.printf("%,d jobs processed, %,d empty jobs, %,d combos processed, %,d submitted, %,d can't be made, %,d rejected for dupes, %d jobs processed/minute, %d rejected combos processed/minute, %d valid combos processed/minute%n",
+                        System.out.printf("%,d jobs processed, %,d empty jobs, %,d combos processed, %,d submitted, %,d can't be made, %,d rejected for dupes, %,d jobs processed/minute, %,d rejected combos processed/minute, %,d valid combos processed/minute%n",
                                 numProcessed.longValue(), empty, stats.numProcessed, jobCount.longValue(), cantBeMade, rejectedForDupes, numProcessed.longValue() / minutes, cantBeMade / minutes, stats.numProcessed / minutes);
                     }
                 } catch (InterruptedException | ExecutionException e) {
