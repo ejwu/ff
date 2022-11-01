@@ -147,7 +147,7 @@ public class BarOptimizer {
     @SuppressWarnings("ConstantConditions")
     public void run() {
         // barLevel, cacheLevel, workerDepth, allowDuplicateDrinks, runUntil
-        setTempValues(21, 6, 9, false, List.of(), 48, DataLoader.SortOrder.CHEAPEST);
+        setTempValues(21, 9, 9, false, List.of(), 46, DataLoader.SortOrder.OVERALL);
 
         Stopwatch sw = Stopwatch.createStarted();
         // This needs to happen before any reference to DataLoader is made
@@ -170,7 +170,10 @@ public class BarOptimizer {
 
         int cacheLastDrinkIndex = lastDrinkIndex;
         if (!allowDuplicateDrinks && lastDrinkIndex > 0) {
-            cacheLastDrinkIndex = lastDrinkIndex - (DataLoader.MAX_DRINKS_BY_BAR_LEVEL.get(barLevel) - workerDepth - cacheDepth) - workerDepth;
+            int maxDrinks = DataLoader.MAX_DRINKS_BY_BAR_LEVEL.get(barLevel);
+            cacheLastDrinkIndex = lastDrinkIndex - (maxDrinks - workerDepth - cacheDepth) - workerDepth;
+            System.out.println("Building cache to %d, last drink %d, prefix depth %d, worker depth %d, max drinks %d".formatted(
+                    cacheLastDrinkIndex, lastDrinkIndex, maxDrinks - workerDepth - cacheDepth, workerDepth, maxDrinks));
         }
         DataLoader.precalculateCache(allowDuplicateDrinks, cacheLastDrinkIndex);
 
@@ -197,15 +200,15 @@ public class BarOptimizer {
                         System.out.println(stats);
                         System.out.println(LocalDateTime.now());
                         long minutes = Math.max(1, sw.elapsed(TimeUnit.MINUTES));
-                        System.out.printf("%,d jobs processed, %,d empty jobs, %,d combos processed, %,d submitted, %,d can't be made, %,d rejected for dupes, %,d jobs processed/minute, %,d rejected combos processed/minute, %,d valid combos processed/minute%n",
-                                numProcessed.longValue(), empty, stats.numProcessed, jobCount.longValue(), cantBeMade, rejectedForDupes, numProcessed.longValue() / minutes, cantBeMade / minutes, stats.numProcessed / minutes);
+                        System.out.printf("%,d submitted, %,d jobs processed, %,d empty jobs, %,d combos processed, %,d can't be made, %,d rejected for dupes, %,d non-empty jobs processed/minute, %,d rejected combos processed/minute, %,d valid combos processed/minute%n",
+                                jobCount.longValue(), numProcessed.longValue(), empty, stats.numProcessed, cantBeMade, rejectedForDupes, (numProcessed.longValue() - empty) / minutes, cantBeMade / minutes, stats.numProcessed / minutes);
                     }
                 } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
                 }
             }
             System.out.println("--------------------------done?");
-            System.out.println("%,d jobs processed, %,d empty jobs, %,d combos processed, %,d submitted, %,d can't be made, %,d rejected for dupes".formatted(numProcessed.longValue(), empty, stats.numProcessed, jobCount.longValue(), cantBeMade, rejectedForDupes));
+            System.out.println("%,d submitted, %,d jobs processed, %,d empty jobs, %,d combos processed, %,d can't be made, %,d rejected for dupes".formatted(jobCount.longValue(), numProcessed.longValue(), empty, stats.numProcessed, cantBeMade, rejectedForDupes));
 
         });
 
