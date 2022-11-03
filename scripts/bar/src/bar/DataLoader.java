@@ -15,11 +15,13 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class DataLoader {
@@ -68,7 +70,7 @@ public class DataLoader {
     public static ImmutableMap<Integer, Material> MATERIAL_COSTS = loadMaterialCosts();
     // materialId to count
     public static ImmutableMap<Integer, Integer> MATERIALS_AVAILABLE = loadMaterialsAvailable();
-    public static final ImmutableMap<String, Drink> DRINK_DATA = loadDrinkData();
+    public static final ImmutableMap<String, Drink> DRINK_DATA = loadDrinkData(BarOptimizer.allowImperfectDrinks);
     public static final ImmutableMap<Integer, String> DRINK_ID_TO_NAME = loadDrinkIdToName();
     public static ImmutableBiMap<Integer, Drink> INDEX_DRINK;
     public static ImmutableList<Drink> DRINKS_BY_LEVEL;
@@ -94,7 +96,7 @@ public class DataLoader {
         int index = 0;
         DRINKS_BY_LEVEL = ImmutableList.copyOf(getDrinksByLevel(BAR_LEVEL));
         for (Drink drink : DRINKS_BY_LEVEL) {
-            System.out.printf("%2d %-20s: %2d fame, %3d tickets - (%s) %d%n",
+            System.out.printf("%2d %-24s: %2d fame, %3d tickets - (%s) %d%n",
                     index, drink.name(), drink.fame(), drink.tickets(), drink.getMaterialListString(), drink.id());
             builder.put(index, drink);
             index++;
@@ -323,7 +325,11 @@ public class DataLoader {
         return builder.build();
     }
 
-    public static ImmutableMap<String, Drink> loadDrinkData() {
+    private static Drink createDrink(String name, JSONObject json, int openBarLevel, List<FormulaMaterial> ingredients) {
+        return new Drink(asInt(json.get("barPopularity")), asInt(json.get("barPoint")), openBarLevel, name, asInt(json.get("id")), ingredients);
+    }
+
+    public static ImmutableMap<String, Drink> loadDrinkData(boolean allowImperfectDrinks) {
         try (BufferedReader formulaReader = new BufferedReader(new FileReader(BASE_PATH + "formula.json.pretty"));
              BufferedReader drinkReader = new BufferedReader(new FileReader(BASE_PATH + "drink.json.pretty"))) {
             ImmutableMap.Builder<String, Drink> builder = ImmutableMap.builder();
@@ -332,21 +338,46 @@ public class DataLoader {
             JSONObject drinksJson = (JSONObject) parser.parse(drinkReader);
             for (Object drinkObj : drinksJson.values()) {
                 JSONObject drinkJson = (JSONObject) drinkObj;
-                // Ignore 0-2* versions of drinks
+                JSONObject formulaJson = (JSONObject) formulasJson.get(String.valueOf(drinkJson.get("formulaId")));
+                JSONArray materials = (JSONArray) formulaJson.get("materials");
+                JSONArray matching = (JSONArray) formulaJson.get("matching");
+                int openBarLevel = asInt(formulaJson.get("openBarLevel"));
+                String name = (String) drinkJson.get("name");
+
+                List<FormulaMaterial> ingredients = new ArrayList<>();
+
+                // Always load well made drinks
                 if (asInt(drinkJson.get("star")) == 3) {
-                    JSONObject formulaJson = (JSONObject) formulasJson.get(String.valueOf(drinkJson.get("formulaId")));
-
-                    JSONArray materials = (JSONArray) formulaJson.get("materials");
-                    JSONArray matching = (JSONArray) formulaJson.get("matching");
-
-                    List<FormulaMaterial> ingredients = new ArrayList<>();
                     for (int i = 0; i < materials.size(); ++i) {
                         ingredients.add(new FormulaMaterial(asInt(materials.get(i)), asInt(matching.get(i))));
                     }
 
-                    String name = (String) drinkJson.get("name");
-                    Drink drink = new Drink(asInt(drinkJson.get("barPopularity")), asInt(drinkJson.get("barPoint")), asInt(formulaJson.get("openBarLevel")), name, asInt(drinkJson.get("id")), ingredients);
+                    Drink drink = createDrink(name, drinkJson, openBarLevel, ingredients);
                     builder.put(name, drink);
+                } else if (allowImperfectDrinks) {
+                    if (asInt(drinkJson.get("star")) == 2) {
+                        // Can't make 2 star versions of 1 ingredient drinks
+                        if (materials.size() != 1) {
+                            // 2 star drinks require the same ingredients as 3 star drinks, just mixed in the wrong order
+                            for (int i = 0; i < materials.size(); ++i) {
+                                ingredients.add(new FormulaMaterial(asInt(materials.get(i)), asInt(matching.get(i))));
+                            }
+                            name += "-2";
+                            Drink drink = createDrink(name, drinkJson, openBarLevel, ingredients);
+                            builder.put(name, drink);
+                        }
+                    } else if (asInt(drinkJson.get("star")) == 1) {
+                        // 1 star drinks require the number of total ingredients to be right, and at least one of each ingredient
+                        // TODO: nodupes needs to treat all 1 star variants as dupes
+//                        generate1StarDrinks(name, drinkJson, materials, openBarLevel, matching, builder);
+                    } else if (asInt(drinkJson.get("star")) == 0) {
+                        // 0 star drinks just need to use the right ingredients.  1 of each is fine
+                        for (Object material : materials) {
+                            ingredients.add(new FormulaMaterial(asInt(material), 1));
+                        }
+                        name += "-0";
+                        builder.put(name, createDrink(name, drinkJson, openBarLevel, ingredients));
+                    }
                 }
             }
             return builder.build();
@@ -356,11 +387,66 @@ public class DataLoader {
         }
     }
 
+    private static List<List<Integer>> generateValidCounts(int totalIngredients, int length) {
+        List<List<Integer>> toReturn = new ArrayList<>();
+
+        if (length == 1) {
+            toReturn.add(List.of(totalIngredients));
+            return toReturn;
+        }
+        for (int i = 1; totalIngredients - i >= length - 1; ++i) {
+            for (List<Integer> completion : generateValidCounts(totalIngredients - i, length - 1)) {
+                List<Integer> candidate = new ArrayList<>();
+                candidate.add(i);
+                candidate.addAll(completion);
+                toReturn.add(candidate);
+            }
+        }
+
+        return toReturn;
+    }
+
+    private static boolean isRegularDrink(List<Integer> coeffs, JSONArray matching) {
+        for (int i = 0; i < matching.size(); ++i) {
+            if (coeffs.get(i) != asInt(matching.get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static void generate1StarDrinks(String name, JSONObject drinkJson, JSONArray materials, int openBarLevel, JSONArray matching, ImmutableMap.Builder<String, Drink> builder) {
+        int totalIngredients = 0;
+        for (Object match : matching) {
+            totalIngredients += asInt(match);
+        }
+
+        List<List<Integer>> z = generateValidCounts(totalIngredients, materials.size());
+
+
+        for (List<Integer> coeffs : generateValidCounts(totalIngredients, materials.size())) {
+            if (!isRegularDrink(coeffs, matching)) {
+                StringBuilder sb = new StringBuilder(name);
+                sb.append("-1-");
+                List<FormulaMaterial> ingredients = new ArrayList<>();
+                for (int i = 0; i < materials.size(); ++i) {
+                    sb.append(coeffs.get(i));
+                    ingredients.add(new FormulaMaterial(asInt(materials.get(i)), coeffs.get(i)));
+                }
+                String modifiedDrinkName = sb.toString();
+                Drink drink = createDrink(modifiedDrinkName, drinkJson, openBarLevel, ingredients);
+                builder.put(modifiedDrinkName, drink);
+            }
+        }
+    }
+
     @SuppressWarnings("ConstantConditions")
     public static ImmutableMap<Integer, String> loadDrinkIdToName() {
         ImmutableMap.Builder<Integer, String> builder = ImmutableMap.builder();
         for (Drink drink : DRINK_DATA.values()) {
-            builder.put(drink.id, drink.name);
+            if (!drink.name.contains("-")) {
+                builder.put(drink.id, drink.name);
+            }
         }
         return builder.build();
     }

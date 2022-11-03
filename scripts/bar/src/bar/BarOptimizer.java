@@ -23,7 +23,7 @@ public class BarOptimizer {
     @Parameter(names={"--barLevel"})
     public int barLevel = 21;
     @Parameter(names={"--cacheDepth"})
-    int cacheDepth = 6;
+    int cacheDepth = 8;
     @Parameter(names={"--workerDepth"})
     int workerDepth = 9;
     @Parameter(names={"--allowDuplicateDrinks"})
@@ -35,12 +35,14 @@ public class BarOptimizer {
     int lastDrinkIndex = 50;
     static DataLoader.SortOrder sortOrder = DataLoader.SortOrder.OVERALL;
 
+    static boolean allowImperfectDrinks = true;
+
     long cantBeMade = 0;
     long rejectedForDupes = 0;
 
     public static Combo START_FROM = new IndexListCombo(ImmutableList.of());
 
-    private void setTempValues(int barLevel, int cacheDepth, int workerDepth, boolean allowDuplicateDrinks, List<Integer> startFrom, int lastDrinkIndex, DataLoader.SortOrder localSortOrder) {
+    private void setTempValues(int barLevel, int cacheDepth, int workerDepth, boolean allowDuplicateDrinks, List<Integer> startFrom, int lastDrinkIndex, DataLoader.SortOrder localSortOrder, boolean allowImperfectDrinks) {
         this.barLevel = barLevel;
         this.cacheDepth = cacheDepth;
         this.workerDepth = workerDepth;
@@ -48,6 +50,7 @@ public class BarOptimizer {
         this.START_FROM = new IndexListCombo(ImmutableList.copyOf(startFrom));
         this.lastDrinkIndex = lastDrinkIndex;
         sortOrder = localSortOrder;
+        this.allowImperfectDrinks = allowImperfectDrinks;
     }
 
 
@@ -66,14 +69,9 @@ public class BarOptimizer {
     public static int WORKER_DEPTH;
     public static int MAX_DRINKS;
 
-    // 31, 31, 26, 26, 24, 18, 13, 13, 8, 8, 6, 4, 3, 1, 1
-
     Stats getAllCompletions(Combo prefix) {
-//        System.out.println("Generating with " + (MAX_DRINKS - WORKER_DEPTH - CACHE_DEPTH) + " " + prefix.toIndices() + " " + allowDuplicateDrinks + " " + lastDrinkIndex);
         ComboGenerator generator = new ComboGenerator(MAX_DRINKS - WORKER_DEPTH - CACHE_DEPTH, prefix, allowDuplicateDrinks, ComboGenerator.RUN_FROM_START, lastDrinkIndex);
         Stats stats = new Stats();
-
-//        Combo lastProcessed = prefix;
 
         Combo partialAtCacheLevel = generator.next();
         while (partialAtCacheLevel != null) {
@@ -104,18 +102,6 @@ public class BarOptimizer {
                 }
             }
 
-//            for (Integer cachePrefix : DataLoader.CACHE.keySet().stream().sorted(Collections.reverseOrder()).toList()) {
-//                if (partialAtCacheLevel.getMin() >= cachePrefix) {
-//                    System.out.println("Cache at " + cachePrefix + ": " + DataLoader.CACHE.get(cachePrefix));
-//                    for (Combo toAdd : DataLoader.CACHE.get(cachePrefix)) {
-//                        Combo combined = partialAtCacheLevel.mergeWith(toAdd);
-//                        if (combined.canBeMade()) {
-//                            stats.offerAll(combined);
-//                        }
-////                        lastProcessed = combined;
-//                    }
-//                }
-//            }
             partialAtCacheLevel = generator.next();
         }
 //        System.out.println("last processed: %s".formatted(lastProcessed.toIndexString()));
@@ -146,8 +132,8 @@ public class BarOptimizer {
 
     @SuppressWarnings("ConstantConditions")
     public void run() {
-        // barLevel, cacheLevel, workerDepth, allowDuplicateDrinks, runUntil
-        setTempValues(21, 9, 9, false, List.of(), 46, DataLoader.SortOrder.OVERALL);
+        // barLevel, cacheLevel, workerDepth, allowDuplicateDrinks, startFrom, runUntil, sortOrder, allowImperfectDrinks
+        setTempValues(21, 9, 9, false, List.of(), 53, DataLoader.SortOrder.CHEAPEST, true);
 
         Stopwatch sw = Stopwatch.createStarted();
         // This needs to happen before any reference to DataLoader is made
@@ -286,19 +272,9 @@ public class BarOptimizer {
         System.out.println(sw.elapsed(TimeUnit.SECONDS) + " seconds taken");
 
         System.out.println("not actually done yet");
-//        while (jobCount.longValue() != numProcessed.longValue()) {
-//            try {
-//                System.out.println(stats);
-//                System.out.println(LocalDateTime.now());
-//                System.out.println("waiting on %d submitted, %d processed".formatted(jobCount.longValue(), numProcessed.longValue()));
-//                Thread.sleep(60000);
-//            } catch (Exception e) {
-//                e.printStackTrace();;
-//            }
-//        }
         try {
             System.out.println("joining");
-            System.out.println("%d submitted, %d processed".formatted(jobCount.longValue(), numProcessed.longValue()));
+            System.out.println("%,d submitted, %,d processed".formatted(jobCount.longValue(), numProcessed.longValue()));
             consumer.join();
         } catch (Exception e) {
             e.printStackTrace();
