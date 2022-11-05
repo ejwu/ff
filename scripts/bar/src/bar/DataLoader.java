@@ -40,6 +40,21 @@ public class DataLoader {
                 return 0;
             }
         },
+        TICKETS {
+            public int compare(Drink l, Drink r) {
+                if (l.tickets > r.tickets) {
+                    return -1;
+                } else if (l.tickets < r.tickets) {
+                    return 1;
+                }
+                if (l.fame > r.fame) {
+                    return -1;
+                } else if (l.fame < r.fame) {
+                    return 1;
+                }
+                return 0;
+            }
+        },
         CHEAPEST {
             private static double getCostEstimate(Drink drink) {
                 double cost = 0.0;
