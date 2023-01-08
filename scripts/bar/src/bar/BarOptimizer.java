@@ -7,6 +7,7 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletionService;
@@ -21,9 +22,9 @@ import java.util.concurrent.atomic.AtomicLong;
 @Parameters(separators="=")
 public class BarOptimizer {
     @Parameter(names={"--barLevel"})
-    public int barLevel = 21;
+    public int barLevel = 22;
     @Parameter(names={"--cacheDepth"})
-    int cacheDepth = 8;
+    int cacheDepth = 9;
     @Parameter(names={"--workerDepth"})
     int workerDepth = 9;
     @Parameter(names={"--allowDuplicateDrinks"})
@@ -32,10 +33,30 @@ public class BarOptimizer {
     // This allows reducing cache size (and increasing cache depth).
     // -1 to run to completion (ComboGenerator.RUN_FULLY)
     @Parameter(names={"--runUntil"})
-    int lastDrinkIndex = 50;
+    int lastDrinkIndex = 55;
     static DataLoader.SortOrder sortOrder = DataLoader.SortOrder.OVERALL;
 
-    static boolean allowImperfectDrinks = true;
+    static boolean allowImperfectDrinks = false;
+
+    // Oden - spritz < copper illusion < paloma
+    // Takoyaki - pjuice, honey soda < refreshing soda
+    // Snowskin - matador < fog cutter
+    // mashed - mojito, margarita - no space for any with above
+    // salt and pepper - lynchburg < ginger cola < sidecar
+
+
+    List<String> requiredDrinks = new ArrayList<>();
+    List<String> additionalDisallowedDrinks = new ArrayList<>();
+//    List<String> requiredDrinks = List.of(
+//            "Paloma", "Paloma", "Paloma", "Paloma", "Spritz",
+//            "Refreshing Soda", "Refreshing Soda", "Refreshing Soda", "Pineapple Juice", "Pineapple Juice",
+//        "Margarita");
+
+    ////    List<String> additionalDisallowedDrinks = List.of("Honey Soda");
+//    List<String> additionalDisallowedDrinks = List.of("Paloma", "Spritz", "Refreshing Soda", "Pineapple Juice", "Margarita");
+//    List<String> additionalDisallowedDrinks = List.of(
+//            "Paloma-2", "Paloma-0", "Copper Illusion-2", "Copper Illusion-0", "Spritz-2", "Spritz-0",
+//            "Refreshing Soda-2", "Refreshing Soda-0", "Pineapple Juice-0", "Honey Soda", "Honey Soda-2", "Honey Soda-0");
 
     long cantBeMade = 0;
     long rejectedForDupes = 0;
@@ -70,7 +91,14 @@ public class BarOptimizer {
     public static int MAX_DRINKS;
 
     Stats getAllCompletions(Combo prefix) {
-        ComboGenerator generator = new ComboGenerator(MAX_DRINKS - WORKER_DEPTH - CACHE_DEPTH, prefix, allowDuplicateDrinks, ComboGenerator.RUN_FROM_START, lastDrinkIndex);
+        int maxDrinks = MAX_DRINKS;
+        // Hack to workaround requiredDrinks messing with the total number of drinks we want
+        if (requiredDrinks != null) {
+            maxDrinks -= requiredDrinks.size();
+        }
+        int numDrinksRemaining = maxDrinks - WORKER_DEPTH - CACHE_DEPTH;
+
+        ComboGenerator generator = new ComboGenerator(numDrinksRemaining, prefix, allowDuplicateDrinks, ComboGenerator.RUN_FROM_START, lastDrinkIndex, DataLoader.getDisallowedDrinks());
         Stats stats = new Stats();
 
         Combo partialAtCacheLevel = generator.next();
@@ -83,13 +111,17 @@ public class BarOptimizer {
                                 new IndexListCombo(ImmutableList.<Integer>builder()
                                         .add(cachePrefix)
                                         .addAll(it.next().toIndices()).build()));
-                        if (combined.toIndices().size() != MAX_DRINKS) {
-                            throw new IllegalStateException(combined.toIndexString() + " doesn't have " + MAX_DRINKS + " drinks");
+                        if (combined.toIndices().size() != maxDrinks) {
+                            throw new IllegalStateException(combined.toIndexString() + " doesn't have " + maxDrinks + " drinks");
                         }
                         // TODO: optimize this, should be able to do nodupes without extra checks
                         if (combined.canBeMade()) {
                             if (allowDuplicateDrinks || !hasDupes(combined)) {
-                                stats.offerAll(combined);
+                                if (requiredDrinks.isEmpty()) {
+                                    stats.offerAll(combined);
+                                } else {
+                                    stats.offerAll(combined.mergeWith(DataLoader.getRequiredDrinks()));
+                                }
                             } else {
                                 if (!allowDuplicateDrinks) {
                                     rejectedForDupes++;
@@ -133,7 +165,7 @@ public class BarOptimizer {
     @SuppressWarnings("ConstantConditions")
     public void run() {
         // barLevel, cacheLevel, workerDepth, allowDuplicateDrinks, startFrom, runUntil, sortOrder, allowImperfectDrinks
-        setTempValues(21, 9, 9, false, List.of(), 53, DataLoader.SortOrder.CHEAPEST, true);
+//        setTempValues(21, 9, 9, false, List.of(49), 49, DataLoader.SortOrder.TICKETS, false);
 
         Stopwatch sw = Stopwatch.createStarted();
         // This needs to happen before any reference to DataLoader is made
@@ -142,21 +174,34 @@ public class BarOptimizer {
         WORKER_DEPTH = workerDepth;
 
         System.out.println("Started at: " + LocalDateTime.now());
-        System.out.printf("Bar level: %d, %d max drinks, %d workerDepth, cacheDepth: %d, allowDuplicateDrinks: %b, startFrom: %s, runUntil: %s%n",
-                barLevel, DataLoader.MAX_DRINKS_BY_BAR_LEVEL.get(barLevel), workerDepth, cacheDepth, allowDuplicateDrinks, START_FROM.toIndexString(), lastDrinkIndex);
+        System.out.printf("Bar level: %d, %d max drinks, workerDepth %d, cacheDepth: %d, allowDuplicateDrinks: %b, allowImperfectDrinks: %b, startFrom: %s, runUntil: %s%n",
+                barLevel, DataLoader.MAX_DRINKS_BY_BAR_LEVEL.get(barLevel), workerDepth, cacheDepth, allowDuplicateDrinks, allowImperfectDrinks, START_FROM.toIndexString(), lastDrinkIndex);
+        System.out.printf("Requiring %d drinks: %s%n", requiredDrinks.size(), requiredDrinks);
+        System.out.printf("Disallowing %s%n", additionalDisallowedDrinks);
 
         // Some contortions here to pretend that an argument is constant
-        DataLoader.init();
+        DataLoader.init(requiredDrinks, additionalDisallowedDrinks);
         ArrayCombo.init(DataLoader.getDrinksByLevel(barLevel).size());
 
         MAX_DRINKS = DataLoader.MAX_DRINKS_BY_BAR_LEVEL.get(BAR_LEVEL);
         if (workerDepth + cacheDepth >= DataLoader.MAX_DRINKS_BY_BAR_LEVEL.get(barLevel)) {
             throw new IllegalArgumentException("worker + cache is too deep");
         }
+        if (requiredDrinks != null &&
+                requiredDrinks.size() + workerDepth + cacheDepth >= DataLoader.MAX_DRINKS_BY_BAR_LEVEL.get(barLevel)) {
+            throw new IllegalArgumentException("worker + cache + required is too deep, is " + (requiredDrinks.size() + workerDepth + cacheDepth));
+        }
 
         int cacheLastDrinkIndex = lastDrinkIndex;
-        if (!allowDuplicateDrinks && lastDrinkIndex > 0) {
+        if (!allowDuplicateDrinks) {
+            if (lastDrinkIndex <= 0) {
+                lastDrinkIndex = DataLoader.getDrinksByLevel(BAR_LEVEL).size() - 1;
+                System.out.println("setting last drink to " + lastDrinkIndex);
+            }
             int maxDrinks = DataLoader.MAX_DRINKS_BY_BAR_LEVEL.get(barLevel);
+            if (requiredDrinks != null) {
+                maxDrinks -= requiredDrinks.size();
+            }
             cacheLastDrinkIndex = lastDrinkIndex - (maxDrinks - workerDepth - cacheDepth) - workerDepth;
             System.out.println("Building cache to %d, last drink %d, prefix depth %d, worker depth %d, max drinks %d".formatted(
                     cacheLastDrinkIndex, lastDrinkIndex, maxDrinks - workerDepth - cacheDepth, workerDepth, maxDrinks));
@@ -200,7 +245,7 @@ public class BarOptimizer {
 
         consumer.start();
 
-        ComboGenerator generator = new ComboGenerator(WORKER_DEPTH, new IndexListCombo(), allowDuplicateDrinks, START_FROM, lastDrinkIndex);
+        ComboGenerator generator = new ComboGenerator(WORKER_DEPTH, new IndexListCombo(), allowDuplicateDrinks, START_FROM, lastDrinkIndex, DataLoader.getDisallowedDrinks());
         Combo prefix = generator.next();
         long skipped = 0;
         if (START_FROM.getSize() > 0) {
@@ -215,7 +260,7 @@ public class BarOptimizer {
             }
             System.out.println(skipped);
             System.out.println(skipwatch.elapsed(TimeUnit.SECONDS));
-            System.out.println("starting from " + prefix);
+            System.out.println("starting from " + prefix.toIndexString());
         }
         String lastProcessed = "";
         long skippedNoDupe = 0;

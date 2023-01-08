@@ -5,6 +5,7 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -16,6 +17,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -78,7 +80,7 @@ public class DataLoader {
 
     // All sorts of things will go wrong if this isn't initialized first
     private static int BAR_LEVEL = BarOptimizer.BAR_LEVEL;
-    private static SortOrder SORT_ORDER = BarOptimizer.sortOrder;
+    private static final SortOrder SORT_ORDER = BarOptimizer.sortOrder;
     private static final String BASE_PATH = "data/";
     public static ImmutableMap<String, MaterialShop> MAT_SHOP = loadMatShop();
     public static ImmutableMap<Integer, Integer> MAX_DRINKS_BY_BAR_LEVEL = loadMaxDrinksByBarLevel();
@@ -88,7 +90,10 @@ public class DataLoader {
     public static final ImmutableMap<String, Drink> DRINK_DATA = loadDrinkData(BarOptimizer.allowImperfectDrinks);
     public static final ImmutableMap<Integer, String> DRINK_ID_TO_NAME = loadDrinkIdToName();
     public static ImmutableBiMap<Integer, Drink> INDEX_DRINK;
+    public static ImmutableMap<String, Integer> NAME_TO_INDEX;
     public static ImmutableList<Drink> DRINKS_BY_LEVEL;
+    private static Combo REQUIRED_DRINKS;
+    private static Combo ADDITIONAL_DISALLOWED_DRINKS;
     // Map of prefixes to all possible combos of a certain size that start with that prefix
     public static TreeCache TREE_CACHE;
 
@@ -105,24 +110,75 @@ public class DataLoader {
         init();
     }
 
-    // This needs to happen first to initialize BAR_LEVEL
     public static void init() {
-        ImmutableBiMap.Builder<Integer, Drink> builder = ImmutableBiMap.builder();
+        init(new ArrayList<>(), new ArrayList<>());
+    }
+
+    // This needs to happen first to initialize BAR_LEVEL
+    public static void init(List<String> requiredDrinks, List<String> additionalDisallowedDrinks) {
+        ImmutableBiMap.Builder<Integer, Drink> indexBuilder = ImmutableBiMap.builder();
+        ImmutableMap.Builder<String, Integer> nameBuilder = ImmutableMap.builder();
         int index = 0;
         DRINKS_BY_LEVEL = ImmutableList.copyOf(getDrinksByLevel(BAR_LEVEL));
         for (Drink drink : DRINKS_BY_LEVEL) {
             System.out.printf("%2d %-24s: %2d fame, %3d tickets - (%s) %d%n",
                     index, drink.name(), drink.fame(), drink.tickets(), drink.getMaterialListString(), drink.id());
-            builder.put(index, drink);
+            indexBuilder.put(index, drink);
+            nameBuilder.put(drink.name(), index);
             index++;
         }
-        INDEX_DRINK = builder.build();
+        INDEX_DRINK = indexBuilder.build();
+        NAME_TO_INDEX = nameBuilder.build();
+
+        if (!requiredDrinks.isEmpty()) {
+            System.out.println("Requiring " + requiredDrinks);
+            List<Integer> requiredDrinkIndices = new ArrayList<>();
+            Map<Integer, Integer> requiredMaterials = new HashMap<>();
+            for (String required : requiredDrinks) {
+                Drink drink = DRINK_DATA.get(required);
+                for (FormulaMaterial material : drink.materials()) {
+                    requiredMaterials.putIfAbsent(material.id(), 0);
+                    requiredMaterials.put(material.id(), requiredMaterials.get(material.id()) + material.num());
+                }
+                requiredDrinkIndices.add(NAME_TO_INDEX.get(required));
+            }
+
+            REQUIRED_DRINKS = new IndexListCombo(ImmutableList.sortedCopyOf(Comparator.<Integer>naturalOrder().reversed(), requiredDrinkIndices));
+
+            Map<Integer, Integer> mutableMaterialsAvailable = new HashMap<>(MATERIALS_AVAILABLE);
+            for (Integer requiredMaterialId : REQUIRED_DRINKS.getMaterialsUsed().keySet()) {
+                int matsRequired = REQUIRED_DRINKS.getMaterialsUsed().get(requiredMaterialId);
+                int matsAvailable = MATERIALS_AVAILABLE.get(requiredMaterialId);
+                int updatedMatsAvailable = matsAvailable - matsRequired;
+                if (updatedMatsAvailable < 0) {
+                    throw new IllegalArgumentException("Can't require %d of material %s, only %d available".formatted(
+                            matsRequired, getMaterialById(requiredMaterialId).name(), matsAvailable));
+                }
+                mutableMaterialsAvailable.put(requiredMaterialId, updatedMatsAvailable);
+                System.out.printf("Removing %d %s from available materials%n",
+                        requiredMaterials.get(requiredMaterialId), getMaterialById(requiredMaterialId).name());
+            }
+
+            if (!additionalDisallowedDrinks.isEmpty()) {
+                List<Integer> disallowedDrinks = new ArrayList<>();
+                for (String disallowed : additionalDisallowedDrinks) {
+                    if (!NAME_TO_INDEX.containsKey(disallowed)) {
+                        throw new IllegalArgumentException(disallowed + " not in drink list");
+                    }
+                    disallowedDrinks.add(NAME_TO_INDEX.get(disallowed));
+                }
+                ADDITIONAL_DISALLOWED_DRINKS = new IndexListCombo(ImmutableList.sortedCopyOf(Comparator.<Integer>naturalOrder().reversed(), disallowedDrinks));
+            }
+
+            // Mutating the available mats seems dodgy, but cost calculations use MATERIAL_COSTS, so maybe it's safe?
+            MATERIALS_AVAILABLE = ImmutableMap.copyOf(mutableMaterialsAvailable);
+        }
     }
 
     // TODO: Extract this in a way that caching can be used to generate this cache as well
     public static void precalculateCache(boolean allowDuplicateDrinks, int lastDrinkIndex) {
         Stopwatch sw = Stopwatch.createStarted();
-        ComboGenerator generator = new ComboGenerator(BarOptimizer.CACHE_DEPTH, getEmptyCombo(), allowDuplicateDrinks, ComboGenerator.RUN_FROM_START, lastDrinkIndex);
+        ComboGenerator generator = new ComboGenerator(BarOptimizer.CACHE_DEPTH, getEmptyCombo(), allowDuplicateDrinks, ComboGenerator.RUN_FROM_START, lastDrinkIndex, getDisallowedDrinks());
         Combo combo = generator.next();
 
         TreeCache treeCache = new TreeCache(BarOptimizer.CACHE_DEPTH);
@@ -483,6 +539,20 @@ public class DataLoader {
     @SuppressWarnings("ConstantConditions")
     public static Material getMaterialById(int id) {
         return MATERIAL_COSTS.get(id);
+    }
+
+    public static Combo getRequiredDrinks() {
+        return REQUIRED_DRINKS;
+    }
+
+    public static Set<Integer> getDisallowedDrinks() {
+        if (REQUIRED_DRINKS == null) {
+            return Collections.emptySet();
+        }
+        if (ADDITIONAL_DISALLOWED_DRINKS != null) {
+            return ImmutableSet.copyOf(REQUIRED_DRINKS.mergeWith(ADDITIONAL_DISALLOWED_DRINKS).toIndices());
+        }
+        return ImmutableSet.copyOf(REQUIRED_DRINKS.toIndices());
     }
 
     public static Combo getEmptyCombo() {

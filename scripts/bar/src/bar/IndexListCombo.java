@@ -89,8 +89,9 @@ public class IndexListCombo extends AbstractCombo implements Combo {
     }
 
     // Returns a map of materialId->numUsed
-    Map<Integer, Integer> getMaterialsUsed() {
-        Map<Integer, Integer> materialsUsed = new HashMap<>(32);
+    public Map<Integer, Integer> getMaterialsUsed() {
+        // 33 distinct materials
+        Map<Integer, Integer> materialsUsed = new HashMap<>(33);
         for (Integer i : drinks) {
             for (FormulaMaterial material : DataLoader.getDrinkByIndex(i).materials()) {
                 materialsUsed.put(material.id(), material.num() + materialsUsed.getOrDefault(material.id(), 0));

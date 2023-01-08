@@ -40,7 +40,7 @@ public abstract class AbstractCombo implements Combo {
             .add(410315)
             .add(410314).build();
 
-    abstract Map<Integer, Integer> getMaterialsUsed();
+    abstract public Map<Integer, Integer> getMaterialsUsed();
 
     @Override
     @SuppressWarnings("ConstantConditions")

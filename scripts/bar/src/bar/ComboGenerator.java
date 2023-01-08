@@ -2,6 +2,7 @@ package bar;
 
 import bar.DataLoader.Drink;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 
 import java.util.*;
 
@@ -20,6 +21,8 @@ public class ComboGenerator implements Iterator<Combo> {
     private final int lastDrinkIndex;
     // Don't generate any combos that come lexicographically before this.
     private final Combo startFrom;
+    // Don't generate any combos using any drinks in this set
+    private final ImmutableSet<Integer> disallowedDrinks;
 
     // Internal queue of fully constructed Combos to be yielded
     private final Deque<Combo> toYield = new ArrayDeque<>();
@@ -50,6 +53,10 @@ public class ComboGenerator implements Iterator<Combo> {
         return new IndexListCombo(ImmutableList.copyOf(startFrom.toIndices().subList(1, startFrom.getSize())));
     }
 
+    public ComboGenerator(int numDrinksRemaining, Combo drinksMade, boolean allowDuplicateDrinks, Combo startFrom, int lastDrinkIndex) {
+        this(numDrinksRemaining, drinksMade, allowDuplicateDrinks, startFrom, lastDrinkIndex, Collections.emptySet());
+    }
+
     /**
      *
      * @param numDrinksRemaining Generated combos should all be of this size
@@ -59,7 +66,7 @@ public class ComboGenerator implements Iterator<Combo> {
      * @param lastDrinkIndex If set, do not generate any drinks with indices > this.  -1 to run completely
      */
     @SuppressWarnings("ConstantConditions")
-    public ComboGenerator(int numDrinksRemaining, Combo drinksMade, boolean allowDuplicateDrinks, Combo startFrom, int lastDrinkIndex) {
+    public ComboGenerator(int numDrinksRemaining, Combo drinksMade, boolean allowDuplicateDrinks, Combo startFrom, int lastDrinkIndex, Set<Integer> disallowedDrinks) {
         if (numDrinksRemaining == 0) {
             throw new IllegalStateException();
         }
@@ -69,6 +76,7 @@ public class ComboGenerator implements Iterator<Combo> {
         this.allowDuplicateDrinks = allowDuplicateDrinks;
         this.startFrom = startFrom;
         this.lastDrinkIndex = lastDrinkIndex;
+        this.disallowedDrinks = ImmutableSet.copyOf(disallowedDrinks);
 
         int startIndex = getStartIndex();
 
@@ -76,15 +84,7 @@ public class ComboGenerator implements Iterator<Combo> {
         if (numDrinksRemaining == 1) {
             for (Drink toAdd : DataLoader.DRINKS_BY_LEVEL) {
                 int toAddIndex = DataLoader.INDEX_DRINK.inverse().get(toAdd);
-                if (toAddIndex < startIndex) {
-                    continue;
-                }
-                if (lastDrinkIndex != RUN_FULLY && toAddIndex > lastDrinkIndex) {
-                    continue;
-                }
-
-                // TODO: avoiding duplicates could be faster than this hack
-                if (!allowDuplicateDrinks && drinksMade.toIndices().contains(toAddIndex)) {
+                if (shouldSkip(drinksMade, allowDuplicateDrinks, lastDrinkIndex, disallowedDrinks, startIndex, toAddIndex)) {
                     continue;
                 }
                 if (toAddIndex <= drinksMade.getMin()) {
@@ -100,6 +100,27 @@ public class ComboGenerator implements Iterator<Combo> {
 //                System.out.println(drinksMade.toIndexString() + " will have nothing to yield");
             }
         }
+    }
+
+    private boolean shouldSkip(Combo drinksMade, boolean allowDuplicateDrinks, int lastDrinkIndex, Set<Integer> disallowedDrinks, int startIndex, int toAddIndex) {
+        // Drink comes before the start point
+        if (toAddIndex < startIndex) {
+            return true;
+        }
+        // Drink comes after the end point
+        if (lastDrinkIndex != RUN_FULLY && toAddIndex > lastDrinkIndex) {
+            return true;
+        }
+        // Drink is in the disallowed set
+        if (disallowedDrinks.contains(toAddIndex)) {
+            return true;
+        }
+        // No dupes allowed and drink is a dupe
+        // TODO: avoiding duplicates could be faster than this hack
+        if (!allowDuplicateDrinks && drinksMade.toIndices().contains(toAddIndex)) {
+            return true;
+        }
+        return false;
     }
 
     private boolean isDefinitelyEmpty() {
@@ -172,20 +193,13 @@ public class ComboGenerator implements Iterator<Combo> {
         for (Drink toAdd : DataLoader.DRINKS_BY_LEVEL) {
             int toAddIndex = DataLoader.INDEX_DRINK.inverse().get(toAdd);
             if (toAddIndex <= drinksMade.getMin()) {
-                if (toAddIndex < startIndex) {
-                    continue;
-                }
-                if (lastDrinkIndex != RUN_FULLY && toAddIndex > lastDrinkIndex) {
-                    continue;
-                }
-                // TODO: avoiding duplicates could be faster than this hack
-                if (!allowDuplicateDrinks && drinksMade.toIndices().contains(toAddIndex)) {
+                if (shouldSkip(drinksMade, allowDuplicateDrinks, lastDrinkIndex, disallowedDrinks, startIndex, toAddIndex)) {
                     continue;
                 }
                 Combo potential = drinksMade.plus(toAddIndex);
                 if (potential.canBeMade()) {
 //                    System.out.println("can make generator " + potential.toIndexString());
-                    ComboGenerator generator = new ComboGenerator(numDrinksRemaining - 1, potential, allowDuplicateDrinks, poppedStartFrom(), lastDrinkIndex);
+                    ComboGenerator generator = new ComboGenerator(numDrinksRemaining - 1, potential, allowDuplicateDrinks, poppedStartFrom(), lastDrinkIndex, disallowedDrinks);
                     // Prune some generators early if possible
                     // TODO: Precaching next value means this will dive all the way down, which could be very expensive
                     // TODO: maybe only do this for the first one?

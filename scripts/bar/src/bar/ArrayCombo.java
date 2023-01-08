@@ -104,7 +104,7 @@ public final class ArrayCombo extends AbstractCombo implements Combo {
 
     // Returns a map of materialId->numUsed
     @Override
-    Map<Integer, Integer> getMaterialsUsed() {
+    public Map<Integer, Integer> getMaterialsUsed() {
         Map<Integer, Integer> materialsUsed = new HashMap<>(32);
         for (int i = 0; i < drinks.length; i++) {
             if (drinks[i] != 0) {

@@ -1,6 +1,7 @@
 package bar;
 
 import java.util.List;
+import java.util.Map;
 
 public interface Combo {
 
@@ -17,6 +18,8 @@ public interface Combo {
 
     // Add one drink to a combo
     Combo plus(int index);
+
+    Map<Integer, Integer> getMaterialsUsed();
 
     @SuppressWarnings("ConstantConditions")
     boolean canBeMade();
