@@ -1,13 +1,13 @@
 package bar;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public abstract class AbstractCombo implements Combo {
     // Approximate ratio of max tickets to max fame
@@ -62,7 +62,8 @@ public abstract class AbstractCombo implements Combo {
                 countAndNames.add(entry.getKey());
             }
         }
-        return Joiner.on(", ").join(countAndNames);
+        // It's helpful to sort drink names so that different versions of the same drink are consecutive
+        return countAndNames.stream().sorted().collect(Collectors.joining(", "));
     }
 
     @Override
