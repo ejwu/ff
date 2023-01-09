@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -91,6 +92,8 @@ public class DataLoader {
     public static final ImmutableMap<Integer, String> DRINK_ID_TO_NAME = loadDrinkIdToName();
     public static ImmutableBiMap<Integer, Drink> INDEX_DRINK;
     public static ImmutableMap<String, Integer> NAME_TO_INDEX;
+    // Map of the indices of 2* drinks to their 3* version
+    public static ImmutableMap<Integer, Integer> TWO_TO_THREE;
     public static ImmutableList<Drink> DRINKS_BY_LEVEL;
     private static Combo REQUIRED_DRINKS;
     private static Combo ADDITIONAL_DISALLOWED_DRINKS;
@@ -129,6 +132,16 @@ public class DataLoader {
         }
         INDEX_DRINK = indexBuilder.build();
         NAME_TO_INDEX = nameBuilder.build();
+
+        // TODO: Don't need to do this unless imperfect drinks are allowed
+        ImmutableMap.Builder<Integer, Integer> twoToThreeBuilder = ImmutableMap.builder();
+        for (String drinkName : NAME_TO_INDEX.keySet()) {
+            if (drinkName.endsWith("-2")) {
+                twoToThreeBuilder.put(Objects.requireNonNull(NAME_TO_INDEX.get(drinkName)),
+                        Objects.requireNonNull(NAME_TO_INDEX.get(drinkName.substring(0, drinkName.length() - 2))));
+            }
+        }
+        TWO_TO_THREE = twoToThreeBuilder.build();
 
         if (!requiredDrinks.isEmpty()) {
             System.out.println("Requiring " + requiredDrinks);
@@ -193,8 +206,14 @@ public class DataLoader {
                 }
                 currentKey = combo.toIndices().get(0);
             }
-            treeCache.addCombo(combo);
-            keyCount.put(currentKey, keyCount.getOrDefault(currentKey, 0) + 1);
+            // TODO: This only excludes combos missing the 3* version of the current key - modifying the generator to be
+            // smarter could exclude further combos involving 2/3* drinks besides the current key
+            if (TWO_TO_THREE.containsKey(currentKey) && !combo.toIndices().contains(TWO_TO_THREE.get(currentKey))) {
+                // Suppress combos that include the 2* but not the 3* version of a drink
+            } else {
+                treeCache.addCombo(combo);
+                keyCount.put(currentKey, keyCount.getOrDefault(currentKey, 0) + 1);
+            }
             combo = generator.next();
         }
         System.out.printf("%2d: %8d - %s%n",
@@ -447,7 +466,8 @@ public class DataLoader {
                             ingredients.add(new FormulaMaterial(asInt(material), 1));
                         }
                         name += "-0";
-                        builder.put(name, createDrink(name, drinkJson, openBarLevel, ingredients));
+                        // TODO: temporarily hack out 0* drinks
+//                        builder.put(name, createDrink(name, drinkJson, openBarLevel, ingredients));
                     }
                 }
             }

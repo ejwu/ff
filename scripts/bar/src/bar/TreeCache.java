@@ -12,6 +12,7 @@ import java.util.TreeMap;
 
 public class TreeCache implements Iterable<Combo> {
     private final Map<Integer, Map> tree;
+    private Map<Integer, Integer> subtreeSizes = new HashMap<>();
     private final int depth;
     private long size;
     public TreeCache(int depth) {
@@ -98,6 +99,7 @@ public class TreeCache implements Iterable<Combo> {
             }
         }
         size++;
+        subtreeSizes.put(combo.getMax(), subtreeSizes.getOrDefault(combo.getMax(), 0) + 1);
     }
 
     public boolean contains(Combo combo) {
@@ -116,6 +118,10 @@ public class TreeCache implements Iterable<Combo> {
 
     public long getSize() {
         return size;
+    }
+
+    public int getSubtreeSize(Integer key) {
+        return subtreeSizes.get(key);
     }
 
     private long getSubtreeSize(Map<Integer, Map> subtree) {

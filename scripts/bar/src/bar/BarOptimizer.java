@@ -24,19 +24,20 @@ public class BarOptimizer {
     @Parameter(names={"--barLevel"})
     public int barLevel = 22;
     @Parameter(names={"--cacheDepth"})
-    int cacheDepth = 9;
+    int cacheDepth = 12;
     @Parameter(names={"--workerDepth"})
-    int workerDepth = 9;
+    int workerDepth = 8;
     @Parameter(names={"--allowDuplicateDrinks"})
     boolean allowDuplicateDrinks = false;
     // Stop running after processing all combos using drinks <= this index.
     // This allows reducing cache size (and increasing cache depth).
     // -1 to run to completion (ComboGenerator.RUN_FULLY)
     @Parameter(names={"--runUntil"})
-    int lastDrinkIndex = 55;
+    int lastDrinkIndex = 47;
     static DataLoader.SortOrder sortOrder = DataLoader.SortOrder.OVERALL;
 
-    static boolean allowImperfectDrinks = false;
+    static boolean allowImperfectDrinks = true;
+    public static Combo START_FROM = new IndexListCombo(ImmutableList.of(46));
 
     // Oden - spritz < copper illusion < paloma
     // Takoyaki - pjuice, honey soda < refreshing soda
@@ -60,8 +61,8 @@ public class BarOptimizer {
 
     long cantBeMade = 0;
     long rejectedForDupes = 0;
+    long rejectedForNoThreeStar = 0;
 
-    public static Combo START_FROM = new IndexListCombo(ImmutableList.of());
 
     private void setTempValues(int barLevel, int cacheDepth, int workerDepth, boolean allowDuplicateDrinks, List<Integer> startFrom, int lastDrinkIndex, DataLoader.SortOrder localSortOrder, boolean allowImperfectDrinks) {
         this.barLevel = barLevel;
@@ -103,8 +104,26 @@ public class BarOptimizer {
 
         Combo partialAtCacheLevel = generator.next();
         while (partialAtCacheLevel != null) {
+            // TODO: if imperfect drinks are allowed, can optimize by disallowing many combos that have 2* drinks without the corresponding 3* drink.
+            int minAllowableCache = -1;
+            if (allowImperfectDrinks) {
+                // TODO: Does this need to be cached on creation?  Could be expensive processing for every combo
+                for (Integer drink : partialAtCacheLevel.toIndices()) {
+                    if (DataLoader.TWO_TO_THREE.containsKey(drink)) {
+                        Integer threeStar = DataLoader.TWO_TO_THREE.get(drink);
+                        if (!partialAtCacheLevel.toIndices().contains(threeStar)) {
+                            // Completions must include the 3 star version of the drink, so bypass all cache levels
+                            // that are too low to include it
+                            minAllowableCache = Math.max(minAllowableCache, threeStar);
+                        }
+                    }
+                }
+            }
             for (Integer cachePrefix : DataLoader.TREE_CACHE.getKeys()) {
-                if (partialAtCacheLevel.getMin() >= cachePrefix) {
+                if (cachePrefix < minAllowableCache) {
+                    rejectedForNoThreeStar += DataLoader.TREE_CACHE.getSubtreeSize(cachePrefix);
+                }
+                if (partialAtCacheLevel.getMin() >= cachePrefix && cachePrefix >= minAllowableCache) {
                     Iterator<Combo> it = DataLoader.TREE_CACHE.getSubtree(cachePrefix);
                     while (it.hasNext()) {
                         Combo combined = partialAtCacheLevel.mergeWith(
@@ -165,7 +184,7 @@ public class BarOptimizer {
     @SuppressWarnings("ConstantConditions")
     public void run() {
         // barLevel, cacheLevel, workerDepth, allowDuplicateDrinks, startFrom, runUntil, sortOrder, allowImperfectDrinks
-//        setTempValues(21, 9, 9, false, List.of(49), 49, DataLoader.SortOrder.TICKETS, false);
+//        setTempValues(8, 6, 4, false, List.of(76), -1, DataLoader.SortOrder.TICKETS, true);
 
         Stopwatch sw = Stopwatch.createStarted();
         // This needs to happen before any reference to DataLoader is made
@@ -231,8 +250,8 @@ public class BarOptimizer {
                         System.out.println(stats);
                         System.out.println(LocalDateTime.now());
                         long minutes = Math.max(1, sw.elapsed(TimeUnit.MINUTES));
-                        System.out.printf("%,d submitted, %,d jobs processed, %,d empty jobs, %,d combos processed, %,d can't be made, %,d rejected for dupes, %,d non-empty jobs processed/minute, %,d rejected combos processed/minute, %,d valid combos processed/minute%n",
-                                jobCount.longValue(), numProcessed.longValue(), empty, stats.numProcessed, cantBeMade, rejectedForDupes, (numProcessed.longValue() - empty) / minutes, cantBeMade / minutes, stats.numProcessed / minutes);
+                        System.out.printf("%,d submitted, %,d jobs processed, %,d empty jobs, %,d combos processed, %,d can't be made, %,d rejected for dupes, %,d skipped for missing 3*, %,d non-empty jobs processed/minute, %,d rejected combos processed/minute, %,d valid combos processed/minute%n",
+                                jobCount.longValue(), numProcessed.longValue(), empty, stats.numProcessed, cantBeMade, rejectedForDupes, rejectedForNoThreeStar, (numProcessed.longValue() - empty) / minutes, cantBeMade / minutes, stats.numProcessed / minutes);
                     }
                 } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
