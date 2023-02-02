@@ -13,6 +13,7 @@ FA_NATURES = {"1": "Brave", "2": "unknown2", "3": "Cautious", "4": "unknown4", "
 def parse_args():
     parser = argparse.ArgumentParser(description="Parse leaderboards for Goose Barnacle event")
     parser.add_argument("--server", help="glori or lk", type=str, default="glori")
+    parser.add_argument("--show_secrets", help="show nonpublic information", action="store_true", required=False)
     return parser.parse_args()
 
 def load_fs_map():
@@ -81,17 +82,46 @@ def short_fa_str(fs_json):
         fa_string = fa_string.replace(original, replacement)
     return fa_string
 
+SHORT_TOGI_COLORS = {
+    "Green": "Gr",
+    "Cyan": "Cy",
+    "Red": "Re",
+    "Blue": "Bl",
+    "Purple": "Pu",
+    "Yellow": "Ye"
+}
+
+import pprint
 
 def togis(fs):
     togis = []
     if not fs["artifactTalent"]:
         return togis
 
-    for i in sorted(int(x) for x in fs["artifactTalent"]):
-        node = fs["artifactTalent"][str(i)]
-        if node["gemstoneId"]:
-            togis.append(togi_map[str(node["gemstoneId"])])
+    for i in ["3", "6", "9", "14", "18"]:
+        if not i in fs["artifactTalent"]:
+            togis.append("LOCKED")
+        else:
+            node = fs["artifactTalent"][str(i)]
+            if node["gemstoneId"]:
+                togis.append(togi_map[str(node["gemstoneId"])])
+            else:
+                togis.append("EMPTY")
     return togis
+
+def short_togi_str(fs):
+    short_togis = []
+    for togi in togis(fs):
+        for color, short in SHORT_TOGI_COLORS.items():
+            togi = togi.replace(color, short)
+        short_togis.append(togi)
+    return "/".join(short_togis)
+
+def shortest_togi_str(fs):
+    s = short_togi_str(fs)
+    for color in SHORT_TOGI_COLORS.values():
+        s = s.replace(color + " ", "") 
+    return s
 
 def artifact_nodes(fs):
     if not fs["artifactTalent"]:
@@ -218,13 +248,14 @@ def parse_goose_barnacle_leaderboards():
     print(sorted(high_scores.items()))
     print(len(high_scores))
 
+DISASTER_NAMES = {"20001": "Aluna", "20002": "Durga", "20003": "Devouroth", "20004": "Bonepain", "20005": "Minamata", "20006": "Jellyfish", "20007": "Dreamer", "20008": "Qiongqi"}
+
 def parse_disaster_manual():
-    DISASTER_NAMES = {"20001": "Aluna", "20002": "Durga", "20003": "Devouroth", "20004": "Bonepain", "20005": "Minamata", "20006": "Jellyfish", "20007": "Dreamer", "20008": "Qiongqi"}
-    disaster_manual = json.load(open("lk_leaderboard_20230201.json"))
+    disaster_manual = json.load(open("lk_leaderboard_20230201.json.pretty"))
     print("lk")
     for disaster in disaster_manual["data"]["manual"]:
         print(DISASTER_NAMES[str(disaster["questId"])], disaster["totalNumbers"])
-    disaster_manual = json.load(open("glori_leaderboard_20230201.json"))
+    disaster_manual = json.load(open("glori_leaderboard_20230201.json.pretty"))
     print("glori")
     for disaster in disaster_manual["data"]["manual"]:
         print(DISASTER_NAMES[str(disaster["questId"])], disaster["totalNumbers"])
@@ -239,8 +270,9 @@ def parse_disaster_manual():
                 
         print()
 
-    lk_data = json.load(open("lk_leaderboard_20230201.json"))["data"]["manual"]
-    glori_data = json.load(open("glori_leaderboard_20230201.json"))["data"]["manual"]
+def parse_disaster_snapshot():
+    lk_data = json.load(open("lk_leaderboard_20230201.json.pretty"))["data"]["manual"]
+    glori_data = json.load(open("glori_leaderboard_20230201.json.pretty"))["data"]["manual"]
 
     max_name_length = 1
     for i, lk_disaster in enumerate(lk_data):
@@ -259,19 +291,25 @@ def parse_disaster_manual():
         
         lk_players = disaster["topRank"]
         glori_players = glori_data[i]["topRank"]
-        for i in range(0, 3):
+        players = 3
+        if parse_args().show_secrets:
+            players = 4
+        for i in range(0, players):
             # Some brutal one off hacks due to fstrings and wcwidth not measuring lengths of unicode strings correctly
             if lk_players[i]["playerId"] == "1738235":
-                print(f"{lk_players[i]['playerName']:{max_name_length - 5}} {lk_players[i]['playerDamage']:<14}   {glori_players[i]['playerName']:20} {glori_players[i]['playerDamage']:12}")
+                print(f"{lk_players[i]['playerName']:{max_name_length - 5}} {lk_players[i]['playerDamage']:<14,}   {glori_players[i]['playerName']:20} {glori_players[i]['playerDamage']:12,}")
             else:
                 if glori_players[i]["playerId"] == "111684":
-                    print(f"{lk_players[i]['playerName']:{max_name_length}} {lk_players[i]['playerDamage']:<14}   {glori_players[i]['playerName']:10} {glori_players[i]['playerDamage']:12}")
+                    print(f"{lk_players[i]['playerName']:{max_name_length}} {lk_players[i]['playerDamage']:<14,}   {glori_players[i]['playerName']:10} {glori_players[i]['playerDamage']:12,}")
                 else:
-                    print(f"{lk_players[i]['playerName']:{max_name_length}} {lk_players[i]['playerDamage']:<14}   {glori_players[i]['playerName']:20} {glori_players[i]['playerDamage']:12}")
+                    print(f"{lk_players[i]['playerName']:{max_name_length}} {lk_players[i]['playerDamage']:<14,}   {glori_players[i]['playerName']:20} {glori_players[i]['playerDamage']:12,}")
             for j in range(0, 5):
                 lk_fs = lk_players[i]['playerCards'][j]
                 glori_fs = glori_players[i]['playerCards'][j]
                 print(f"  {fs_str(lk_fs):23} {short_fa_str(lk_fs)}    {fs_str(glori_fs):23} {short_fa_str(glori_fs)}")
+                if parse_args().show_secrets:
+#                    print(fs_skills(lk_fs))
+                    print(f"    {shortest_togi_str(lk_fs):29}         {shortest_togi_str(glori_fs)}")
             print()
         print()
         
@@ -281,4 +319,5 @@ if __name__ == '__main__':
     togi_map = load_togi_map()
 
 #    parse_goose_barnacle_leaderboards()
-    parse_disaster_manual()
+#    parse_disaster_manual()
+    parse_disaster_snapshot()
