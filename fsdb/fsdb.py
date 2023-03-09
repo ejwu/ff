@@ -52,7 +52,15 @@ SEEK_SORT_RULES = {
 
 #ConfigSeekTargetRule
 TARGET_TYPES = {
-    "1": "T_OBJ_SELF", "2": "T_OBJ_ENEMY", "3": "T_OBJ_FRIEND", "4": "T_OBJ_ALL", "5": "T_OBJ_FRIEND_TANK", "6": "T_OBJ_FRIEND_MELEE", "7": "T_OBJ_FRIEND_REMOTE", "8": "T_OBJ_FRIEND_HEALER", "9": "T_OBJ_ENEMY_TANK", "10": "T_OBJ_ENEMY_MELEE", "11": "T_OBJ_ENEMY_REMOTE", "12": "T_OBJ_ENEMY_HEALER"}
+    "1": "T_OBJ_SELF", "2": "T_OBJ_ENEMY", "3": "T_OBJ_FRIEND", "4": "T_OBJ_ALL", "5": "T_OBJ_FRIEND_TANK", "6": "T_OBJ_FRIEND_MELEE", "7": "T_OBJ_FRIEND_REMOTE", "8": "T_OBJ_FRIEND_HEALER", "9": "T_OBJ_ENEMY_TANK", "10": "T_OBJ_ENEMY_MELEE", "11": "T_OBJ_ENEMY_REMOTE", "12": "T_OBJ_ENEMY_HEALER", "13": "T_OBJ_FRIEND_PLAYER", "14": "T_OBJ_ENEMY_PLAYER", "15": "T_OBJ_ATTACKER", "16": "T_OBJ_ATTACK_TARGET", "17": "T_OBJ_TRIGGER_ATTACKER"}
+
+#ConfigObjectTriggerConditionType
+TRIGGER_CONDITION_TYPE = {
+    "0": "BASE", "1": "HP_MORE_THAN", "2": "HP_LESS_THAN", "3": "HAS_BUFF"}
+
+#ConfigMeetConditionType
+MEET_CONDITION_TYPE = {
+    "0": "BASE", "1": "ONE", "2": "ALL"}
 
 # Just by inspection
 TOGI_TYPES = {
@@ -74,7 +82,7 @@ def create_tables():
     # Querying by complicated json objects on skills with multiple effects is a pain.
     # Denormalize skills by splitting each effect and target into a separate row.
     c.execute("DROP TABLE IF EXISTS dn_skills")
-    c.execute("CREATE TABLE dn_skills(fs_id text, monster_id text, descr text, id text, type text, type_desc text, effect_type text, effect, effect_rate numeric, effect_time numeric, target_num integer, target text, target_type text, trigger_type text, cooldown integer)") 
+    c.execute("CREATE TABLE dn_skills(fs_id text, monster_id text, descr text, id text, type text, type_desc text, effect_type text, effect text, effect_rate numeric, effect_time numeric, target_num integer, target text, target_type text, trigger_type text, triggerCondition text, triggerThreshold numeric, triggerMeetType text, triggerConditionTarget text, triggerConditionTargetType text, triggerConditionTargetNum numeric, triggerConditionFull text, cooldown integer)") 
 
 def transform_fs(fs):
     fs["career"] = FS_TYPE[fs["career"]]
@@ -136,14 +144,15 @@ def transform_skill(skill):
         print("no triggerType for", skill["id"])        
 
     # Replace target types
-    if skill["target"]:
-        for value in skill["target"].values():
-            # General target types
-            if value["type"] in TARGET_TYPES:
+    for field in ["target", "triggerConditionTarget"]:
+        if skill[field]:
+            for value in skill[field].values():
+                # General target types
+                if value["type"] in TARGET_TYPES:
                      value["type"] = TARGET_TYPES[value["type"]]
-            # Specific target types
-            if value["sequence"] in SEEK_SORT_RULES:
-                value["sequence"] = SEEK_SORT_RULES[value["sequence"]]
+                # Specific target types
+                if value["sequence"] in SEEK_SORT_RULES:
+                    value["sequence"] = SEEK_SORT_RULES[value["sequence"]]
 
     # Replace skill type
     if skill["property"]:
@@ -163,7 +172,11 @@ def transform_skill(skill):
 def insert_skill(c, fill, fsid, skill, skills_to_monsters):
     row = [fsid]
     for k in sorted(skill.keys()):
-        row.append(json.dumps(skill[k]))
+        # Show Chinese instead of unicode string
+        if k == "descr":
+            row.append(skill[k])
+        else:
+            row.append(json.dumps(skill[k]))
 
     c.execute(f"INSERT INTO skills VALUES({fill})", row)
 
@@ -171,6 +184,43 @@ def insert_skill(c, fill, fsid, skill, skills_to_monsters):
     if str(skill["id"]) in skills_to_monsters.keys():
         monster_list = skills_to_monsters[str(skill["id"])]
     insert_denormalized_skill(c, fsid, skill, monster_list)
+
+def append_trigger_conditions(row, skill, target):
+    if skill["triggerCondition"]:
+        triggerCondition = skill["triggerCondition"]
+        hasValue = False
+        condition = triggerCondition[target]
+        if condition:
+            if condition["value"]:
+                if hasValue:
+                    print("more than one condition has a threshold", skill)
+                    exit()
+
+                hasValue = True
+                if len(condition["value"]) > 1:
+                    print("too many values in ", skill)
+                    exit()
+                row.append(TRIGGER_CONDITION_TYPE.get(condition["type"], "missing"))
+                row.append(condition["value"][0])
+                row.append(MEET_CONDITION_TYPE.get(condition["meetType"], "missing"))
+                row.append(skill["triggerConditionTarget"][target]["type"])
+                row.append(skill["triggerConditionTarget"][target]["sequence"])
+                row.append(skill["triggerConditionTarget"][target]["num"])
+        if not hasValue:
+            # triggerCondition, triggerConditionThreshold, triggerMeetType, triggerConditionTarget, triggerConditionTargetType, triggerConditionTargetNum
+            row.append("")
+            row.append("")
+            row.append("")
+            row.append("")
+            row.append("")
+            row.append("")
+    else:
+        print("no trigger", skill)
+        exit()
+
+    # Always append raw form just in case
+    # triggerConditionFull
+    row.append(str(skill["triggerCondition"]))
 
 def populate_and_insert(c, fsid, monster_id, skill):
     for target in skill["target"]:
@@ -184,11 +234,14 @@ def populate_and_insert(c, fsid, monster_id, skill):
         row.append(skill["target"][target]["sequence"])
         row.append(skill["target"][target]["type"])
         row.append(str(skill["triggerType"]))
+
+        append_trigger_conditions(row, skill, target)
+                                                    
         if skill["triggerType"] and "CD" in skill["triggerType"]:
             row.append(skill["triggerType"]["CD"])
         else:
             row.append("")
-        c.execute("INSERT INTO dn_skills VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
+        c.execute("INSERT INTO dn_skills VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
     
 def insert_denormalized_skill(c, fsid, skill, monster_list):
     populate_and_insert(c, fsid, "", skill)
@@ -279,6 +332,8 @@ SKILLS_FILE = path / "card" / "skill.json.pretty"
 MONSTER_FILE = path / "monster" / "monster.json.pretty"
 
 # Artifacts may only exist here?
+# Monkfish Liver is translated in /publish but not /res_sub
+# Durian Pancake exists in res_sub but not publish?
 ARTIFACT_PATH = Path(args.dir) / "com.egg.foodandroid" / "files" / "res_sub" / "conf" / "en-us" / "artifact"
 # This appears to be the togi map for every FS
 ARTIFACT_MAPPING_FILE = ARTIFACT_PATH / "talentPoint.json.pretty"
