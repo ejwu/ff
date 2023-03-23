@@ -22,39 +22,89 @@ import java.util.concurrent.atomic.AtomicLong;
 @Parameters(separators="=")
 public class BarOptimizer {
     @Parameter(names={"--barLevel"})
-    public int barLevel = 22;
+    public int barLevel = 23;
     @Parameter(names={"--cacheDepth"})
-    int cacheDepth = 12;
+    int cacheDepth = 9;
     @Parameter(names={"--workerDepth"})
-    int workerDepth = 8;
+    int workerDepth = 9;
     @Parameter(names={"--allowDuplicateDrinks"})
     boolean allowDuplicateDrinks = false;
     // Stop running after processing all combos using drinks <= this index.
     // This allows reducing cache size (and increasing cache depth).
     // -1 to run to completion (ComboGenerator.RUN_FULLY)
     @Parameter(names={"--runUntil"})
-    int lastDrinkIndex = 47;
+    int lastDrinkIndex = 45;
     static DataLoader.SortOrder sortOrder = DataLoader.SortOrder.OVERALL;
 
-    static boolean allowImperfectDrinks = true;
-    public static Combo START_FROM = new IndexListCombo(ImmutableList.of(46));
-
-    // Oden - spritz < copper illusion < paloma
-    // Takoyaki - pjuice, honey soda < refreshing soda
-    // Snowskin - matador < fog cutter
-    // mashed - mojito, margarita - no space for any with above
-    // salt and pepper - lynchburg < ginger cola < sidecar
-
+    static boolean allowImperfectDrinks = false;
+    public static Combo START_FROM = new IndexListCombo(ImmutableList.of());
 
     List<String> requiredDrinks = new ArrayList<>();
     List<String> additionalDisallowedDrinks = new ArrayList<>();
-//    List<String> requiredDrinks = List.of(
-//            "Paloma", "Paloma", "Paloma", "Paloma", "Spritz",
-//            "Refreshing Soda", "Refreshing Soda", "Refreshing Soda", "Pineapple Juice", "Pineapple Juice",
-//        "Margarita");
+
+    // buddha - brandy alexander (3) < zombie, tequila sunset
+    // champagne - mayan (3) < daiquiri, lemon soda water
+    // beggar - fitzgerald (3) < bobby burns
+
+    // 3x Tequila sunset due to fruit syrup
+    // Zombie uses lemon juice
+
+    // Required/disallowed drinks for level 21 and the Beggar's Chicken/Champagne/Buddha's Temptation rotation
+    private void setLevel21BeggarDrinks() {
+        requiredDrinks = List.of("Tequila Sunset", "Tequila Sunset", "Zombie", "Zombie", "Zombie",
+                "Lemon Soda Water", "Lemon Soda Water", "Lemon Soda Water", "Lemon Soda Water", "Lemon Soda Water",
+                "Bobby Burns", "Bobby Burns", "Bobby Burns", "Bobby Burns", "Bobby Burns");
+        additionalDisallowedDrinks = List.of("Brandy Alexander", "Mayan", "Fitzgerald",
+                "Brandy Alexander-2", "Mayan-2", "Fitzgerald-2",
+                "Tequila Sunset-2", "Zombie-2",
+                "Lemon Soda Water-2",
+                "Bobby Burns-2");
+    }
+
+    private void setLevel23BeggarDrinks() {
+        // 23 allows one more Tequila Sunset due to larger ingredient stacks
+        requiredDrinks = List.of("Tequila Sunset", "Tequila Sunset", "Tequila Sunset", "Zombie", "Zombie",
+                "Lemon Soda Water", "Lemon Soda Water", "Lemon Soda Water", "Lemon Soda Water", "Lemon Soda Water",
+                "Bobby Burns", "Bobby Burns", "Bobby Burns", "Bobby Burns", "Bobby Burns");
+        additionalDisallowedDrinks = List.of("Brandy Alexander", "Mayan", "Fitzgerald",
+                "Brandy Alexander-2", "Mayan-2", "Fitzgerald-2",
+                "Tequila Sunset-2", "Zombie-2",
+                "Lemon Soda Water-2",
+                "Bobby Burns-2");
+    }
+
+    // Oden - spritz < copper illusion < paloma
+    // Takoyaki - pjuice, honey soda < refreshing soda
+    // Snowskin - matador < fog cutter - these all use lemon juice, which is all used up by Palomas
+    // mashed - mojito, margarita < americano - all used up by oden/takoyaki
+
+    private void setLevel23OdenDrinks2Star() {
+        requiredDrinks = List.of(
+                "Paloma", "Paloma", "Paloma", "Paloma", "Paloma",
+                "Refreshing Soda", "Refreshing Soda", "Refreshing Soda", "Refreshing Soda", "Pineapple Juice");
+        additionalDisallowedDrinks = List.of("Paloma", "Spritz", "Copper Illusion",
+                "Paloma-2", "Spritz-2", "Copper Illusion-2",
+                "Refreshing Soda", "Honey Soda", "Pineapple Juice",
+                "Refreshing Soda-2", "Honey Soda-2",
+                "Fog Cutter", "Matador",
+                "Fog Cutter-2", "Matador-2",
+                "Americano", "Margarita", "Mojito",
+                "Americano-2", "Margarita-2", "Mojito-2");
+        setTempValues(23, 9, 5, false, List.of(93), 113, DataLoader.SortOrder.OVERALL, true);
+    }
+
+    private void setLevel23OdenDrinks() {
+        requiredDrinks = List.of(
+                "Paloma", "Paloma", "Paloma", "Paloma", "Paloma",
+                "Refreshing Soda", "Refreshing Soda", "Refreshing Soda", "Refreshing Soda", "Pineapple Juice");
+        additionalDisallowedDrinks = List.of("Paloma", "Spritz", "Copper Illusion",
+                "Refreshing Soda", "Honey Soda", "Pineapple Juice",
+                "Fog Cutter", "Matador",
+                "Americano", "Margarita", "Mojito");
+        setTempValues(23, 10, 4, false, List.of(), -1, DataLoader.SortOrder.OVERALL, false);
+    }
 
     ////    List<String> additionalDisallowedDrinks = List.of("Honey Soda");
-//    List<String> additionalDisallowedDrinks = List.of("Paloma", "Spritz", "Refreshing Soda", "Pineapple Juice", "Margarita");
 //    List<String> additionalDisallowedDrinks = List.of(
 //            "Paloma-2", "Paloma-0", "Copper Illusion-2", "Copper Illusion-0", "Spritz-2", "Spritz-0",
 //            "Refreshing Soda-2", "Refreshing Soda-0", "Pineapple Juice-0", "Honey Soda", "Honey Soda-2", "Honey Soda-0");
@@ -184,8 +234,8 @@ public class BarOptimizer {
     @SuppressWarnings("ConstantConditions")
     public void run() {
         // barLevel, cacheLevel, workerDepth, allowDuplicateDrinks, startFrom, runUntil, sortOrder, allowImperfectDrinks
-//        setTempValues(8, 6, 4, false, List.of(76), -1, DataLoader.SortOrder.TICKETS, true);
-
+        setTempValues(23, 10, 9, false, List.of(47, 46, 43), 47, DataLoader.SortOrder.OVERALL, false);
+//        setLevel23OdenDrinks2Star();
         Stopwatch sw = Stopwatch.createStarted();
         // This needs to happen before any reference to DataLoader is made
         BAR_LEVEL = barLevel;

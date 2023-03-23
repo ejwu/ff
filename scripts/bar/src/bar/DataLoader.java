@@ -278,6 +278,7 @@ public class DataLoader {
         baseShop.put("Fruit Liqueur", new MaterialShop(150, 10, 15));
         // This is dumb, but the market sells 4 for 60, and also 6 for 90.
         // Use 10 for 150 as a placeholder and fix the actual cost later
+        // NOTE: Goes up to 6+8 for 210 at level 23
         baseShop.put("Ginger Beer", new MaterialShop(150, 10, 16));
         baseShop.put("Benedictine", new MaterialShop(150, 10, 18));
 
@@ -295,6 +296,7 @@ public class DataLoader {
         baseShop.put("Fruit Syrup", new MaterialShop(40, 4, 11));
         // This is dumb, but the market sells 4 for 60, and also 6 for 90.
         // Use 10 for 150 as a placeholder and fix the actual cost later
+        // NOTE: Goes up to 6+8 for 210 at level 23, except Hot Sauce
         baseShop.put("Soda", new MaterialShop(150, 10, 17));
         baseShop.put("Fruit Juice", new MaterialShop(150, 10, 19));
         baseShop.put("Hot Sauce", new MaterialShop(150, 10, 20));
@@ -365,6 +367,15 @@ public class DataLoader {
             }
             for (String other : List.of("Fruit Syrup")) {
                 baseShop.put(other, new MaterialShop(80, 8, baseShop.get(other).level));
+            }
+        }
+
+        if (BAR_LEVEL >= 23) {
+            for (String other : List.of("Soda", "Tomato Juice", "Fruit Juice", "Benedictine", "Ginger Beer")) {
+                baseShop.put(other, new MaterialShop(210, 14, baseShop.get(other).level));
+            }
+            for (String other : List.of("Fruit Syrup")) {
+                baseShop.put(other, new MaterialShop(100, 10, baseShop.get(other).level));
             }
         }
         return ImmutableMap.copyOf(baseShop);

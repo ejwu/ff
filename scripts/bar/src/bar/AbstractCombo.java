@@ -82,10 +82,18 @@ public abstract class AbstractCombo implements Combo {
                     toReturn.add(material);
                 }
                 if (MULTI_MAT_NAMES.contains(material)) {
-                    if (materialsUsed.get(material) <= 4) {
-                        buyAllExcept.add("6x " + material);
-                    } else if (materialsUsed.get(material) <= 6) {
-                        buyAllExcept.add("4x " + material);
+                    if (BarOptimizer.BAR_LEVEL <= 22) {
+                        if (materialsUsed.get(material) <= 4) {
+                            buyAllExcept.add("6x " + material);
+                        } else if (materialsUsed.get(material) <= 6) {
+                            buyAllExcept.add("4x " + material);
+                        }
+                    } else {
+                        if (materialsUsed.get(material) <= 6) {
+                            buyAllExcept.add("8x " + material);
+                        } else if (materialsUsed.get(material) <= 8) {
+                            buyAllExcept.add("6x " + material);
+                        }
                     }
                 }
             } else {
@@ -112,12 +120,23 @@ public abstract class AbstractCombo implements Combo {
             // 4 for 60, or 6 for 90
             if (MULTI_MAT_IDS.contains(materialId)) {
                 int quantity = getMaterialsUsed().get(materialId);
-                if (quantity <= 4) {
-                    cost += 60;
-                } else if (quantity <= 6) {
-                    cost += 90;
+                // Hot sauce doesn't change quantities at 23 for whatever reason
+                if (BarOptimizer.BAR_LEVEL <= 22 || materialId == 410315) {
+                    if (quantity <= 4) {
+                        cost += 60;
+                    } else if (quantity <= 6) {
+                        cost += 90;
+                    } else {
+                        cost += 150;
+                    }
                 } else {
-                    cost += 150;
+                    if (quantity <= 6) {
+                        cost += 90;
+                    } else if (quantity <= 8) {
+                        cost += 120;
+                    } else {
+                        cost += 210;
+                    }
                 }
             } else {
                 cost += DataLoader.getMaterialById(materialId).cost();
