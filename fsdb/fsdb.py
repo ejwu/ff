@@ -81,8 +81,10 @@ def create_tables():
 
     # Querying by complicated json objects on skills with multiple effects is a pain.
     # Denormalize skills by splitting each effect and target into a separate row.
+
+    # TODO: triggerThreshold and triggerConditionTargetNum being text is a hack to make sqlite-web work
     c.execute("DROP TABLE IF EXISTS dn_skills")
-    c.execute("CREATE TABLE dn_skills(fs_id text, monster_id text, descr text, id text, type text, type_desc text, effect_type text, effect text, effect_rate numeric, effect_time numeric, target_num integer, target text, target_type text, trigger_type text, triggerCondition text, triggerThreshold numeric, triggerMeetType text, triggerConditionTarget text, triggerConditionTargetType text, triggerConditionTargetNum numeric, triggerConditionFull text, cooldown integer)") 
+    c.execute("CREATE TABLE dn_skills(fs_id text, monster_id text, descr text, id text, type text, type_desc text, effect_type text, effect text, effect_rate numeric, effect_time numeric, target_num integer, target text, target_type text, trigger_type text, triggerCondition text, triggerThreshold text, triggerMeetType text, triggerConditionTarget text, triggerConditionTargetType text, triggerConditionTargetNum text, triggerConditionFull text, cooldown integer)") 
 
 def transform_fs(fs):
     fs["career"] = FS_TYPE[fs["career"]]
@@ -263,7 +265,7 @@ def parse_artifacts():
 
         # There seems to be an explicit mapping in cardArtifactGemstoneSkill.json as well.
         # Assuming here that they're not insane and these filenames make sense.
-        artifact_file = ARTIFACT_PATH / f"gemstoneSkill{fsid}.json.pretty"
+        artifact_file = ARTIFACT_PATH / f"gemstoneSkill{fsid}.json"
 
         if not artifact_file.exists():
             # This seems to happen for partially translated newer artifacts.  Presumably all of them
@@ -309,36 +311,36 @@ def parse_args():
 
 def assert_files_exist():
     if not FS_FILE.exists():
-        sys.exit(f"Can't find card.json.pretty at {FS_FILE}")
+        sys.exit(f"Can't find card.json at {FS_FILE}")
 
     if not SKILLS_FILE.exists():
-        sys.exit(f"Can't find skill.json.pretty at {SKILLS_FILE}")
+        sys.exit(f"Can't find skill.json at {SKILLS_FILE}")
 
     if not MONSTER_FILE.exists():
-        sys.exit(f"Can't find monster.json.pretty at {MONSTER_FILE}")
+        sys.exit(f"Can't find monster.json at {MONSTER_FILE}")
         
     if not ARTIFACT_MAPPING_FILE.exists():
-        sys.exit(f"Can't find talentPoint.json.pretty at {ARTIFACT_MAPPING_FILE}")
+        sys.exit(f"Can't find talentPoint.json at {ARTIFACT_MAPPING_FILE}")
 
     if not ARTIFACT_SKILL_GROUP_FILE.exists():
-        sys.exit(f"Can't find gemstoneSkillGroup.json.pretty at {ARTIFACT_SKILL_GROUP_FILE}")
+        sys.exit(f"Can't find gemstoneSkillGroup.json at {ARTIFACT_SKILL_GROUP_FILE}")
     
 args = parse_args()
 #path = Path(args.dir) / "com.egg.foodandroid" / "files" / "res_sub" / "conf" / "en-us"
 # Based on ankimo event, this is the path shown in game
 path = Path(args.dir) / "com.egg.foodandroid" / "files" / "publish" / "conf" / "en-us"
-FS_FILE = path / "card" / "card.json.pretty"
-SKILLS_FILE = path / "card" / "skill.json.pretty"
-MONSTER_FILE = path / "monster" / "monster.json.pretty"
+FS_FILE = path / "card" / "card.json"
+SKILLS_FILE = path / "card" / "skill.json"
+MONSTER_FILE = path / "monster" / "monster.json"
 
 # Artifacts may only exist here?
 # Monkfish Liver is translated in /publish but not /res_sub
 # Durian Pancake exists in res_sub but not publish?
 ARTIFACT_PATH = Path(args.dir) / "com.egg.foodandroid" / "files" / "res_sub" / "conf" / "en-us" / "artifact"
 # This appears to be the togi map for every FS
-ARTIFACT_MAPPING_FILE = ARTIFACT_PATH / "talentPoint.json.pretty"
+ARTIFACT_MAPPING_FILE = ARTIFACT_PATH / "talentPoint.json"
 # Togi map refers to a skill group, which maps to individual skills for all 10 togi levels
-ARTIFACT_SKILL_GROUP_FILE = ARTIFACT_PATH / "gemstoneSkillGroup.json.pretty"
+ARTIFACT_SKILL_GROUP_FILE = ARTIFACT_PATH / "gemstoneSkillGroup.json"
 
 assert_files_exist()
 

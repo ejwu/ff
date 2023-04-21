@@ -94,6 +94,7 @@ prettify_json() {
             echo prettify $file failed >> $LOG
         else
             rm $file
+            mv $file.pretty $file
         fi
     done
 }
@@ -131,10 +132,10 @@ unpack_textures() {
 }
 
 delete_translations $1
-process_lua $1
 process_data $1
 unzip_everything $1
 prettify_json $1
+process_lua $1
 unpack_textures $1
 
 echo $errors
