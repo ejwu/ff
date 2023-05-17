@@ -296,9 +296,12 @@ public class DataLoader {
         baseShop.put("Fruit Syrup", new MaterialShop(40, 4, 11));
         // This is dumb, but the market sells 4 for 60, and also 6 for 90.
         // Use 10 for 150 as a placeholder and fix the actual cost later
-        // NOTE: Goes up to 6+8 for 210 at level 23, except Hot Sauce
+
+        // Soda and Fruit Juice go up to 6+8 at level 23
         baseShop.put("Soda", new MaterialShop(150, 10, 17));
         baseShop.put("Fruit Juice", new MaterialShop(150, 10, 19));
+
+        // Hot Sauce and Tomato Juice remain at 6+4 at level 23
         baseShop.put("Hot Sauce", new MaterialShop(150, 10, 20));
         baseShop.put("Tomato Juice", new MaterialShop(150, 10, 20));
 
@@ -371,7 +374,7 @@ public class DataLoader {
         }
 
         if (BAR_LEVEL >= 23) {
-            for (String other : List.of("Soda", "Tomato Juice", "Fruit Juice", "Benedictine", "Ginger Beer")) {
+            for (String other : List.of("Soda", "Fruit Juice", "Benedictine", "Ginger Beer")) {
                 baseShop.put(other, new MaterialShop(210, 14, baseShop.get(other).level));
             }
             for (String other : List.of("Fruit Syrup")) {

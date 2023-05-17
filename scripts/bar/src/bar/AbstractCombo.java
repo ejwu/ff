@@ -82,7 +82,8 @@ public abstract class AbstractCombo implements Combo {
                     toReturn.add(material);
                 }
                 if (MULTI_MAT_NAMES.contains(material)) {
-                    if (BarOptimizer.BAR_LEVEL <= 22) {
+                    // Hot Sauce and Tomato Juice (still 6+4) diverge from Soda and Fruit Juice (6+8) starting at level 23
+                    if (BarOptimizer.BAR_LEVEL <= 22 || "Hot Sauce".equals(material) || "Tomato Juice".equals(material)) {
                         if (materialsUsed.get(material) <= 4) {
                             buyAllExcept.add("6x " + material);
                         } else if (materialsUsed.get(material) <= 6) {
