@@ -189,16 +189,23 @@ public class DataLoader {
     }
 
     // TODO: Extract this in a way that caching can be used to generate this cache as well
-    public static void precalculateCache(boolean allowDuplicateDrinks, int lastDrinkIndex) {
+    public static void precalculateCache(boolean allowDuplicateDrinks, int lastDrinkIndex, int highestCap) {
         Stopwatch sw = Stopwatch.createStarted();
         ComboGenerator generator = new ComboGenerator(BarOptimizer.CACHE_DEPTH, getEmptyCombo(), allowDuplicateDrinks, ComboGenerator.RUN_FROM_START, lastDrinkIndex, getDisallowedDrinks());
         Combo combo = generator.next();
+
+        int skippedForCap = 0;
 
         TreeCache treeCache = new TreeCache(BarOptimizer.CACHE_DEPTH);
 
         int currentKey = -1;
         Map<Integer, Integer> keyCount = new HashMap<>();
         while (combo != null) {
+            if (combo.getCost() > highestCap) {
+                skippedForCap++;
+                combo = generator.next();
+                continue;
+            }
             if (combo.toIndices().get(0) > currentKey) {
                 if (currentKey >= 0) {
                     System.out.printf("%2d: %8d - %s%n",
@@ -221,6 +228,7 @@ public class DataLoader {
 
         System.out.println("Tree entries: " + treeCache.getSize());
         TREE_CACHE = treeCache;
+        System.out.println("Skipped " + skippedForCap + " entries for being over " + highestCap);
         System.out.println(sw.elapsed(TimeUnit.SECONDS) + " seconds to create cache");
     }
 

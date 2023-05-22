@@ -2,7 +2,7 @@ package bar;
 
 import java.util.Comparator;
 
-public class Stats {
+public class Stats implements StatsInterface<Stats> {
     BestDrinkSet cost;
     BestDrinkSet cheap;
     BestDrinkSet fame;
@@ -143,6 +143,7 @@ public class Stats {
         numProcessed = 0;
     }
 
+    @Override
     public void offerAll(Combo combo) {
         cost.offer(combo);
         cheap.offer(combo);
@@ -155,6 +156,7 @@ public class Stats {
         numProcessed++;
     }
 
+    @Override
     public void mergeFrom(Stats other) {
         cost.offer(other.cost.best);
         cheap.offer(other.cheap.best);
@@ -197,5 +199,10 @@ public class Stats {
         sb.append("\nTotal combos: %,d\n".formatted(numProcessed));
         sb.append("----------------------------------------------------------------\n");
         return sb.toString();
+    }
+
+    @Override
+    public long getNumProcessed() {
+       return numProcessed;
     }
 }

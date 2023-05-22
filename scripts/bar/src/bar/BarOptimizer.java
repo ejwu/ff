@@ -22,9 +22,9 @@ import java.util.concurrent.atomic.AtomicLong;
 @Parameters(separators="=")
 public class BarOptimizer {
     @Parameter(names={"--barLevel"})
-    public int barLevel = 23;
+    public int barLevel = 24;
     @Parameter(names={"--cacheDepth"})
-    int cacheDepth = 9;
+    int cacheDepth = 10;
     @Parameter(names={"--workerDepth"})
     int workerDepth = 9;
     @Parameter(names={"--allowDuplicateDrinks"})
@@ -33,7 +33,11 @@ public class BarOptimizer {
     // This allows reducing cache size (and increasing cache depth).
     // -1 to run to completion (ComboGenerator.RUN_FULLY)
     @Parameter(names={"--runUntil"})
-    int lastDrinkIndex = 45;
+    int lastDrinkIndex = 55;
+    @Parameter(names={"--priceCaps"})
+    List<Integer> caps = List.of(1000, 1200);
+    private int highestCap = -1;
+
     static DataLoader.SortOrder sortOrder = DataLoader.SortOrder.OVERALL;
 
     static boolean allowImperfectDrinks = false;
@@ -71,6 +75,7 @@ public class BarOptimizer {
                 "Tequila Sunset-2", "Zombie-2",
                 "Lemon Soda Water-2",
                 "Bobby Burns-2");
+        setTempValues(24, 7, 2, false, List.of(), -1, DataLoader.SortOrder.OVERALL, true);
     }
 
     // Oden - spritz < copper illusion < paloma
@@ -78,6 +83,7 @@ public class BarOptimizer {
     // Snowskin - matador < fog cutter - these all use lemon juice, which is all used up by Palomas
     // mashed - mojito, margarita < americano - all used up by oden/takoyaki
 
+    // same drinks for 24, both level 24 drinks aren't favored by anyone
     private void setLevel23OdenDrinks2Star() {
         requiredDrinks = List.of(
                 "Paloma", "Paloma", "Paloma", "Paloma", "Paloma",
@@ -90,7 +96,7 @@ public class BarOptimizer {
                 "Fog Cutter-2", "Matador-2",
                 "Americano", "Margarita", "Mojito",
                 "Americano-2", "Margarita-2", "Mojito-2");
-        setTempValues(23, 9, 5, false, List.of(93), 113, DataLoader.SortOrder.OVERALL, true);
+        setTempValues(24, 6, 7, false, List.of(143), -1, DataLoader.SortOrder.OVERALL, true);
     }
 
     private void setLevel23OdenDrinks() {
@@ -141,7 +147,15 @@ public class BarOptimizer {
     public static int WORKER_DEPTH;
     public static int MAX_DRINKS;
 
-    Stats getAllCompletions(Combo prefix) {
+    StatsInterface createEmptyStats(List<Integer> caps) {
+        if (caps.isEmpty()) {
+            return new Stats();
+        } else {
+            return new StatsWithCaps(caps);
+        }
+    }
+
+    StatsInterface getAllCompletions(Combo prefix, List<Integer> caps) {
         int maxDrinks = MAX_DRINKS;
         // Hack to workaround requiredDrinks messing with the total number of drinks we want
         if (requiredDrinks != null) {
@@ -150,7 +164,7 @@ public class BarOptimizer {
         int numDrinksRemaining = maxDrinks - WORKER_DEPTH - CACHE_DEPTH;
 
         ComboGenerator generator = new ComboGenerator(numDrinksRemaining, prefix, allowDuplicateDrinks, ComboGenerator.RUN_FROM_START, lastDrinkIndex, DataLoader.getDisallowedDrinks());
-        Stats stats = new Stats();
+        StatsInterface stats = createEmptyStats(caps);
 
         Combo partialAtCacheLevel = generator.next();
         while (partialAtCacheLevel != null) {
@@ -234,17 +248,26 @@ public class BarOptimizer {
     @SuppressWarnings("ConstantConditions")
     public void run() {
         // barLevel, cacheLevel, workerDepth, allowDuplicateDrinks, startFrom, runUntil, sortOrder, allowImperfectDrinks
-        setTempValues(23, 10, 9, false, List.of(47, 46, 43), 47, DataLoader.SortOrder.OVERALL, false);
+//        setTempValues(24, 10, 9, false, List.of(49), 49, DataLoader.SortOrder.OVERALL, false);
 //        setLevel23OdenDrinks2Star();
+//        setLevel23BeggarDrinks();
         Stopwatch sw = Stopwatch.createStarted();
         // This needs to happen before any reference to DataLoader is made
         BAR_LEVEL = barLevel;
         CACHE_DEPTH = cacheDepth;
         WORKER_DEPTH = workerDepth;
 
+        if (!caps.isEmpty()) {
+            for (Integer cap : caps) {
+                highestCap = Math.max(highestCap, cap);
+            }
+        } else {
+            highestCap = Integer.MAX_VALUE;
+        }
+
         System.out.println("Started at: " + LocalDateTime.now());
-        System.out.printf("Bar level: %d, %d max drinks, workerDepth %d, cacheDepth: %d, allowDuplicateDrinks: %b, allowImperfectDrinks: %b, startFrom: %s, runUntil: %s%n",
-                barLevel, DataLoader.MAX_DRINKS_BY_BAR_LEVEL.get(barLevel), workerDepth, cacheDepth, allowDuplicateDrinks, allowImperfectDrinks, START_FROM.toIndexString(), lastDrinkIndex);
+        System.out.printf("Bar level: %d, %d max drinks, workerDepth %d, cacheDepth: %d, allowDuplicateDrinks: %b, allowImperfectDrinks: %b, startFrom: %s, runUntil: %s, priceCaps: %s%n",
+                barLevel, DataLoader.MAX_DRINKS_BY_BAR_LEVEL.get(barLevel), workerDepth, cacheDepth, allowDuplicateDrinks, allowImperfectDrinks, START_FROM.toIndexString(), lastDrinkIndex, caps);
         System.out.printf("Requiring %d drinks: %s%n", requiredDrinks.size(), requiredDrinks);
         System.out.printf("Disallowing %s%n", additionalDisallowedDrinks);
 
@@ -275,22 +298,22 @@ public class BarOptimizer {
             System.out.println("Building cache to %d, last drink %d, prefix depth %d, worker depth %d, max drinks %d".formatted(
                     cacheLastDrinkIndex, lastDrinkIndex, maxDrinks - workerDepth - cacheDepth, workerDepth, maxDrinks));
         }
-        DataLoader.precalculateCache(allowDuplicateDrinks, cacheLastDrinkIndex);
+        DataLoader.precalculateCache(allowDuplicateDrinks, cacheLastDrinkIndex, highestCap);
 
-        final CompletionService<Stats> cs = new ExecutorCompletionService<>(Executors.newWorkStealingPool());
+        final CompletionService<StatsInterface> cs = new ExecutorCompletionService<>(Executors.newWorkStealingPool());
 
 
         final AtomicLong jobCount = new AtomicLong(0);
         final AtomicLong numProcessed = new AtomicLong(0);
         final AtomicBoolean doneSubmitting = new AtomicBoolean(false);
-        final Stats stats = new Stats();
+        final StatsInterface stats = createEmptyStats(caps);
         Thread consumer = new Thread(() -> {
             int empty = 0;
             while (!doneSubmitting.get() || jobCount.longValue() != numProcessed.longValue()) {
                 try {
-                    Stats processed = cs.take().get();
+                    StatsInterface processed = cs.take().get();
                     numProcessed.incrementAndGet();
-                    if (processed.numProcessed == 0) {
+                    if (processed.getNumProcessed() == 0) {
                         empty++;
                     } else {
                         stats.mergeFrom(processed);
@@ -301,14 +324,14 @@ public class BarOptimizer {
                         System.out.println(LocalDateTime.now());
                         long minutes = Math.max(1, sw.elapsed(TimeUnit.MINUTES));
                         System.out.printf("%,d submitted, %,d jobs processed, %,d empty jobs, %,d combos processed, %,d can't be made, %,d rejected for dupes, %,d skipped for missing 3*, %,d non-empty jobs processed/minute, %,d rejected combos processed/minute, %,d valid combos processed/minute%n",
-                                jobCount.longValue(), numProcessed.longValue(), empty, stats.numProcessed, cantBeMade, rejectedForDupes, rejectedForNoThreeStar, (numProcessed.longValue() - empty) / minutes, cantBeMade / minutes, stats.numProcessed / minutes);
+                                jobCount.longValue(), numProcessed.longValue(), empty, stats.getNumProcessed(), cantBeMade, rejectedForDupes, rejectedForNoThreeStar, (numProcessed.longValue() - empty) / minutes, cantBeMade / minutes, stats.getNumProcessed() / minutes);
                     }
                 } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
                 }
             }
             System.out.println("--------------------------done?");
-            System.out.println("%,d submitted, %,d jobs processed, %,d empty jobs, %,d combos processed, %,d can't be made, %,d rejected for dupes".formatted(jobCount.longValue(), numProcessed.longValue(), empty, stats.numProcessed, cantBeMade, rejectedForDupes));
+            System.out.println("%,d submitted, %,d jobs processed, %,d empty jobs, %,d combos processed, %,d can't be made, %,d rejected for dupes".formatted(jobCount.longValue(), numProcessed.longValue(), empty, stats.getNumProcessed(), cantBeMade, rejectedForDupes));
 
         });
 
@@ -333,6 +356,7 @@ public class BarOptimizer {
         }
         String lastProcessed = "";
         long skippedNoDupe = 0;
+        long skippedPrefixTooExpensive = 0;
         try {
             while (prefix != null) {
                 while (prefix != null && jobCount.longValue() - numProcessed.longValue() < 10000) {
@@ -342,11 +366,17 @@ public class BarOptimizer {
                         prefix = generator.next();
                         continue;
                     }
+                    if (prefix.getCost() > highestCap) {
+                        skippedPrefixTooExpensive++;
+                        prefix = generator.next();
+//                        System.out.println(prefix.toIndices() + " skipped for being too expensive at cost " + prefix.getCost());
+                        continue;
+                    }
                     int batchCount = 0;
                     while (prefix != null && batchCount < 20000) {
                         // effectively final for use as lambda argument
                         Combo finalPrefix = prefix;
-                        cs.submit(() -> getAllCompletions(finalPrefix));
+                        cs.submit(() -> getAllCompletions(finalPrefix, caps));
                         jobCount.incrementAndGet();
                         prefix = generator.next();
                         while (prefix != null && !isValidNoDupePrefix(prefix)) {
@@ -365,6 +395,9 @@ public class BarOptimizer {
                         System.out.println(jobCount.longValue() - numProcessed.longValue() + " excess jobs, done submitting for now: " + prefix.toIndexString());
                         if (skippedNoDupe > 0) {
                             System.out.println("Skipped submitting " + skippedNoDupe + " jobs with no chance of completion");
+                        }
+                        if (skippedPrefixTooExpensive > 0) {
+                            System.out.println("Skipped submitting " + skippedPrefixTooExpensive + " jobs with expensive prefixes");
                         }
                         Thread.sleep(1000);
                         System.out.println(jobCount.longValue() + " " + numProcessed.longValue());
