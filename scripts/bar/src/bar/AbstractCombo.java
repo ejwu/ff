@@ -121,8 +121,8 @@ public abstract class AbstractCombo implements Combo {
             // 4 for 60, or 6 for 90
             if (MULTI_MAT_IDS.contains(materialId)) {
                 int quantity = getMaterialsUsed().get(materialId);
-                // Hot sauce doesn't change quantities at 23 for whatever reason
-                if (BarOptimizer.BAR_LEVEL <= 22 || materialId == 410315) {
+                // Hot sauce and Tomato Juice don't change quantities at 23 for whatever reason
+                if (BarOptimizer.BAR_LEVEL <= 22 || materialId == 410315 || materialId == 410314) {
                     if (quantity <= 4) {
                         cost += 60;
                     } else if (quantity <= 6) {
