@@ -115,7 +115,7 @@ def parse_monsters():
 
 def transform_skill(skill):
     # Replace buff types
-    for field in ["innerPile", "target", "triggerActionTarget", "triggerCondition", "triggerConditionTarget", "triggerInsideCd", "type"]:
+    for field in ["innerPile", "target", "triggerActionTarget", "triggerCondition", "triggerConditionTarget", "triggerInsideCd", "type", "triggerAction"]:
         if skill[field]:
             new_field = {}
             for key in skill[field].keys():
@@ -125,8 +125,10 @@ def transform_skill(skill):
                     print("haven't mapped target type", key)
             skill[field] = new_field
         else:
-            # TODO: what's going on here?
-            print("no target for", field, skill["id"])
+            # triggerAction doesn't have targets, probably would be redundant
+            if field not in ["triggerAction"]:
+                # TODO: what's going on here?
+                print("no target for", field, skill["id"])
 
     # the type.effect field also uses buff type as a value, replace it as well
     if skill["type"]:
@@ -230,8 +232,23 @@ def populate_and_insert(c, fsid, monster_id, skill):
         row.append(target)
         effect = skill["type"][target]
         row.append(str(effect["effect"]))
-        row.append(effect["effectSuccessRate"])
-        row.append(effect["effectTime"])
+
+        # Success rates in triggerAction appear to override those in the skill.
+        # Probably has something to do with skills with multiple effects/cooldowns
+        effectSuccessRate = effect["effectSuccessRate"]
+        effectTime = effect["effectTime"]
+        
+        if skill["triggerAction"]:
+            for tat, value in skill["triggerAction"].items():
+                if tat == target:
+                    if effectSuccessRate != value[0]["successRate"]:
+                        effectSuccessRate = value[0]["successRate"]
+                    if effectTime != value[0]["time"]:
+                        effectTime = value[0]["time"]
+                    # TODO: use the type field in triggerAction as well?
+                    
+        row.append(effectSuccessRate)
+        row.append(effectTime)
         row.append(skill["target"][target]["num"])
         row.append(skill["target"][target]["sequence"])
         row.append(skill["target"][target]["type"])
@@ -241,6 +258,10 @@ def populate_and_insert(c, fsid, monster_id, skill):
                                                     
         if skill["triggerType"] and "CD" in skill["triggerType"]:
             row.append(skill["triggerType"]["CD"])
+        elif skill["triggerInsideCd"] and skill["triggerInsideCd"][target]:
+            # Skills with multiple effects may put cooldowns here
+            # TODO: Verify that this doesn't mess up simpler skills
+            row.append(skill["triggerInsideCd"][target])
         else:
             row.append("")
         c.execute("INSERT INTO dn_skills VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
