@@ -15,10 +15,10 @@ def get_result(roll, rates):
 
 # rates, then pity
 # .92, .05, .03
-base = [{0.92: 1, 0.97: 2, 1: 3}, 2]
+base = [{0.92: 1, 0.97: 2, 1: 3}, 2, "base", [15, 10], ["shop", "event"]]
 # .905, .05, .03, .015
-advanced = [{0.905: 2, 0.955: 3, 0.985: 4, 1: 5}, 3]
-cat = [{ 0.905: 3, 0.955: 4, 0.985: 5, 1: 6}, 4]
+advanced = [{0.905: 2, 0.955: 3, 0.985: 4, 1: 5}, 3, "advanced", [45, 59 / 1.5, 36, 59 / 3], ["shop", "sweep", "event", "sweep + double drop"]]
+cat = [{ 0.905: 3, 0.955: 4, 0.985: 5, 1: 6}, 4, "cat paw", [125]]
 
 
 ten_rolls = 1000000
@@ -43,10 +43,17 @@ for r in [base, advanced, cat]:
 
 #    print(levels)
 
+    print(r[2])
     print(f"{ten_rolls} x10 rolls, hit pity {hit_pity} times")
     roll_value = 0
-    for togi_level in levels.keys():
+    for togi_level in sorted(levels.keys()):
         print(f"{togi_level}: {levels[togi_level] / (ten_rolls * 10)}")
         roll_value += levels[togi_level] * math.pow(3, togi_level - 1)
     print(f"Equivalent to {roll_value / ten_rolls:.2f} level 1 togis per 10x roll")
+    for i, cost in enumerate(r[3]):
+        source = ""
+        if len(r) > 4:
+            source = f"({r[4][i]})"
+        print(f"At cost {cost:.2f}, {cost * 10 / (roll_value / ten_rolls):.2f} crystals per level 1 togi {source}")
+    print()
 
