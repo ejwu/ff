@@ -15,9 +15,9 @@ def get_result(roll, rates):
 
 # rates, then pity
 # .92, .05, .03
-base = [{0.92: 1, 0.97: 2, 1: 3}, 2, "base", [15, 10], ["shop", "event"]]
+base = [{0.92: 1, 0.97: 2, 1: 3}, 2, "base", [15, 10, 20 / 1.7 / 6], ["shop", "event", "dunhuang shop"]]
 # .905, .05, .03, .015
-advanced = [{0.905: 2, 0.955: 3, 0.985: 4, 1: 5}, 3, "advanced", [45, 59 / 1.5, 36, 59 / 3], ["shop", "sweep", "event", "sweep + double drop"]]
+advanced = [{0.905: 2, 0.955: 3, 0.985: 4, 1: 5}, 3, "advanced", [45, 59 / 1.5, 36, 59 / 3, 80 / 1.7 / 2], ["shop", "sweep", "event", "sweep + double drop", "dunhuang shop"]]
 cat = [{ 0.905: 3, 0.955: 4, 0.985: 5, 1: 6}, 4, "cat paw", [125]]
 
 
