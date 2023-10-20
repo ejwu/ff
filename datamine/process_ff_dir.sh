@@ -2,7 +2,7 @@
 
 #IFS=$'\n'; set -f
 
-LOG=$1.log
+LOG=logs/$1.log
 
 if [ -z "$*" ]; then
     echo "Needs a directory argument"
@@ -24,7 +24,33 @@ delete_translations() {
     set +x
 }
 
+# Process only the json files so we can look at them while all the rest of the stuff is still decoding
+process_json() {
+    echo 'begin process_json'
+    echo `date`
+    OIFS="$IFS"
+    IFS=$'\n'
+    for file in $(grep --include=*.zip -rPl '^doboyugame' $1); do
+        # The ^ anchor doesn't work for lib/libcocos2dlua.so
+        if [[ $(head -c10 $file) = doboyugame ]]; then
+            echo $file
+            /home/ejwu/src/ff/datamine/decode.py $file > /dev/null
+
+            if [[ -f $file-unxxtea ]]; then
+                mv $file-unxxtea $file
+            else
+                echo $file-unxxtea does not exist
+                exit 1
+            fi
+        fi
+    done
+    IFS="$OIFS"
+    echo 'end process_data'
+}
+
 process_lua() {
+    echo 'begin process_lua'
+    echo `date`
     # Try to get every file prefixed by "doboyu", but not "doboyugame"
     # Exclude libcocos2dlua.so, which also contains the strings
     for file in $(grep --exclude=*.so -rPl '^doboyu(?!game)' $1); do
@@ -51,13 +77,17 @@ process_lua() {
             fi
         fi
     done
+    echo 'end process_lua'
 }
 
 process_data() {
+    echo 'begin process_data'
+    echo `date`
     # There's a file with a space in its name that confuses things
     OIFS="$IFS"
     IFS=$'\n'
-    for file in $(grep --exclude=*.so -rPl '^doboyugame' $1); do
+    # zip files should have already been dealt with in process_json
+    for file in $(grep --exclude=*.so --exclude=*.zip -rPl '^doboyugame' $1); do
         # The ^ anchor doesn't work for lib/libcocos2dlua.so
         if [[ $(head -c10 $file) = doboyugame ]]; then
             echo $file
@@ -72,9 +102,12 @@ process_data() {
         fi
     done
     IFS="$OIFS"
+    echo 'end process_data'
 }
 
 unzip_everything() {
+    echo 'begin unzip_everything'
+    echo `date`
     for file in $(find $1 -name '*.zip'); do
         echo $file
         unzip -o $file -d ${file%/*} > /dev/null
@@ -84,9 +117,12 @@ unzip_everything() {
             rm $file
         fi
     done
+    echo 'end unzip_everything'
 }
 
 prettify_json() {
+    echo 'begin prettify_json'
+    echo `date`
     for file in $(find $1 -name '*.json'); do
         echo $file
         python -m json.tool $file > $file.pretty
@@ -97,9 +133,12 @@ prettify_json() {
             mv $file.pretty $file
         fi
     done
+    echo 'end prettify_json'
 }
 
 unpack_textures() {
+    echo 'begin unpack_textures'
+    echo `date`
     for file in $(find $1 -name '*.pvr.ccz'); do
         echo $file
         pvr=${file%.ccz}
@@ -129,17 +168,26 @@ unpack_textures() {
         fi
 
     done
+    echo 'end unpack_textures'
 }
 
+# Nuke non-en-US locales
 delete_translations $1
-process_data $1
+# Decode json first to allow faster analysis
+process_json $1
+# json files are all zipped, unzip and then prettify them
 unzip_everything $1
 prettify_json $1
+# Decode doboyu prefixes (lua)
 process_lua $1
+# Back to doboyugame files, mostly images 
+process_data $1
+# Unpack ccz images
 unpack_textures $1
 
 echo $errors
 
 echo "done"
+echo `date`
 
 #unset IFS; set +f
