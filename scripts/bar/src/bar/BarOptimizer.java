@@ -22,29 +22,41 @@ import java.util.concurrent.atomic.AtomicLong;
 @Parameters(separators="=")
 public class BarOptimizer {
     @Parameter(names={"--barLevel"})
-    public int barLevel = 24;
+    public int barLevel = 25;
     @Parameter(names={"--cacheDepth"})
-    int cacheDepth = 10;
+    int cacheDepth = 8;
     @Parameter(names={"--workerDepth"})
-    int workerDepth = 9;
+    int workerDepth = 6;
     @Parameter(names={"--allowDuplicateDrinks"})
     boolean allowDuplicateDrinks = false;
     // Stop running after processing all combos using drinks <= this index.
     // This allows reducing cache size (and increasing cache depth).
     // -1 to run to completion (ComboGenerator.RUN_FULLY)
     @Parameter(names={"--runUntil"})
-    int lastDrinkIndex = 55;
+    int lastDrinkIndex = -1;
     @Parameter(names={"--priceCaps"})
-    List<Integer> caps = List.of(1000, 1200);
+//    List<Integer> caps = List.of(1000, 1200, 1500);
+    List<Integer> caps = List.of(1500);
     private int highestCap = -1;
 
-    static DataLoader.SortOrder sortOrder = DataLoader.SortOrder.OVERALL;
+    static DataLoader.SortOrder sortOrder = DataLoader.SortOrder.CHEAPEST;
 
-    static boolean allowImperfectDrinks = false;
+    static boolean allowImperfectDrinks = true;
     public static Combo START_FROM = new IndexListCombo(ImmutableList.of());
 
     List<String> requiredDrinks = new ArrayList<>();
+//    List<String> requiredDrinks = List.of("Lemon Soda Water", "Lemon Soda Water-2", "Mistake", "Mistake-2", "Moscow Mule", "Depth Charge", "San Francisco", "San Francisco-2", "Americano", "Americano-2");
+
     List<String> additionalDisallowedDrinks = new ArrayList<>();
+
+    List<String> disallowedMaterials = List.of();
+
+
+    private void setVodkaDrinks() {
+        disallowedMaterials = List.of("Whisky", "Rum", "Gin", "Tequila", "Brandy");
+        setTempValues(25, 8, 6, false, List.of(117), -1, DataLoader.SortOrder.CHEAPEST, true);
+
+    }
 
     // buddha - brandy alexander (3) < zombie, tequila sunset
     // champagne - mayan (3) < daiquiri, lemon soda water
@@ -96,7 +108,7 @@ public class BarOptimizer {
                 "Fog Cutter-2", "Matador-2",
                 "Americano", "Margarita", "Mojito",
                 "Americano-2", "Margarita-2", "Mojito-2");
-        setTempValues(24, 6, 7, false, List.of(143), -1, DataLoader.SortOrder.OVERALL, true);
+        setTempValues(25, 6, 7, false, List.of(149), 149, DataLoader.SortOrder.TICKETS, true);
     }
 
     private void setLevel23OdenDrinks() {
@@ -107,7 +119,7 @@ public class BarOptimizer {
                 "Refreshing Soda", "Honey Soda", "Pineapple Juice",
                 "Fog Cutter", "Matador",
                 "Americano", "Margarita", "Mojito");
-        setTempValues(23, 10, 4, false, List.of(), -1, DataLoader.SortOrder.OVERALL, false);
+        setTempValues(25, 10, 4, false, List.of(), -1, DataLoader.SortOrder.TICKETS, false);
     }
 
     ////    List<String> additionalDisallowedDrinks = List.of("Honey Soda");
@@ -249,8 +261,10 @@ public class BarOptimizer {
     public void run() {
         // barLevel, cacheLevel, workerDepth, allowDuplicateDrinks, startFrom, runUntil, sortOrder, allowImperfectDrinks
 //        setTempValues(24, 10, 9, false, List.of(49), 49, DataLoader.SortOrder.OVERALL, false);
-//        setLevel23OdenDrinks2Star();
+//        setLevel23OdenDrinks();
 //        setLevel23BeggarDrinks();
+//        setLevel23OdenDrinks2Star();
+        setVodkaDrinks();
         Stopwatch sw = Stopwatch.createStarted();
         // This needs to happen before any reference to DataLoader is made
         BAR_LEVEL = barLevel;
@@ -266,14 +280,25 @@ public class BarOptimizer {
         }
 
         System.out.println("Started at: " + LocalDateTime.now());
-        System.out.printf("Bar level: %d, %d max drinks, workerDepth %d, cacheDepth: %d, allowDuplicateDrinks: %b, allowImperfectDrinks: %b, startFrom: %s, runUntil: %s, priceCaps: %s%n",
-                barLevel, DataLoader.MAX_DRINKS_BY_BAR_LEVEL.get(barLevel), workerDepth, cacheDepth, allowDuplicateDrinks, allowImperfectDrinks, START_FROM.toIndexString(), lastDrinkIndex, caps);
+        System.out.printf("Bar level: %d, %d max drinks, workerDepth %d, cacheDepth: %d, allowDuplicateDrinks: %b, allowImperfectDrinks: %b, startFrom: %s, runUntil: %s, priceCaps: %s, sortOrder: %s%n",
+                barLevel, DataLoader.MAX_DRINKS_BY_BAR_LEVEL.get(barLevel), workerDepth, cacheDepth, allowDuplicateDrinks, allowImperfectDrinks, START_FROM.toIndexString(), lastDrinkIndex, caps, sortOrder);
         System.out.printf("Requiring %d drinks: %s%n", requiredDrinks.size(), requiredDrinks);
         System.out.printf("Disallowing %s%n", additionalDisallowedDrinks);
+        System.out.printf("Diallowing materials %s%n", disallowedMaterials);
 
         // Some contortions here to pretend that an argument is constant
-        DataLoader.init(requiredDrinks, additionalDisallowedDrinks);
+        DataLoader.init(requiredDrinks, additionalDisallowedDrinks, disallowedMaterials);
         ArrayCombo.init(DataLoader.getDrinksByLevel(barLevel).size());
+
+        List<Integer> checkDrinks = new ArrayList<>();
+//        for (String drink : List.of("Bernice", "Vodka", "Vodka Sour", "Black Russian", "Moscow Mule",
+//                "Depth Charge", "Mistake", "Mistake-2", "Garibaldi", "Garibaldi-2", "Ginger Cola", "Ginger Cola-2", "San Francisco", "San Francisco-2", "Coffee Martini", "Coffee Martini-2", "Screwdriver", "Screwdriver-2", "Americano", "Americano-2", "Lemon Soda Water", "Lemon Soda Water-2", "Sour Pineapple Juice", "Sour Pineapple Juice-2")) {
+//            System.out.println(drink + " " + DataLoader.DRINK_DATA.get(drink).tickets() + " " + DataLoader.DRINK_DATA.get(drink).fame());
+//            checkDrinks.add(DataLoader.NAME_TO_INDEX.get(drink));
+//        }
+//        Combo check = new IndexListCombo(ImmutableList.copyOf(checkDrinks));
+//        System.out.println(check);
+//        System.exit(1);
 
         MAX_DRINKS = DataLoader.MAX_DRINKS_BY_BAR_LEVEL.get(BAR_LEVEL);
         if (workerDepth + cacheDepth >= DataLoader.MAX_DRINKS_BY_BAR_LEVEL.get(barLevel)) {

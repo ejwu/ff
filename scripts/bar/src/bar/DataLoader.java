@@ -84,6 +84,7 @@ public class DataLoader {
     private static final SortOrder SORT_ORDER = BarOptimizer.sortOrder;
     private static final String BASE_PATH = "data/";
     public static ImmutableMap<String, MaterialShop> MAT_SHOP = loadMatShop();
+    public static Map<String, Integer> MAT_NAME_TO_ID = new HashMap<>();
     public static ImmutableMap<Integer, Integer> MAX_DRINKS_BY_BAR_LEVEL = loadMaxDrinksByBarLevel();
     public static ImmutableMap<Integer, Material> MATERIAL_COSTS = loadMaterialCosts();
     // materialId to count
@@ -114,11 +115,11 @@ public class DataLoader {
     }
 
     public static void init() {
-        init(new ArrayList<>(), new ArrayList<>());
+        init(new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
     }
 
     // This needs to happen first to initialize BAR_LEVEL
-    public static void init(List<String> requiredDrinks, List<String> additionalDisallowedDrinks) {
+    public static void init(List<String> requiredDrinks, List<String> additionalDisallowedDrinks, List<String> disallowedMaterials) {
         ImmutableBiMap.Builder<Integer, Drink> indexBuilder = ImmutableBiMap.builder();
         ImmutableMap.Builder<String, Integer> nameBuilder = ImmutableMap.builder();
         int index = 0;
@@ -143,11 +144,13 @@ public class DataLoader {
         }
         TWO_TO_THREE = twoToThreeBuilder.build();
 
-        if (!requiredDrinks.isEmpty()) {
+        // TODO: is it bad if there are no required drinks but there are disallowed materials?
+        if (!requiredDrinks.isEmpty() || !disallowedMaterials.isEmpty()) {
             System.out.println("Requiring " + requiredDrinks);
             List<Integer> requiredDrinkIndices = new ArrayList<>();
             Map<Integer, Integer> requiredMaterials = new HashMap<>();
             for (String required : requiredDrinks) {
+                System.out.println(required);
                 Drink drink = DRINK_DATA.get(required);
                 for (FormulaMaterial material : drink.materials()) {
                     requiredMaterials.putIfAbsent(material.id(), 0);
@@ -183,6 +186,19 @@ public class DataLoader {
                 ADDITIONAL_DISALLOWED_DRINKS = new IndexListCombo(ImmutableList.sortedCopyOf(Comparator.<Integer>naturalOrder().reversed(), disallowedDrinks));
             }
 
+            if (!disallowedMaterials.isEmpty()) {
+                System.out.println("disallowing " + disallowedMaterials);
+                System.out.println(mutableMaterialsAvailable);
+                System.out.println(MAT_NAME_TO_ID);
+                for (String disallowedMaterial : disallowedMaterials) {
+                    int disallowedMaterialId = MAT_NAME_TO_ID.get(disallowedMaterial);
+                    if (mutableMaterialsAvailable.containsKey(disallowedMaterialId)) {
+                        System.out.println("removing " + mutableMaterialsAvailable.get(disallowedMaterialId) + " " + disallowedMaterial);
+                        mutableMaterialsAvailable.put(disallowedMaterialId, 0);
+                    }
+                }
+                System.out.println(mutableMaterialsAvailable);
+            }
             // Mutating the available mats seems dodgy, but cost calculations use MATERIAL_COSTS, so maybe it's safe?
             MATERIALS_AVAILABLE = ImmutableMap.copyOf(mutableMaterialsAvailable);
         }
@@ -420,7 +436,9 @@ public class DataLoader {
                 if (MAT_SHOP.containsKey(name)) {
                     Material material = new Material(name, MAT_SHOP.get(name).cost, MAT_SHOP.get(name).num, asInt(value.get("materialType")), asInt(value.get("openBarLevel")));
                     builder.put(materialId, material);
-                }            }
+                    MAT_NAME_TO_ID.put(name, materialId);
+                }
+            }
             return builder.build();
         } catch (IOException | ParseException e) {
             e.printStackTrace();
@@ -571,6 +589,7 @@ public class DataLoader {
                 .filter(drink -> drink.level <= barLevel)
                 .sorted(SORT_ORDER)
                 .toList();
+
         return sorted;
     }
 
