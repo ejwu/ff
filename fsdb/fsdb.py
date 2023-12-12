@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import argparse
+from bidict import bidict
 from collections import defaultdict
 import json
 import os
@@ -15,6 +16,12 @@ FS_RARITY = {"5": "SP", "4": "UR", "3": "SR", "2": "R", "1": "M"}
 
 # FS type
 FS_TYPE = {"1": "Defense", "2": "Strength", "3": "Magic", "4": "Healer"}
+
+# Monster type (ConfigCardCareer)
+MONSTER_TYPE = {"1": "Tank", "2": "Melee", "3": "Range", "4": "Healer"}
+
+# ConfigMonsterFormType
+MONSTER_FORM_TYPE = {"1": "Normal", "2": "Commode"}
 
 # ConfigBuffType
 BUFF_TYPES = {
@@ -37,6 +44,8 @@ BUFF_TYPES = {
     "111": "CHANGE_SKILL_TRIGGER", "112": "CHANGE_PP",
     "130": "IMMUNE_BUFF_TYPE", "131": "VIEW_TRANSFORM"}
 
+BUFF_TYPES_BIMAP = bidict(BUFF_TYPES)
+
 #ConfigSkillTriggerType
 TRIGGER_TYPES = {
     "1": "RESIDENT", "2": "RANDOM", "3": "ENERGY", "4": "CD", "5": "LOST_HP", "6": "COST_HP", "7": "COST_CHP", "8": "COST_OHP"}
@@ -48,7 +57,8 @@ SKILL_TYPES = {
 #SeekSortRule
 SEEK_SORT_RULES = {
     "1": "S_NONE", "2": "S_DISTANCE_MIN", "3": "S_DISTANCE_MAX", "4": "S_HP_PERCENT_MAX", "5": "S_HP_PERCENT_MIN",
-    "6": "S_ATTACK_MAX", "7": "S_ATTACK_MIN", "8": "S_DEFENCE_MAX", "9": "S_DEFENCE_MIN"}
+    "6": "S_ATTACK_MAX", "7": "S_ATTACK_MIN", "8": "S_DEFENCE_MAX", "9": "S_DEFENCE_MIN", "10": "S_CHP_MAX",
+    "11": "S_CHP_MIN", "12": "S_OHP_MAX", "13": "S_OHP_MIN"}
 
 #ConfigSeekTargetRule
 TARGET_TYPES = {
@@ -84,7 +94,7 @@ def create_tables():
 
     # TODO: triggerThreshold and triggerConditionTargetNum being text is a hack to make sqlite-web work
     c.execute("DROP TABLE IF EXISTS dn_skills")
-    c.execute("CREATE TABLE dn_skills(fs_id text, monster_id text, descr text, id text, type text, type_desc text, effect_type text, effect text, effect_rate numeric, effect_time numeric, target_num integer, target text, target_type text, trigger_type text, triggerCondition text, triggerThreshold text, triggerMeetType text, triggerConditionTarget text, triggerConditionTargetType text, triggerConditionTargetNum text, triggerConditionFull text, cooldown integer)") 
+    c.execute("CREATE TABLE dn_skills(fs_id text, monster_id text, name text, descr text, id text, type text, type_desc text, effect_type text, effect text, effect_rate numeric, effect_time numeric, cooldown numeric, target_num integer, target text, target_type text, trigger_type text, immuneDispel text, triggerCondition text, triggerThreshold text, triggerMeetType text, triggerConditionTarget text, triggerConditionTargetType text, triggerConditionTargetNum text, triggerConditionFull text)") 
 
 def transform_fs(fs):
     fs["career"] = FS_TYPE[fs["career"]]
@@ -98,6 +108,8 @@ def transform_monster(monster):
             print(f"unknown immunity {immunity} in monster {monster['id']}")
         immunity_list.append(BUFF_TYPES[immunity])
     monster["immunitySkillProperty"] = immunity_list
+    monster["career"] = MONSTER_TYPE[monster["career"]]
+    monster["formType"] = MONSTER_FORM_TYPE[monster["formType"]]
     return monster
 
 def parse_monsters():
@@ -135,6 +147,17 @@ def transform_skill(skill):
         for effect in skill["type"].values():
             effect["type"] = BUFF_TYPES[effect["type"]]
 
+    # immuneDispel also uses the DISPEL_DEBUFF and DISPEL_BUFF buff types to denote immunity to having buffs/debuffs dispelled
+    if skill["immuneDispel"]:
+        immunities = []
+        for immunity in skill["immuneDispel"]:
+            if immunity in BUFF_TYPES:
+                immunities.append(BUFF_TYPES[immunity])
+            else:
+                # Some immunities are apparently bugged and say '28,29' instead of ['28', '29']
+                immunities.append(immunity)
+        skill["immuneDispel"] = immunities
+            
     # Replace trigger types
     if skill["triggerType"]:
         new_trigger_type = {}
@@ -173,7 +196,7 @@ def transform_skill(skill):
             
     return skill
 
-def insert_skill(c, fill, fsid, skill, skills_to_monsters):
+def insert_skill(c, fill, fsid, skill, skills_to_monsters, skill_scaling_data):
     row = [fsid]
     for k in sorted(skill.keys()):
         # Show Chinese instead of unicode string
@@ -187,7 +210,7 @@ def insert_skill(c, fill, fsid, skill, skills_to_monsters):
     monster_list = []
     if str(skill["id"]) in skills_to_monsters.keys():
         monster_list = skills_to_monsters[str(skill["id"])]
-    insert_denormalized_skill(c, fsid, skill, monster_list)
+    insert_denormalized_skill(c, fsid, skill, monster_list, skill_scaling_data)
 
 def append_trigger_conditions(row, skill, target):
     if skill["triggerCondition"]:
@@ -226,12 +249,24 @@ def append_trigger_conditions(row, skill, target):
     # triggerConditionFull
     row.append(str(skill["triggerCondition"]))
 
-def populate_and_insert(c, fsid, monster_id, skill):
+def populate_and_insert(c, fsid, monster_id, skill, scaling_data):
     for target in skill["target"]:
-        row = [fsid, monster_id, skill["descr"], skill["id"], skill["property"], skill["type_desc"]]
+        row = [fsid, monster_id, skill["name"], skill["descr"], skill["id"], skill["property"], skill["type_desc"]]
         row.append(target)
         effect = skill["type"][target]
-        row.append(str(effect["effect"]))
+        scaled_effect_used = False
+        if scaling_data and str(skill["id"]) in scaling_data.keys():
+            scaled_effect = scaling_data[str(skill["id"])][BUFF_TYPES_BIMAP.inv[target]]["41"]
+            if effect["effect"] != scaled_effect[0]:
+                if fsid:
+                    row.append(str(scaled_effect[0]))
+                    scaled_effect_used = True
+                # Some monster skills are in the scaling file for reasons unknown
+#                else:
+#                    print(skill["id"], "has scaling data for monster", monster_id)
+
+        if not scaled_effect_used:
+            row.append(str(effect["effect"]))
 
         # Success rates in triggerAction appear to override those in the skill.
         # Probably has something to do with skills with multiple effects/cooldowns
@@ -239,6 +274,7 @@ def populate_and_insert(c, fsid, monster_id, skill):
         effectTime = effect["effectTime"]
         
         if skill["triggerAction"]:
+#            tatypes = set()
             for tat, value in skill["triggerAction"].items():
                 if tat == target:
                     if effectSuccessRate != value[0]["successRate"]:
@@ -246,30 +282,43 @@ def populate_and_insert(c, fsid, monster_id, skill):
                     if effectTime != value[0]["time"]:
                         effectTime = value[0]["time"]
                     # TODO: use the type field in triggerAction as well?
-                    
+#                for v in value:
+#                    tatypes.add(v["type"])
+#                    print(value[0]["type"], fsid, skill["id"], skill["descr"])
+#            if len(tatypes) > 2:
+#                print(tatypes, fsid, skill["id"], skill["descr"])
+
+                        
         row.append(effectSuccessRate)
         row.append(effectTime)
+
+        cd_index = len(row)
+        
         row.append(skill["target"][target]["num"])
         row.append(skill["target"][target]["sequence"])
         row.append(skill["target"][target]["type"])
         row.append(str(skill["triggerType"]))
 
+        row.append(str(skill["immuneDispel"]))
+
         append_trigger_conditions(row, skill, target)
                                                     
         if skill["triggerType"] and "CD" in skill["triggerType"]:
-            row.append(skill["triggerType"]["CD"])
+            row.insert(cd_index, skill["triggerType"]["CD"])
         elif skill["triggerInsideCd"] and skill["triggerInsideCd"][target]:
             # Skills with multiple effects may put cooldowns here
             # TODO: Verify that this doesn't mess up simpler skills
-            row.append(skill["triggerInsideCd"][target])
+            row.insert(cd_index, skill["triggerInsideCd"][target])
+            #row.append(skill["triggerInsideCd"][target])
         else:
-            row.append("")
-        c.execute("INSERT INTO dn_skills VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
+            row.insert(cd_index, "")
+#            row.append("")
+        c.execute("INSERT INTO dn_skills VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
     
-def insert_denormalized_skill(c, fsid, skill, monster_list):
-    populate_and_insert(c, fsid, "", skill)
+def insert_denormalized_skill(c, fsid, skill, monster_list, scaling_data):
+    populate_and_insert(c, fsid, "", skill, scaling_data)
     for monster in monster_list:
-        populate_and_insert(c, "", monster, skill)
+        populate_and_insert(c, "", monster, skill, scaling_data)
             
 def parse_artifacts():
     # Return a multimap of fsid to all their skills
@@ -281,13 +330,17 @@ def parse_artifacts():
         if fsid == "200028":
             print("skipping Moon Cake because something's gone wrong in the mappings")
             continue
-        
+
         artifact_map = all_artifacts[fsid]
 
         # There seems to be an explicit mapping in cardArtifactGemstoneSkill.json as well.
         # Assuming here that they're not insane and these filenames make sense.
         artifact_file = ARTIFACT_PATH / f"gemstoneSkill{fsid}.json"
 
+        # Try /res_sub if it's not in /publish
+        if not artifact_file.exists():
+            artifact_file = ARTIFACT_PATH_RES / f"gemstoneSkill{fsid}.json"
+        
         if not artifact_file.exists():
             # This seems to happen for partially translated newer artifacts.  Presumably all of them
             # have artifactStatus != 1 in the fs table.
@@ -308,10 +361,10 @@ def parse_artifacts():
                 skill_count = 0
                 for skill in node["getSkill"]:
                     skill_count += 1
-                    # Only use the L6 version of a skill to avoid spamming the main skill table
-                    skill = transform_skill(artifact[str(skill_groups[skill]["6"])])
-                    skill[TYPE_DESC] = f"T{togi_count}_{TOGI_TYPES[skill_count]}_L6"
-                    
+                    # Only use the L7 version of a skill to avoid spamming the main skill table
+                    skill = transform_skill(artifact[str(skill_groups[skill]["7"])])
+                    skill[TYPE_DESC] = f"T{togi_count}_{TOGI_TYPES[skill_count]}_L7"
+
                     # Make artifact skills look like normal skills
                     del skill["gemstoneGrade"]
                     # Huh?  descr0 and descr show different ranges.  Might want to keep these
@@ -347,17 +400,19 @@ def assert_files_exist():
         sys.exit(f"Can't find gemstoneSkillGroup.json at {ARTIFACT_SKILL_GROUP_FILE}")
     
 args = parse_args()
-#path = Path(args.dir) / "com.egg.foodandroid" / "files" / "res_sub" / "conf" / "en-us"
 # Based on ankimo event, this is the path shown in game
+# Assumption is that /publish takes priority over res_sub when it exists
+# These files generally exist in /publish unless there's been a large refactoring back to res_sub with a store update
 path = Path(args.dir) / "com.egg.foodandroid" / "files" / "publish" / "conf" / "en-us"
 FS_FILE = path / "card" / "card.json"
 SKILLS_FILE = path / "card" / "skill.json"
+SKILLS_SCALING_FILE = path / "card" / "skillEffect.json"
 MONSTER_FILE = path / "monster" / "monster.json"
 
-# Artifacts may only exist here?
-# Monkfish Liver is translated in /publish but not /res_sub
-# Durian Pancake exists in res_sub but not publish?
-ARTIFACT_PATH = Path(args.dir) / "com.egg.foodandroid" / "files" / "res_sub" / "conf" / "en-us" / "artifact"
+# Try /publish first.  Often artifacts exist in both paths, but translations may only be in /publish
+ARTIFACT_PATH = path / "com.egg.foodandroid" / "files" / "publish" / "conf" / "en-us" / "artifact"
+ARTIFACT_PATH_RES = path / "com.egg.foodandroid" / "files" / "res_sub" / "conf" / "en-us" / "artifact"
+
 # This appears to be the togi map for every FS
 ARTIFACT_MAPPING_FILE = ARTIFACT_PATH / "talentPoint.json"
 # Togi map refers to a skill group, which maps to individual skills for all 10 togi levels
@@ -394,6 +449,7 @@ for id, fs in fs_data.items():
 skills_to_monsters = parse_monsters()
   
 skill_data = json.load(open(SKILLS_FILE))
+skill_scaling_data = json.load(open(SKILLS_SCALING_FILE))
 skill_columns = list(skill_data["10001"].keys())
 skill_fill = ("?," * (len(skill_columns) + 4))[:-1]
 
@@ -408,13 +464,13 @@ for skill_id, skill in skill_data.items():
         fsid = skills_to_fs[skill_id]
 
     skill = transform_skill(skill)
-    insert_skill(c, skill_fill, fsid, skill, skills_to_monsters)
+    insert_skill(c, skill_fill, fsid, skill, skills_to_monsters, skill_scaling_data)
 
 # Artifact skills
 f2s = parse_artifacts()
 for fsid in f2s.keys():
     for arti_skill in f2s[fsid]:
-        insert_skill(c, skill_fill, fsid, arti_skill, {})
+        insert_skill(c, skill_fill, fsid, arti_skill, {}, None)
 
 conn.commit()
 conn.close()
