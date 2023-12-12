@@ -81,7 +81,7 @@ TYPE_DESC = "type_desc"
 
 def create_tables():
     c.execute("DROP TABLE IF EXISTS fs")
-    c.execute("CREATE TABLE fs (artifactCost text, artifactCostId text, artifactName text, artifactQuestId text, artifactStatus text, attack integer, attackRange integer, attackRate integer, backgroundStory text, breakLevel text, cardCollectionBook text, career text, concertSkill text, contractLevel integer, critDamage integer, critRate integer, cv text, cvCn text, defence integer, descr text, exclusivePet text, favoriteFood text, fragmentId text, growType text, hp integer, id text, maxLevel integer, name text, qualityId text, skill text, skin text, specialCard text, star text, tasteId text, threat integer, vigour integer)")
+    c.execute("CREATE TABLE fs (id text, name text, artifactCost text, artifactCostId text, artifactName text, artifactQuestId text, artifactStatus text, attack integer, attackRange integer, attackRate integer, backgroundStory text, breakLevel text, cardCollectionBook text, career text, concertSkill text, contractLevel integer, critDamage integer, critRate integer, cv text, cvCn text, defence integer, descr text, exclusivePet text, favoriteFood text, fragmentId text, growType text, hp integer, maxLevel integer, qualityId text, skill text, skin text, specialCard text, star text, tasteId text, threat integer, vigour integer)")
 
     c.execute("DROP TABLE IF EXISTS monsters")
     c.execute("CREATE TABLE monsters (agreeDialogue text, attack integer, attackInterval integer, attackRange integer, attackRate integer, career text, critDamage integer, critRate integer, defaultLayer text, defence integer, descr text, drawId text, dropRate integer, feature text, foodsLike text, formType text, hp integer, id text, immunitySkillProperty text, meetDialogue text, name text, petCoin text, refuseDialogue text, scale text, showSkill text, skill text, skinId text, star text, type text, weatherProperty text)")
@@ -94,7 +94,7 @@ def create_tables():
 
     # TODO: triggerThreshold and triggerConditionTargetNum being text is a hack to make sqlite-web work
     c.execute("DROP TABLE IF EXISTS dn_skills")
-    c.execute("CREATE TABLE dn_skills(fs_id text, monster_id text, name text, descr text, id text, type text, type_desc text, effect_type text, effect text, effect_rate numeric, effect_time numeric, cooldown numeric, target_num integer, target text, target_type text, trigger_type text, immuneDispel text, triggerCondition text, triggerThreshold text, triggerMeetType text, triggerConditionTarget text, triggerConditionTargetType text, triggerConditionTargetNum text, triggerConditionFull text)") 
+    c.execute("CREATE TABLE dn_skills(fs_id text, monster_id text, name text, descr text, id text, type text, type_desc text, effect_type text, effect text, effect_rate numeric, effect_time numeric, cooldown numeric, target_num integer, target text, target_type text, trigger_type text, immuneDispel text, triggerCondition text, triggerThreshold text, triggerMeetType text, triggerConditionTarget text, triggerConditionTargetType text, triggerConditionTargetNum text, triggerConditionFull text)")
 
 def transform_fs(fs):
     fs["career"] = FS_TYPE[fs["career"]]
@@ -326,6 +326,7 @@ def parse_artifacts():
     
     all_artifacts = json.load(open(ARTIFACT_MAPPING_FILE))
     skill_groups = json.load(open(ARTIFACT_SKILL_GROUP_FILE))
+
     for fsid in all_artifacts.keys():
         if fsid == "200028":
             print("skipping Moon Cake because something's gone wrong in the mappings")
@@ -410,8 +411,8 @@ SKILLS_SCALING_FILE = path / "card" / "skillEffect.json"
 MONSTER_FILE = path / "monster" / "monster.json"
 
 # Try /publish first.  Often artifacts exist in both paths, but translations may only be in /publish
-ARTIFACT_PATH = path / "com.egg.foodandroid" / "files" / "publish" / "conf" / "en-us" / "artifact"
-ARTIFACT_PATH_RES = path / "com.egg.foodandroid" / "files" / "res_sub" / "conf" / "en-us" / "artifact"
+ARTIFACT_PATH = path / "artifact"
+ARTIFACT_PATH_RES = Path(args.dir) / "com.egg.foodandroid" / "files" / "res_sub" / "conf" / "en-us" / "artifact"
 
 # This appears to be the togi map for every FS
 ARTIFACT_MAPPING_FILE = ARTIFACT_PATH / "talentPoint.json"
@@ -430,12 +431,22 @@ fs_data = json.load(open(FS_FILE))
 columns = list(fs_data["200001"].keys())
 fs_fill = ("?," * len(columns))[:-1]
 
+# HACK to fake having Vidal so his skills are easier to query
+fake_vidal = ["200412", "Vidal Icewine (fake)"]
+c.execute("INSERT INTO fs(id, name) VALUES('200412', 'Vidal Icewine (fake)')") 
+
+
 fs_to_skills = {}
 skills_to_fs = {}
 for id, fs in fs_data.items():
     fs = transform_fs(fs)
-    
-    c.execute(f"INSERT INTO fs VALUES({fs_fill})", list([str(fs[key]) for key in sorted(fs)]))
+    fs_fields = list([str(fs[key]) for key in sorted(fs)])
+    # Pull id and name to the front
+    fs_fields = [fs_fields[25]] + [fs_fields[27]] + fs_fields
+    fs_fields.pop(29)
+    fs_fields.pop(27)
+
+    c.execute(f"INSERT INTO fs VALUES({fs_fill})", fs_fields)
 
     if not fs["skill"]:
         print("No skills: ", fs)
