@@ -96,6 +96,46 @@ def create_tables():
     c.execute("DROP TABLE IF EXISTS dn_skills")
     c.execute("CREATE TABLE dn_skills(fs_id text, monster_id text, name text, descr text, id text, type text, type_desc text, effect_type text, effect text, effect_rate numeric, effect_time numeric, cooldown numeric, target_num integer, target text, target_type text, trigger_type text, immuneDispel text, triggerCondition text, triggerThreshold text, triggerMeetType text, triggerConditionTarget text, triggerConditionTargetType text, triggerConditionTargetNum text, triggerConditionFull text)")
 
+    c.execute("DROP TABLE IF EXISTS triggers")
+    c.execute("CREATE TABLE triggers(skill_id text, type text)")
+
+FUTURE_FS = {"200398": "Salmon Family Rice", "200399": "Mousse (SP)", "200400": "Prosciutto di Parma", "200401": "Caramel Macchiato", "200402": "Bresse Chicken Soup", "200403": "Pu-erh", "200404": "Angel Cake", "200405": "Panna Cotta", "200406": "Absinthe", "200407": "Amaldin", "200408": "Iberian Ham", "200409": "Baklava", "200410": "Cafe au lait", "200411": "Saskatoon Berry Pie", "200412": "Vidal Icewine", "200413": "Moules Frites", "200414": "Montreal Smoked Meat", "200415": "Milk (SP)", "200416": "Falafel", "200417": "Macaroni", "200418": "Pavlova", "200419": "Walnut Porridge", "200420": "Agate Fish Ball", "200421": "Lotus Leaf Phoenix Preserved", "200422": "Golden Pan-fried Marrow", "200423": "Fusilli", "200424": "French Baked Apple"}
+# No artis past 200424 at the moment
+
+def insert_fs(fs_data, c):
+    columns = list(fs_data["200001"].keys())
+    fs_fill = ("?," * len(columns))[:-1]
+    fs_to_skills = {}
+    skills_to_fs = {}
+    for fs_id, fs in fs_data.items():
+        fs = transform_fs(fs)
+        fs_fields = list([str(fs[key]) for key in sorted(fs)])
+        # HACK: Pull id and name to the front
+        fs_fields = [fs_fields[25]] + [fs_fields[27]] + fs_fields
+        fs_fields.pop(29)
+        fs_fields.pop(27)
+
+        c.execute(f"INSERT INTO fs VALUES({fs_fill})", fs_fields)
+
+        if not fs["skill"]:
+            print("No skills: ", fs)
+            raise
+        for skill_id in fs["skill"]:
+            if skill_id in skills_to_fs:
+                print("Skill already exists:", skill_id)
+            skills_to_fs[skill_id] = fs_id
+
+        if fs_id in FUTURE_FS:
+            print("removing from future, update FUTURE_FS", fs_id)
+            del FUTURE_FS[fs_id]
+
+    # Add known future FS that already have artifacts but don't exist in card.json
+    for fs_id, name in FUTURE_FS.items():
+        fake_name = name + " (future)"
+        c.execute(f"INSERT INTO fs(id, name) VALUES(\'{fs_id}\', \'{fake_name}\')")
+        
+    return skills_to_fs
+
 def transform_fs(fs):
     fs["career"] = FS_TYPE[fs["career"]]
     fs["qualityId"] = FS_RARITY[fs["qualityId"]]
@@ -426,37 +466,8 @@ c = conn.cursor()
 
 create_tables()
 
-fs_data = json.load(open(FS_FILE))
-
-columns = list(fs_data["200001"].keys())
-fs_fill = ("?," * len(columns))[:-1]
-
-# HACK to fake having Vidal so his skills are easier to query
-fake_vidal = ["200412", "Vidal Icewine (fake)"]
-c.execute("INSERT INTO fs(id, name) VALUES('200412', 'Vidal Icewine (fake)')") 
-
-
-fs_to_skills = {}
-skills_to_fs = {}
-for id, fs in fs_data.items():
-    fs = transform_fs(fs)
-    fs_fields = list([str(fs[key]) for key in sorted(fs)])
-    # Pull id and name to the front
-    fs_fields = [fs_fields[25]] + [fs_fields[27]] + fs_fields
-    fs_fields.pop(29)
-    fs_fields.pop(27)
-
-    c.execute(f"INSERT INTO fs VALUES({fs_fill})", fs_fields)
-
-    if not fs["skill"]:
-        print("No skills: ", fs)
-        raise
-    for skill_id in fs["skill"]:
-        if skill_id in skills_to_fs:
-            print("Skill already exists:", skill_id)
-        skills_to_fs[skill_id] = id
-
-
+skills_to_fs = insert_fs(json.load(open(FS_FILE)), c)
+              
 skills_to_monsters = parse_monsters()
   
 skill_data = json.load(open(SKILLS_FILE))
