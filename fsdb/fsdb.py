@@ -314,6 +314,9 @@ def populate_and_insert(c, fsid, monster_id, skill, scaling_data):
         effectTime = effect["effectTime"]
         
         if skill["triggerAction"]:
+#            if fsid:
+#                print(fsid, skill["id"], skill["descr"])
+
 #            tatypes = set()
             for tat, value in skill["triggerAction"].items():
                 if tat == target:
@@ -366,7 +369,7 @@ def parse_artifacts():
     
     all_artifacts = json.load(open(ARTIFACT_MAPPING_FILE))
     skill_groups = json.load(open(ARTIFACT_SKILL_GROUP_FILE))
-
+    
     for fsid in all_artifacts.keys():
         if fsid == "200028":
             print("skipping Moon Cake because something's gone wrong in the mappings")
@@ -376,12 +379,8 @@ def parse_artifacts():
 
         # There seems to be an explicit mapping in cardArtifactGemstoneSkill.json as well.
         # Assuming here that they're not insane and these filenames make sense.
-        artifact_file = ARTIFACT_PATH / f"gemstoneSkill{fsid}.json"
+        artifact_file = get_file(f"artifact/gemstoneSkill{fsid}.json")
 
-        # Try /res_sub if it's not in /publish
-        if not artifact_file.exists():
-            artifact_file = ARTIFACT_PATH_RES / f"gemstoneSkill{fsid}.json"
-        
         if not artifact_file.exists():
             # This seems to happen for partially translated newer artifacts.  Presumably all of them
             # have artifactStatus != 1 in the fs table.
@@ -439,25 +438,31 @@ def assert_files_exist():
 
     if not ARTIFACT_SKILL_GROUP_FILE.exists():
         sys.exit(f"Can't find gemstoneSkillGroup.json at {ARTIFACT_SKILL_GROUP_FILE}")
-    
+
+# Get the file in /publish if it exists, otherwise fall back to /res_sub
+def get_file(path):
+    pub_file = PUB_PATH / path
+    if pub_file.exists():
+        return pub_file
+    return RES_PATH / path
+        
 args = parse_args()
 # Based on ankimo event, this is the path shown in game
 # Assumption is that /publish takes priority over res_sub when it exists
 # These files generally exist in /publish unless there's been a large refactoring back to res_sub with a store update
-path = Path(args.dir) / "com.egg.foodandroid" / "files" / "publish" / "conf" / "en-us"
-FS_FILE = path / "card" / "card.json"
-SKILLS_FILE = path / "card" / "skill.json"
-SKILLS_SCALING_FILE = path / "card" / "skillEffect.json"
-MONSTER_FILE = path / "monster" / "monster.json"
+PUB_PATH = Path(args.dir) / "com.egg.foodandroid" / "files" / "publish" / "conf" / "en-us"
+RES_PATH = Path(args.dir) / "com.egg.foodandroid" / "files" / "res_sub" / "conf" / "en-us"
 
-# Try /publish first.  Often artifacts exist in both paths, but translations may only be in /publish
-ARTIFACT_PATH = path / "artifact"
-ARTIFACT_PATH_RES = Path(args.dir) / "com.egg.foodandroid" / "files" / "res_sub" / "conf" / "en-us" / "artifact"
+FS_FILE = get_file("card/card.json")
+SKILLS_FILE = get_file("card/skill.json")
+SKILLS_SCALING_FILE = get_file(Path("card/skillEffect.json"))
+MONSTER_FILE = get_file("monster/monster.json")
 
 # This appears to be the togi map for every FS
-ARTIFACT_MAPPING_FILE = ARTIFACT_PATH / "talentPoint.json"
+ARTIFACT_MAPPING_FILE = get_file("artifact/talentPoint.json")
+
 # Togi map refers to a skill group, which maps to individual skills for all 10 togi levels
-ARTIFACT_SKILL_GROUP_FILE = ARTIFACT_PATH / "gemstoneSkillGroup.json"
+ARTIFACT_SKILL_GROUP_FILE = get_file("artifact/gemstoneSkillGroup.json")
 
 assert_files_exist()
 
@@ -487,11 +492,12 @@ for skill_id, skill in skill_data.items():
 
     skill = transform_skill(skill)
     insert_skill(c, skill_fill, fsid, skill, skills_to_monsters, skill_scaling_data)
-
+#    print(skill["id"], fsid, 
+    
 # Artifact skills
 f2s = parse_artifacts()
-for fsid in f2s.keys():
-    for arti_skill in f2s[fsid]:
+for fsid, arti_skills in f2s.items():
+    for arti_skill in arti_skills:
         insert_skill(c, skill_fill, fsid, arti_skill, {}, None)
 
 conn.commit()
