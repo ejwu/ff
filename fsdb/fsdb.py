@@ -64,6 +64,11 @@ SEEK_SORT_RULES = {
 TARGET_TYPES = {
     "1": "T_OBJ_SELF", "2": "T_OBJ_ENEMY", "3": "T_OBJ_FRIEND", "4": "T_OBJ_ALL", "5": "T_OBJ_FRIEND_TANK", "6": "T_OBJ_FRIEND_MELEE", "7": "T_OBJ_FRIEND_REMOTE", "8": "T_OBJ_FRIEND_HEALER", "9": "T_OBJ_ENEMY_TANK", "10": "T_OBJ_ENEMY_MELEE", "11": "T_OBJ_ENEMY_REMOTE", "12": "T_OBJ_ENEMY_HEALER", "13": "T_OBJ_FRIEND_PLAYER", "14": "T_OBJ_ENEMY_PLAYER", "15": "T_OBJ_ATTACKER", "16": "T_OBJ_ATTACK_TARGET", "17": "T_OBJ_TRIGGER_ATTACKER"}
 
+#ConfigObjectTriggerActionType
+TRIGGER_ACTION_TYPE = {
+    "1": "ATTACK", "3": "ATTACK_CRITICAL", "4": "GOT_DAMAGE", "5": "GOT_DAMAGE_CRITICAL", "6": "GOT_HEAL", "8": "CAST", "10": "DEAD", "14": "CAST_SKILL_NORMAL", "15": "CAST_SKILL_CUTIN", "16": "CAST_SKILL_CONNECT", "20": "OBJECT_AWAKE"
+}
+
 #ConfigObjectTriggerConditionType
 TRIGGER_CONDITION_TYPE = {
     "0": "BASE", "1": "HP_MORE_THAN", "2": "HP_LESS_THAN", "3": "HAS_BUFF"}
@@ -94,12 +99,12 @@ def create_tables():
 
     # TODO: triggerThreshold and triggerConditionTargetNum being text is a hack to make sqlite-web work
     c.execute("DROP TABLE IF EXISTS dn_skills")
-    c.execute("CREATE TABLE dn_skills(fs_id text, monster_id text, name text, descr text, id text, type text, type_desc text, effect_type text, effect text, effect_rate numeric, effect_time numeric, cooldown numeric, target_num integer, target text, target_type text, trigger_type text, immuneDispel text, triggerCondition text, triggerThreshold text, triggerMeetType text, triggerConditionTarget text, triggerConditionTargetType text, triggerConditionTargetNum text, triggerConditionFull text)")
+    c.execute("CREATE TABLE dn_skills(fs_id text, monster_id text, name text, descr text, id text, type text, type_desc text, effect_type text, effect text, effect_rate numeric, effect_time numeric, cooldown numeric, target_num integer, target text, target_type text, trigger_type text, immuneDispel text, triggerActionType text, triggerCondition text, triggerThreshold text, triggerMeetType text, triggerConditionTarget text, triggerConditionTargetType text, triggerConditionTargetNum text, triggerConditionFull text)")
 
     c.execute("DROP TABLE IF EXISTS triggers")
     c.execute("CREATE TABLE triggers(skill_id text, type text)")
 
-FUTURE_FS = {"200398": "Salmon Family Rice", "200399": "Mousse (SP)", "200400": "Prosciutto di Parma", "200401": "Caramel Macchiato", "200402": "Bresse Chicken Soup", "200403": "Pu-erh", "200404": "Angel Cake", "200405": "Panna Cotta", "200406": "Absinthe", "200407": "Amaldin", "200408": "Iberian Ham", "200409": "Baklava", "200410": "Cafe au lait", "200411": "Saskatoon Berry Pie", "200412": "Vidal Icewine", "200413": "Moules Frites", "200414": "Montreal Smoked Meat", "200415": "Milk (SP)", "200416": "Falafel", "200417": "Macaroni", "200418": "Pavlova", "200419": "Walnut Porridge", "200420": "Agate Fish Ball", "200421": "Lotus Leaf Phoenix Preserved", "200422": "Golden Pan-fried Marrow", "200423": "Fusilli", "200424": "French Baked Apple"}
+FUTURE_FS = {"200398": "Salmon Family Rice", "200399": "Mousse (SP)", "200400": "Prosciutto di Parma", "200401": "Caramel Macchiato", "200402": "Bresse Chicken Soup", "200403": "Pu-er", "200404": "Angel Cake", "200405": "Panna Cotta", "200406": "Absinthe", "200407": "Amaldin", "200408": "Iberian Ham", "200409": "Baklava", "200410": "Cafe au lait", "200411": "Saskatoon Berry Pie", "200412": "Vidal Icewine", "200413": "Moules Frites", "200414": "Montreal Smoked Meat", "200415": "Milk (SP)", "200416": "Falafel", "200417": "Macaroni", "200418": "Pavlova", "200419": "Walnut Porridge", "200420": "Agate Fish Ball", "200421": "Lotus Leaf Phoenix Preserved", "200422": "Golden Pan-fried Marrow", "200423": "Fusilli", "200424": "French Baked Apple"}
 # No artis past 200424 at the moment
 
 def insert_fs(fs_data, c):
@@ -253,6 +258,27 @@ def insert_skill(c, fill, fsid, skill, skills_to_monsters, skill_scaling_data):
     insert_denormalized_skill(c, fsid, skill, monster_list, skill_scaling_data)
 
 def append_trigger_conditions(row, skill, target):
+    # Add triggerActionType, if available
+    hasTriggerAction = False
+    if skill["triggerAction"]:
+        for k, v in skill["triggerAction"].items():
+            if k == target:
+                if v[0]["type"] == "1.4":
+                    print("1.4?!?", skill["id"])
+                    continue
+                if len(v) == 1:
+                    row.append(TRIGGER_ACTION_TYPE[v[0]["type"]])
+                    hasTriggerAction = True
+                elif len(v) > 1:
+                    tatypes = []
+                    for data in v:
+                       tatypes.append(TRIGGER_ACTION_TYPE[data["type"]]) 
+                    row.append(str(tatypes))
+                    hasTriggerAction = True;
+                    
+    if not hasTriggerAction:
+        row.append("")
+
     if skill["triggerCondition"]:
         triggerCondition = skill["triggerCondition"]
         hasValue = False
@@ -274,13 +300,10 @@ def append_trigger_conditions(row, skill, target):
                 row.append(skill["triggerConditionTarget"][target]["sequence"])
                 row.append(skill["triggerConditionTarget"][target]["num"])
         if not hasValue:
-            # triggerCondition, triggerConditionThreshold, triggerMeetType, triggerConditionTarget, triggerConditionTargetType, triggerConditionTargetNum
-            row.append("")
-            row.append("")
-            row.append("")
-            row.append("")
-            row.append("")
-            row.append("")
+            # List of the blank fields to fill
+            for _ in ["triggerCondition", "triggerConditionThreshold", "triggerMeetType", "triggerConditionTarget", "triggerConditionTargetType", "triggerConditionTargetNum"]:
+                row.append("")
+
     else:
         print("no trigger", skill)
         exit()
@@ -317,7 +340,7 @@ def populate_and_insert(c, fsid, monster_id, skill, scaling_data):
 #            if fsid:
 #                print(fsid, skill["id"], skill["descr"])
 
-#            tatypes = set()
+            tatypes = set()
             for tat, value in skill["triggerAction"].items():
                 if tat == target:
                     if effectSuccessRate != value[0]["successRate"]:
@@ -325,9 +348,11 @@ def populate_and_insert(c, fsid, monster_id, skill, scaling_data):
                     if effectTime != value[0]["time"]:
                         effectTime = value[0]["time"]
                     # TODO: use the type field in triggerAction as well?
+                
 #                for v in value:
 #                    tatypes.add(v["type"])
-#                    print(value[0]["type"], fsid, skill["id"], skill["descr"])
+#                    if value[0]["type"] == "16":
+#                        print(value[0]["type"], fsid, skill["id"], skill["descr"])
 #            if len(tatypes) > 2:
 #                print(tatypes, fsid, skill["id"], skill["descr"])
 
@@ -356,7 +381,7 @@ def populate_and_insert(c, fsid, monster_id, skill, scaling_data):
         else:
             row.insert(cd_index, "")
 #            row.append("")
-        c.execute("INSERT INTO dn_skills VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
+        c.execute("INSERT INTO dn_skills VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
     
 def insert_denormalized_skill(c, fsid, skill, monster_list, scaling_data):
     populate_and_insert(c, fsid, "", skill, scaling_data)
