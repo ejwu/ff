@@ -1,0 +1,114 @@
+
+_name_: Night _when_ The Capital City
+
+Narration: It was a fine night, the night of the Double Seventh. Colorful lanterns hung in the pavilion eaves, and the whole city was aglow with a dazzling beauty that one couldn't get enough of.
+
+Narration: The pastries that Almond Tofu, Laba Noodles, and the others made received widespread approval at the temple fair, garnering lots of praise from fair-goers.
+
+Narration: Tea Cake was walking alone taking in the street market when she suddenly spotted a familiar figure in front of a jewelry stall.
+
+Prospecto: Catho, do you think this bird hairpin of blue jade and gold looks good, or this plum blossom hairpin of colored glass?
+
+Narration: The boy was in the middle of choosing among the myriad of hairpins with a smile on his face when he turned and was met with a similarly smiling Tea Cake.
+
+Prospecto: Miss Tea Cake? It's you! Sorry, I was out of line back there.
+
+Tea Cake (skin): That's not important right now. I quite think this plum blossom hairpin would more suit Evena.
+
+Prospecto: Alright, I trust your taste, Miss Tea Cake. If that's the case, then I'll give the other one to you, my lady. I hope you won't mind.
+
+Tea Cake (skin): Aw, that's not necessary. If you want to thank me, then come support me at the tea house.
+
+Narration: Tea Cake was about to put her hands together in a salute of thanks when a bulging bag wrapped in wax paper and still piping hot was thrust into them.
+
+Catho: These treats are for you... When I spoke out against you before... I really shouldn't have... But you helped My Lord now... so you won't get any trouble out of me again!
+
+Tea Cake (skin): Hahahaha, it's fine. Now that the misunderstanding is all cleared up, we're "enemies turned friends" now. The next time you come to the tea house, the cakes and tea are on me~
+
+Catho: O-okay, but I'm gonna hold you to that! No take-backsies!
+
+Prospecto: Oh yeah, Miss Tea Cake, there's one more thing... How did you come up with this plan to get us back together? And why were you so sure we would step up?
+
+Tea Cake (skin): I didn't have any kind of miraculous foresight, and naturally I wasn't entirely sure. I just thought that with your squire's temperament, there was a chance he'd come out and contradict me. I was just taking a gamble, that's all.
+
+Prospecto: So I see...
+
+Tea Cake (skin): Don't stand there and sigh, Sir. Evena is somewhere over there calling for you.
+
+Prospecto: Tch, th-thank you for the reminder. Miss Tea Cake, these river lanterns are for you. When I came over just now, I saw Persimmon and the others by the riverside.
+
+Tea Cake (skin): Great. I'll take you up on that fine idea.
+
+Narration: Tea Cake bid Prospecto farewell and then sauntered to the river bank in the breeze.
+
+Laba Noodles: Tea Cake, you're here. Everybody's talking about the feat you pulled off today.
+
+Fire Crystal Persimmon Cake: Yep, and a lot of people are wracking their brains to get seats to your next storytelling performance! You're going to be even more famous now.
+
+Tea Cake (skin): Resolving this matter is all thanks to everyone's hard work. I brought some river lanterns, also to offer wishes and prayers for everyone.
+
+Narration: The night tide pushed the flickering lantern out onto the lake surface. The lanterns in the water crossed paths with the floating lanterns in the sky, and for a second one couldn't distinguish between sky and land.
+
+Tea Cake (skin): Truly a beautiful end to a great day. I wish all lovers in the world could be happily ever after...
+
+Narration: A proliferation of floating lanterns dotted the river like the stars in the Milky Way above. Their flickering lights shimmered on the undulating waves, and candlelights filled the sky too, carrying the wishes of the people up into the night. Chrysanthemum Wine and Evena were enjoying the view from a small boat.
+
+Evena: Thank you, Chrysanthemum Wine... I took things too much to heart before and, without realizing it, became too timid to act.
+
+Evena: Thankfully you all were there to give me a push and make me remember my former self.
+
+Chrysanthemum Wine: No need for all that thanks. If you didn't have the courage within you, then all of our hard work would've been for nothing.
+
+Narration: Evena let out a relieved laugh, and Chrysanthemum Wine couldn't help smile back. A cool breeze caressed their faces, as if blowing away all the worries that had built up over the years.
+
+Evena: Oh yeah, I don't know when Miss Tea Cake will be doing a storytelling next, but I'll certainly be there to show support.
+
+Chrysanthemum Wine: Good, she'll like that.
+
+Narration: The boat stopped at the bank, and the two parted ways. As Chrysanthemum Wine strolled among the sundry stalls, she happened upon Dongtang and Almond Tofu.
+
+Almond Tofu: Miss Chrysanthemum Wine, we were just going to look for you.
+
+Chrysanthemum Wine: To look for me?
+
+Dongtang: Yes. Almond and the others put together an impromptu party at the tea house. It'll be perfect for watching tonight's fireworks show.
+
+_name_: Night _when_ Ink Pavilion
+
+Narration: The moon was bright, and the breeze was fine. Toasts were being made all around, and Fire Crystal Persimmon Cake drunkenly sloshed his cup around.
+
+Fire Crystal Persimmon Cake: Good stuff, *hic*!
+
+Laba Noodles: I only left for a minute... How did everyone drink themselves into this state...?
+
+Fire Crystal Persimmon Cake: Aww, it's just every once in a while! No big deal! Come, try some!
+
+Laba Noodles: Uh, Persimmon, you poured it down my shirt... ugh!
+
+Fire Crystal Persimmon Cake: Oh yeah, that reminds me, where did that Tea Cake go?
+
+Chrysanthemum Wine: She got stopped on the way here by some playhouse folks. They were waving money around trying to get her to come do a show at their venue. She must've run away somewhere to hide.
+
+Fire Crystal Persimmon Cake: What? I did a pretty bang-up acting job too! Why didn't they come to me... Forget it. If she's not coming back anyway, then I'll drink this jug for her~!
+
+Fire Crystal Persimmon Cake: Oh, and Chrysanthemum Wine, we hadn't seen you in ages. Where'd you get off to?
+
+Chrysanthemum Wine: Just the usual places. Nowhere worth mentioning.
+
+Fire Crystal Persimmon Cake: Aw, don't be like that! Tell us.
+
+Almond Tofu: I wanna hear too, Miss Chrysanthemum Wine!
+
+Dongtang: This is a rare opportunity, Chrysanthemum Wine. Don't spoil everyone's fun.
+
+Tea Cake (skin): That's right. I managed to escape my predicament too, so I have a stake in this. If there's anything fun, I can write it up into a story~
+
+Fire Crystal Persimmon Cake: Tea Cake, when did you get back? And why do you look like a ghost... Ack, and you're stealing my wine! I never did settle the score with you for hitting me today!
+
+Tea Cake (skin): What do you mean, hitting you? That was all just part of the show~
+
+Narration: Seeing that the table had erupted into arguing again, Chrysanthemum Wine let out a resigned sigh and decided to relent.
+
+Chrysanthemum Wine: Guys... Oh, alright...
+
+Narration: A silver moon accented the deep blue night sky. The evening breeze caressed their cheeks with refreshing gusts. Tonight, the bustling city was resplendent shimmering, as if cloaked in a mantle of light.
