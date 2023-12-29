@@ -185,6 +185,10 @@ process_data $1
 # Unpack ccz images
 unpack_textures $1
 
+# Hack, more json found in the later process steps
+process_json $1
+prettify_json $1
+
 echo $errors
 
 echo "done"
