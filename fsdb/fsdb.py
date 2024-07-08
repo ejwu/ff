@@ -50,6 +50,11 @@ BUFF_TYPES_BIMAP = bidict(BUFF_TYPES)
 TRIGGER_TYPES = {
     "1": "RESIDENT", "2": "RANDOM", "3": "ENERGY", "4": "CD", "5": "LOST_HP", "6": "COST_HP", "7": "COST_CHP", "8": "COST_OHP"}
 
+#ObjPP - what gets affected by CHANGE_PP skills
+OBJ_PP = {
+    "1": "ATTACK_A", "2": "ATTACK_B", "3": "DEFENCE_A", "4": "DEFENCE_B", "5": "CDAMAGE_UP", "6": "CDAMAGE_DOWN", "7": "GDAMAGE_UP", "8": "GDAMAGE_DOWN", "9": "SKILL_UP", "10": "SKILL_DOWN", "11": "OHP_A", "12": "OHP_B", "13": "CR_RATE_A", "14": "CR_RATE_B", "15": "CR_DAMAGE_A", "16": "CR_DAMAGE_B", "17": "ATK_RATE_A", "18": "ATK_RATE_B", "19": "GET_DAMAGE_ATTACK", "20": "GET_DAMAGE_SKILL", "21": "GET_DAMAGE_PHYSICAL", "22": "CAUSE_DAMAGE_ATTACK", "23": "CAUSE_DAMAGE_SKILL", "24": "CAUSE_DAMAGE_PHYSICAL", "25": "GET_HEAL_ATTACK", "26": "GET_HEAL_SKILL", "27": "GET_HEAL_ALL", "28": "CAUSE_HEAL_ATTACK", "29": "CAUSE_HEAL_SKILL", "30": "CAUSE_HEAL_ALL"
+}
+
 #ConfigSkillType - Basic/energy/link?
 SKILL_TYPES = {
     "1": "Basic", "2": "Aura", "3": "Energy", "4": "Link"}
@@ -58,7 +63,7 @@ SKILL_TYPES = {
 SEEK_SORT_RULES = {
     "1": "S_NONE", "2": "S_DISTANCE_MIN", "3": "S_DISTANCE_MAX", "4": "S_HP_PERCENT_MAX", "5": "S_HP_PERCENT_MIN",
     "6": "S_ATTACK_MAX", "7": "S_ATTACK_MIN", "8": "S_DEFENCE_MAX", "9": "S_DEFENCE_MIN", "10": "S_CHP_MAX",
-    "11": "S_CHP_MIN", "12": "S_OHP_MAX", "13": "S_OHP_MIN"}
+    "11": "S_CHP_MIN", "12": "S_OHP_MAX", "13": "S_OHP_MIN", "14": "S_BATTLE_POINT_MAX"}
 
 #ConfigSeekTargetRule
 TARGET_TYPES = {
@@ -99,12 +104,12 @@ def create_tables():
 
     # TODO: triggerThreshold and triggerConditionTargetNum being text is a hack to make sqlite-web work
     c.execute("DROP TABLE IF EXISTS dn_skills")
-    c.execute("CREATE TABLE dn_skills(fs_id text, monster_id text, name text, descr text, id text, type text, type_desc text, effect_type text, effect text, effect_rate numeric, effect_time numeric, cooldown numeric, target_num integer, target text, target_type text, trigger_type text, immuneDispel text, triggerActionType text, triggerCondition text, triggerThreshold text, triggerMeetType text, triggerConditionTarget text, triggerConditionTargetType text, triggerConditionTargetNum text, triggerConditionFull text)")
+    c.execute("CREATE TABLE dn_skills(fs_id text, monster_id text, name text, descr text, id text, type text, type_desc text, effect_type text, effect text, effect_rate numeric, effect_time numeric, cooldown numeric, target_num integer, target text, target_type text, trigger_type text, immuneDispel text, triggerActionType text, triggerActionTargetType text, triggerActionTargetNum integer, triggerActionTargetSequence text, triggerCondition text, triggerThreshold text, triggerMeetType text, triggerConditionTarget text, triggerConditionTargetType text, triggerConditionTargetNum text, triggerConditionFull text)")
 
     c.execute("DROP TABLE IF EXISTS triggers")
     c.execute("CREATE TABLE triggers(skill_id text, type text)")
 
-FUTURE_FS = {"200398": "Salmon Family Rice", "200399": "Mousse (SP)", "200400": "Prosciutto di Parma", "200401": "Caramel Macchiato", "200402": "Bresse Chicken Soup", "200403": "Pu-er", "200404": "Angel Cake", "200405": "Panna Cotta", "200406": "Absinthe", "200407": "Amaldin", "200408": "Iberian Ham", "200409": "Baklava", "200410": "Cafe au lait", "200411": "Saskatoon Berry Pie", "200412": "Vidal Icewine", "200413": "Moules Frites", "200414": "Montreal Smoked Meat", "200415": "Milk (SP)", "200416": "Falafel", "200417": "Macaroni", "200418": "Pavlova", "200419": "Walnut Porridge", "200420": "Agate Fish Ball", "200421": "Lotus Leaf Phoenix Preserved", "200422": "Golden Pan-fried Marrow", "200423": "Fusilli", "200424": "French Baked Apple"}
+FUTURE_FS = {"200399": "Mousse (SP)", "200404": "Angel Cake", "200405": "Panna Cotta", "200406": "Absinthe", "200407": "Amaldin", "200409": "Baklava", "200410": "Cafe au lait", "200411": "Saskatoon Berry Pie", "200412": "Vidal Icewine", "200413": "Moules Frites", "200414": "Montreal Smoked Meat", "200415": "Milk (SP)", "200416": "Falafel", "200417": "Macaroni", "200418": "Pavlova", "200419": "Walnut Porridge", "200420": "Agate Fish Ball", "200421": "Lotus Leaf Phoenix Preserved", "200422": "Golden Pan-fried Marrow", "200423": "Fusilli", "200424": "French Baked Apple"}
 # No artis past 200424 at the moment
 
 def insert_fs(fs_data, c):
@@ -191,6 +196,26 @@ def transform_skill(skill):
     if skill["type"]:
         for effect in skill["type"].values():
             effect["type"] = BUFF_TYPES[effect["type"]]
+            
+            effect_effect = effect["effect"]
+            # skills with type CHANGE_PP have an additional change to make within the effect field
+            if effect["type"] == "CHANGE_PP":
+                if len(effect_effect) != 2:
+                    print("Can't parse CHANGE_PP", effect)
+                    exit()
+                effect_effect[0] = OBJ_PP[effect_effect[0]]
+
+            # skills with type IMMUNE_BUFF_TYPE have an additional change to make within the effect field
+            if effect["type"] == "IMMUNE_BUFF_TYPE":
+                if skill["id"] == 10265:
+                    print(effect)
+                    print(effect_effect)
+                
+                for i, immunity in enumerate(effect_effect):
+                    if immunity not in BUFF_TYPES:
+                        print("Illegal immunity", immunity, skill["id"], effect)
+                    else:
+                        effect_effect[i] = BUFF_TYPES[immunity]
 
     # immuneDispel also uses the DISPEL_DEBUFF and DISPEL_BUFF buff types to denote immunity to having buffs/debuffs dispelled
     if skill["immuneDispel"]:
@@ -260,7 +285,9 @@ def insert_skill(c, fill, fsid, skill, skills_to_monsters, skill_scaling_data):
 def append_trigger_conditions(row, skill, target):
     # Add triggerActionType, if available
     hasTriggerAction = False
+    hasTriggerActionField = False
     if skill["triggerAction"]:
+        hasTriggerActionField = True
         for k, v in skill["triggerAction"].items():
             if k == target:
                 if v[0]["type"] == "1.4":
@@ -275,8 +302,35 @@ def append_trigger_conditions(row, skill, target):
                        tatypes.append(TRIGGER_ACTION_TYPE[data["type"]]) 
                     row.append(str(tatypes))
                     hasTriggerAction = True;
-                    
     if not hasTriggerAction:
+        row.append("")
+
+    hasTriggerActionTarget = False
+    if skill["triggerActionTarget"]:
+        for k, v in skill["triggerActionTarget"].items():
+            if k == target:
+                # Lots of skills have the triggerActionTarget field filled with nulls,
+                # pretend they don't exist
+#                print(skill["id"], v)
+                # TODO: check for other malformed versions that are partially populated, e.g. 2018177
+                if v["type"]:
+                    hasTriggerActionTarget = True;
+                    row.append(TARGET_TYPES[v["type"]])
+                    row.append(v["num"])
+                    if v["sequence"]:
+                        row.append(SEEK_SORT_RULES[v["sequence"]])
+                    else:
+                        row.append("None?")
+
+        if not hasTriggerActionField:
+            print(skill["id"], "has tat but no ta")
+    else:
+        if hasTriggerActionField:
+            print(skill["id"], "has ta but no tat")
+            
+    if not hasTriggerActionTarget:
+        row.append("")
+        row.append("")
         row.append("")
 
     if skill["triggerCondition"]:
@@ -317,10 +371,13 @@ def populate_and_insert(c, fsid, monster_id, skill, scaling_data):
         row = [fsid, monster_id, skill["name"], skill["descr"], skill["id"], skill["property"], skill["type_desc"]]
         row.append(target)
         effect = skill["type"][target]
+
         scaled_effect_used = False
         if scaling_data and str(skill["id"]) in scaling_data.keys():
             scaled_effect = scaling_data[str(skill["id"])][BUFF_TYPES_BIMAP.inv[target]]["41"]
-            if effect["effect"] != scaled_effect[0]:
+            # Immunities don't scale, but their effects have been transformed in the nonscaled version,
+            # so make sure we don't replace them
+            if effect["type"] not in ("IMMUNE_BUFF_TYPE") and effect["effect"] != scaled_effect[0]:
                 if fsid:
                     row.append(str(scaled_effect[0]))
                     scaled_effect_used = True
@@ -381,7 +438,7 @@ def populate_and_insert(c, fsid, monster_id, skill, scaling_data):
         else:
             row.insert(cd_index, "")
 #            row.append("")
-        c.execute("INSERT INTO dn_skills VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
+        c.execute("INSERT INTO dn_skills VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
     
 def insert_denormalized_skill(c, fsid, skill, monster_list, scaling_data):
     populate_and_insert(c, fsid, "", skill, scaling_data)
