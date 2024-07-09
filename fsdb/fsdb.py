@@ -3,6 +3,7 @@
 import argparse
 from bidict import bidict
 from collections import defaultdict
+import csv
 import json
 import os
 from pathlib import Path
@@ -106,10 +107,13 @@ def create_tables():
     c.execute("DROP TABLE IF EXISTS dn_skills")
     c.execute("CREATE TABLE dn_skills(fs_id text, monster_id text, name text, descr text, id text, type text, type_desc text, effect_type text, effect text, effect_rate numeric, effect_time numeric, cooldown numeric, target_num integer, target text, target_type text, trigger_type text, immuneDispel text, triggerActionType text, triggerActionTargetType text, triggerActionTargetNum integer, triggerActionTargetSequence text, triggerCondition text, triggerThreshold text, triggerMeetType text, triggerConditionTarget text, triggerConditionTargetType text, triggerConditionTargetNum text, triggerConditionFull text)")
 
+    c.execute("DROP TABLE IF EXISTS skins")
+    c.execute("CREATE TABLE skins(id text, name text, fs_id text, fs_name text, auto numeric, basic numeric, energy numeric, auto_trigger text, basic_trigger text, energy_trigger text)") 
+    
     c.execute("DROP TABLE IF EXISTS triggers")
     c.execute("CREATE TABLE triggers(skill_id text, type text)")
 
-FUTURE_FS = {"200399": "Mousse (SP)", "200404": "Angel Cake", "200405": "Panna Cotta", "200406": "Absinthe", "200407": "Amaldin", "200409": "Baklava", "200410": "Cafe au lait", "200411": "Saskatoon Berry Pie", "200412": "Vidal Icewine", "200413": "Moules Frites", "200414": "Montreal Smoked Meat", "200415": "Milk (SP)", "200416": "Falafel", "200417": "Macaroni", "200418": "Pavlova", "200419": "Walnut Porridge", "200420": "Agate Fish Ball", "200421": "Lotus Leaf Phoenix Preserved", "200422": "Golden Pan-fried Marrow", "200423": "Fusilli", "200424": "French Baked Apple"}
+FUTURE_FS = {"200407": "Amaldin", "200415": "Milk (SP)", "200419": "Walnut Porridge", "200420": "Agate Fish Ball", "200421": "Lotus Leaf Phoenix Preserved", "200422": "Golden Pan-fried Marrow", "200423": "Fusilli", "200424": "French Baked Apple"}
 # No artis past 200424 at the moment
 
 def insert_fs(fs_data, c):
@@ -582,6 +586,13 @@ for fsid, arti_skills in f2s.items():
     for arti_skill in arti_skills:
         insert_skill(c, skill_fill, fsid, arti_skill, {}, None)
 
+with open(Path(args.dir) / ".." / ".." / "src/ff/scripts/skin_speeds/fsdb_data.psv", "r") as skins_file:
+    skin_reader = csv.reader(skins_file, delimiter = "|")
+    for row in skin_reader:
+        print(row)
+        c.execute("INSERT INTO skins VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
+
+        
 conn.commit()
 conn.close()
 
