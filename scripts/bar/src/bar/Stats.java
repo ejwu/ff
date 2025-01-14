@@ -147,12 +147,14 @@ public class Stats implements StatsInterface<Stats> {
     public void offerAll(Combo combo) {
         cost.offer(combo);
         cheap.offer(combo);
-        fame.offer(combo);
-        fameEfficiency.offer(combo);
+        if (!BarOptimizer.isBar25()) {
+            fame.offer(combo);
+            fameEfficiency.offer(combo);
+            overall.offer(combo);
+            overallEfficiency.offer(combo);
+        }
         tickets.offer(combo);
         ticketsEfficiency.offer(combo);
-        overall.offer(combo);
-        overallEfficiency.offer(combo);
         numProcessed++;
     }
 
@@ -160,12 +162,14 @@ public class Stats implements StatsInterface<Stats> {
     public void mergeFrom(Stats other) {
         cost.offer(other.cost.best);
         cheap.offer(other.cheap.best);
-        fame.offer(other.fame.best);
-        fameEfficiency.offer(other.fameEfficiency.best);
+        if (!BarOptimizer.isBar25()) {
+            fame.offer(other.fame.best);
+            fameEfficiency.offer(other.fameEfficiency.best);
+            overall.offer(other.overall.best);
+            overallEfficiency.offer(other.overallEfficiency.best);
+        }
         tickets.offer(other.tickets.best);
         ticketsEfficiency.offer(other.ticketsEfficiency.best);
-        overall.offer(other.overall.best);
-        overallEfficiency.offer(other.overallEfficiency.best);
         numProcessed += other.numProcessed;
     }
 
@@ -184,18 +188,22 @@ public class Stats implements StatsInterface<Stats> {
         sb.append(cost.best);
         sb.append("\nLowest cost: %d\n".formatted(cheap.best.getCost()));
         sb.append(cheap.best);
-        sb.append("\nBest fame: %d\n".formatted(fame.best.getFame()));
-        sb.append(fame.best);
-        sb.append("\nBest fame efficiency: %.3f\n".formatted(fameEfficiency.best.getFameEfficiency()));
-        sb.append(fameEfficiency.best);
+        if (!BarOptimizer.isBar25()) {
+            sb.append("\nBest fame: %d\n".formatted(fame.best.getFame()));
+            sb.append(fame.best);
+            sb.append("\nBest fame efficiency: %.3f\n".formatted(fameEfficiency.best.getFameEfficiency()));
+            sb.append(fameEfficiency.best);
+        }
         sb.append("\nBest tickets: %d\n".formatted(tickets.best.getTickets()));
         sb.append(tickets.best);
         sb.append("\nBest ticket efficiency: %.3f\n".formatted(ticketsEfficiency.best.getTicketsEfficiency()));
         sb.append(ticketsEfficiency.best);
-        sb.append("\nBest overall: %.2f\n".formatted(overall.best.getOverall()));
-        sb.append(overall.best);
-        sb.append("\nBest overall efficiency: %.3f\n".formatted(overallEfficiency.best.getOverallEfficiency()));
-        sb.append(overallEfficiency.best);
+        if (!BarOptimizer.isBar25()) {
+            sb.append("\nBest overall: %.2f\n".formatted(overall.best.getOverall()));
+            sb.append(overall.best);
+            sb.append("\nBest overall efficiency: %.3f\n".formatted(overallEfficiency.best.getOverallEfficiency()));
+            sb.append(overallEfficiency.best);
+        }
         sb.append("\nTotal combos: %,d\n".formatted(numProcessed));
         sb.append("----------------------------------------------------------------\n");
         return sb.toString();

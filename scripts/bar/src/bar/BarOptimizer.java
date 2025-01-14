@@ -36,7 +36,7 @@ public class BarOptimizer {
     int lastDrinkIndex = -1;
     @Parameter(names={"--priceCaps"})
 //    List<Integer> caps = List.of(1000, 1200, 1500);
-    List<Integer> caps = List.of(1500);
+    List<Integer> caps = List.of();
     private int highestCap = -1;
 
     static DataLoader.SortOrder sortOrder = DataLoader.SortOrder.CHEAPEST;
@@ -51,10 +51,17 @@ public class BarOptimizer {
 
     List<String> disallowedMaterials = List.of();
 
+    // At bar 25, fame can be ignored, so optimizations around tickets are available
+    public static boolean isBar25() {
+        return BAR_LEVEL == 25;
+    }
 
-    private void setVodkaDrinks() {
+    private void setRestrictedDrinks() {
+        // TODO: Requiring 1* drinks should just skip all their equivalents in the base generator.  or all generators?
+        // probably also some other optimizations to do here
         disallowedMaterials = List.of("Whisky", "Rum", "Gin", "Tequila", "Brandy");
-        setTempValues(25, 8, 6, false, List.of(117), -1, DataLoader.SortOrder.CHEAPEST, true);
+        requiredDrinks = List.of("San Francisco", "San Francisco-2", "Americano", "Americano-2", "Moscow Mule", "Mistake", "Mistake-2", "Depth Charge", "San Francisco-1-4111");
+        setTempValues(25, 8, 5, false, List.of(), 131, DataLoader.SortOrder.CHEAPEST, true);
 
     }
 
@@ -92,8 +99,20 @@ public class BarOptimizer {
 
     // Oden - spritz < copper illusion < paloma
     // Takoyaki - pjuice, honey soda < refreshing soda
+    // rsoda - 4/3/3/3, hsoda 3/2/2/2, pjuice 3/2/2/2
+    // rsoda 1 mint 3 soda, hsoda 1 cream 3 honey 3 soda water, pjuice pjuice
     // Snowskin - matador < fog cutter - these all use lemon juice, which is all used up by Palomas
     // mashed - mojito, margarita < americano - all used up by oden/takoyaki
+
+    private void setTakoyakiDrinks() {
+        // pjuice -> san franciscos
+        // sf - vodka/curacao/pjuice/fsyrup
+        requiredDrinks = List.of("Refreshing Soda", "Refreshing Soda-2", "Refreshing Soda-1-31", "Refreshing Soda-0", "Honey Soda", "San Francisco", "San Francisco-2", "San Francisco-1-4111", "San Francisco-0");
+        additionalDisallowedDrinks = List.of("Refreshing Soda-1-22", "Honey Soda-2", "San Francisco-1-1114", "San Francisco-1-1123", "San Francisco-1-1132", "San Francisco-1-1141", "San Francisco-1-1213", "San Francisco-1-1231", "San Francisco-1-1312", "San Francisco-1-1321", "San Francisco-1-1411", "San Francisco-1-2113", "San Francisco-1-2122", "San Francisco-1-2131", "San Francisco-1-2212", "San Francisco-1-2221", "San Francisco-1-2311", "San Francisco-1-3112", "San Francisco-1-3121", "San Francisco-1-3211", "Pineapple Juice");
+        // SF takes vodka, Crystal Coral takes tequila, Whiskey generally useful, skip these three for tractability
+        disallowedMaterials = List.of("Brandy", "Rum", "Gin", "Whisky", "Tequila");
+        setTempValues(25, 6, 7, false, List.of(), -1, DataLoader.SortOrder.TICKETS, true);
+    }
 
     // same drinks for 24, both level 24 drinks aren't favored by anyone
     private void setLevel23OdenDrinks2Star() {
@@ -235,8 +254,10 @@ public class BarOptimizer {
         return stats;
     }
 
-    public static void initForTest(int barLevel) {
+    public static void initForTest(int barLevel, DataLoader.SortOrder so, boolean aid) {
         BAR_LEVEL = barLevel;
+        sortOrder = so;
+        allowImperfectDrinks = aid;
     }
 
     private boolean hasDupes(Combo combo) {
@@ -264,7 +285,8 @@ public class BarOptimizer {
 //        setLevel23OdenDrinks();
 //        setLevel23BeggarDrinks();
 //        setLevel23OdenDrinks2Star();
-        setVodkaDrinks();
+//        setRestrictedDrinks();
+        setTakoyakiDrinks();
         Stopwatch sw = Stopwatch.createStarted();
         // This needs to happen before any reference to DataLoader is made
         BAR_LEVEL = barLevel;
@@ -292,7 +314,7 @@ public class BarOptimizer {
 
         List<Integer> checkDrinks = new ArrayList<>();
 //        for (String drink : List.of("Bernice", "Vodka", "Vodka Sour", "Black Russian", "Moscow Mule",
-//                "Depth Charge", "Mistake", "Mistake-2", "Garibaldi", "Garibaldi-2", "Ginger Cola", "Ginger Cola-2", "San Francisco", "San Francisco-2", "Coffee Martini", "Coffee Martini-2", "Screwdriver", "Screwdriver-2", "Americano", "Americano-2", "Lemon Soda Water", "Lemon Soda Water-2", "Sour Pineapple Juice", "Sour Pineapple Juice-2")) {
+//                "Depth Charge", "Mistake", "Mistake-2", "Garibaldi", "Garibaldi-2", "Ginger Cola", "Ginger Cola-2", "San Francisco", "San Francisco-2", "Coffee Martini", "Coffee Martini-2", "Screwdriver", "Screwdriver-2", "Americano", "Americano-2", "Lemon Soda Water", "Lemon Soda Water-2", "Sour Pineapple Juice", "Sour Pineapple Juice-2", "Cola")) {
 //            System.out.println(drink + " " + DataLoader.DRINK_DATA.get(drink).tickets() + " " + DataLoader.DRINK_DATA.get(drink).fame());
 //            checkDrinks.add(DataLoader.NAME_TO_INDEX.get(drink));
 //        }
@@ -323,7 +345,14 @@ public class BarOptimizer {
             System.out.println("Building cache to %d, last drink %d, prefix depth %d, worker depth %d, max drinks %d".formatted(
                     cacheLastDrinkIndex, lastDrinkIndex, maxDrinks - workerDepth - cacheDepth, workerDepth, maxDrinks));
         }
-        DataLoader.precalculateCache(allowDuplicateDrinks, cacheLastDrinkIndex, highestCap);
+
+        // If START_FROM == lastDrinkIndex, we're always requiring a particular drink and can preemptively remove its
+        // ingredients from the material shop when generating the cache
+        List<Integer> knownDrinks = new ArrayList<>();
+        if (START_FROM.toIndices().size() == 1 && lastDrinkIndex == START_FROM.toIndices().get(0)) {
+            knownDrinks.add(lastDrinkIndex);
+        }
+        DataLoader.precalculateCache(allowDuplicateDrinks, cacheLastDrinkIndex, highestCap, knownDrinks);
 
         final CompletionService<StatsInterface> cs = new ExecutorCompletionService<>(Executors.newWorkStealingPool());
 
@@ -344,7 +373,7 @@ public class BarOptimizer {
                         stats.mergeFrom(processed);
                     }
                     //100k for dupes
-                    if (numProcessed.longValue() % 5000 == 0) {
+                    if (numProcessed.longValue() % 1000 == 0) {
                         System.out.println(stats);
                         System.out.println(LocalDateTime.now());
                         long minutes = Math.max(1, sw.elapsed(TimeUnit.MINUTES));

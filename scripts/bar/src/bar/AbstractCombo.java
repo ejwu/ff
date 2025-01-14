@@ -45,6 +45,20 @@ public abstract class AbstractCombo implements Combo {
     @Override
     @SuppressWarnings("ConstantConditions")
     public boolean canBeMade() {
+        for (int i : toIndices()) {
+            if (DataLoader.TWO_TO_THREE.containsKey(i) && !hasDrink(DataLoader.TWO_TO_THREE.get(i))) {
+//                System.out.println("rejecting for missing 3* " + i + ": " + toString());
+                return false;
+            }
+            if (DataLoader.ONE_STAR_DUPES.containsKey(i)) {
+                for (int dupeIndex : DataLoader.ONE_STAR_DUPES.get(i)) {
+                    if (hasDrink(dupeIndex)) {
+                        return false;
+                    }
+                }
+            }
+        }
+
         for (Map.Entry<Integer, Integer> entry : getMaterialsUsed().entrySet()) {
             if (DataLoader.MATERIALS_AVAILABLE.get(entry.getKey()) < entry.getValue()) {
                 return false;
@@ -201,6 +215,11 @@ public abstract class AbstractCombo implements Combo {
 
         // No reason to skip?
         return false;
+    }
+
+    @Override
+    public boolean hasDrink(int index) {
+        return toIndices().contains(index);
     }
 
     @Override

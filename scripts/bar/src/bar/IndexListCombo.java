@@ -3,6 +3,7 @@ package bar;
 import bar.DataLoader.FormulaMaterial;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -17,12 +18,17 @@ public class IndexListCombo extends AbstractCombo implements Combo {
     // A list of indices in descending order
     final ImmutableList<Integer> drinks;
 
+    // Strictly to support hasDrink to deal with 2\* and their corresponding 3\* drinks
+//    final ImmutableSet<Integer> hasDrinks;
+
     public IndexListCombo() {
         drinks = ImmutableList.of();
+//        hasDrinks = ImmutableSet.of();
     }
 
     public IndexListCombo(ImmutableList<Integer> drinks) {
         this.drinks = drinks;
+//        this.hasDrinks = ImmutableSet.copyOf(drinks);
     }
 
     @Override
@@ -148,6 +154,12 @@ public class IndexListCombo extends AbstractCombo implements Combo {
     @Override
     public int getSize() {
         return drinks.size();
+    }
+
+    @Override
+    public boolean hasDrink(int index) {
+        return drinks.contains(index);
+//        return hasDrinks.contains(index);
     }
 
     @Override

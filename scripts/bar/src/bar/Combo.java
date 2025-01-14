@@ -52,4 +52,6 @@ public interface Combo {
     int getSize();
 
     boolean isBefore(Combo other);
+
+    boolean hasDrink(int index);
 }

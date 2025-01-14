@@ -2,10 +2,13 @@ package bar;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.math.Quantiles;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -16,16 +19,18 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class DataLoader {
 
@@ -59,20 +64,19 @@ public class DataLoader {
             }
         },
         CHEAPEST {
-            private static double getCostEstimate(Drink drink) {
-                double cost = 0.0;
-                for (FormulaMaterial material : drink.materials()) {
-                    MaterialShop shop = MAT_SHOP.get(getMaterialById(material.id).name);
-                    cost += (double) material.num / shop.num * shop.cost;
-                }
-                return cost;
-            }
-
             public int compare(Drink l, Drink r) {
                 if (getCostEstimate(l) > getCostEstimate(r)) {
                     return 1;
                 } else if (getCostEstimate(l) < getCostEstimate(r)) {
                     return -1;
+                }
+
+                // 2* drinks always come before their 3* versions in CHEAPEST ordering to help prevent attempting
+                // to process a bunch of illegal combos with 2* drinks without the 3* version.
+                if (l.name().endsWith("-2") && l.name().substring(0, l.name().length() - 2).equals(r.name())) {
+                    return -1;
+                } else if (r.name().endsWith("-2") && r.name().substring(0, r.name().length() - 2).equals(l.name())) {
+                    return 1;
                 }
                 return 0;
             }
@@ -84,7 +88,7 @@ public class DataLoader {
     private static final SortOrder SORT_ORDER = BarOptimizer.sortOrder;
     private static final String BASE_PATH = "data/";
     public static ImmutableMap<String, MaterialShop> MAT_SHOP = loadMatShop();
-    public static Map<String, Integer> MAT_NAME_TO_ID = new HashMap<>();
+    public static BiMap<String, Integer> MAT_NAME_TO_ID = HashBiMap.create();
     public static ImmutableMap<Integer, Integer> MAX_DRINKS_BY_BAR_LEVEL = loadMaxDrinksByBarLevel();
     public static ImmutableMap<Integer, Material> MATERIAL_COSTS = loadMaterialCosts();
     // materialId to count
@@ -95,6 +99,8 @@ public class DataLoader {
     public static ImmutableMap<String, Integer> NAME_TO_INDEX;
     // Map of the indices of 2* drinks to their 3* version
     public static ImmutableMap<Integer, Integer> TWO_TO_THREE;
+    // Map of the indices of 1* drinks to their equivalents
+    public static ImmutableMap<Integer, Set<Integer>> ONE_STAR_DUPES;
     public static ImmutableList<Drink> DRINKS_BY_LEVEL;
     private static Combo REQUIRED_DRINKS;
     private static Combo ADDITIONAL_DISALLOWED_DRINKS;
@@ -102,6 +108,15 @@ public class DataLoader {
     public static TreeCache TREE_CACHE;
 
     public static final double OVERALL_COEFF = 3.25;
+
+    private static double getCostEstimate(Drink drink) {
+        double cost = 0.0;
+        for (FormulaMaterial material : drink.materials()) {
+            MaterialShop shop = MAT_SHOP.get(getMaterialById(material.id).name);
+            cost += (double) material.num / shop.num * shop.cost;
+        }
+        return cost;
+    }
 
     // Tests that muck around with different bar levels in BarOptimizer will need to call this instead of just init
     // This is a mess, too much static stuff
@@ -125,8 +140,8 @@ public class DataLoader {
         int index = 0;
         DRINKS_BY_LEVEL = ImmutableList.copyOf(getDrinksByLevel(BAR_LEVEL));
         for (Drink drink : DRINKS_BY_LEVEL) {
-            System.out.printf("%2d %-24s: %2d fame, %3d tickets - (%s) %d%n",
-                    index, drink.name(), drink.fame(), drink.tickets(), drink.getMaterialListString(), drink.id());
+            System.out.printf("%2d %-24s: %2d fame, %3d tickets, %.2f cost - (%s) %d%n",
+                    index, drink.name(), drink.fame(), drink.tickets(), getCostEstimate(drink), drink.getMaterialListString(), drink.id());
             indexBuilder.put(index, drink);
             nameBuilder.put(drink.name(), index);
             index++;
@@ -143,6 +158,29 @@ public class DataLoader {
             }
         }
         TWO_TO_THREE = twoToThreeBuilder.build();
+
+        // TODO: Don't need to do this unless imperfect drinks are allowed and dupes aren't
+        ImmutableMap.Builder<Integer, Set<Integer>> oneStarDupeBuilder = ImmutableMap.builder();
+        Pattern oneStarName = Pattern.compile("(.*-1)-.*");
+        for (String drinkName : NAME_TO_INDEX.keySet()) {
+            Matcher matcher = oneStarName.matcher(drinkName);
+            if (matcher.matches()) {
+                Set<Integer> matches = new HashSet<>();
+                String rootName = matcher.group(1);
+                System.out.println(rootName);
+                for (String matchCandidate : NAME_TO_INDEX.keySet()) {
+                    if (matchCandidate.startsWith(rootName) && !matchCandidate.equals(drinkName)) {
+                        matches.add(NAME_TO_INDEX.get(matchCandidate));
+                        System.out.println("matches " + matchCandidate);
+                    }
+                }
+                oneStarDupeBuilder.put(Objects.requireNonNull(NAME_TO_INDEX.get(drinkName)), matches);
+            }
+        }
+        ONE_STAR_DUPES = oneStarDupeBuilder.build();
+        for (int k : ONE_STAR_DUPES.keySet()) {
+            System.out.println(k + ": " + ONE_STAR_DUPES.get(k));
+        }
 
         // TODO: is it bad if there are no required drinks but there are disallowed materials?
         if (!requiredDrinks.isEmpty() || !disallowedMaterials.isEmpty()) {
@@ -205,8 +243,27 @@ public class DataLoader {
     }
 
     // TODO: Extract this in a way that caching can be used to generate this cache as well
-    public static void precalculateCache(boolean allowDuplicateDrinks, int lastDrinkIndex, int highestCap) {
+    public static void precalculateCache(boolean allowDuplicateDrinks, int lastDrinkIndex, int highestCap, List<Integer> knownDrinks) {
+        System.out.println("known drinks: " + knownDrinks);
         Stopwatch sw = Stopwatch.createStarted();
+
+        // HACK: Temporarily mutating MATERIALS_AVAILABLE to reduce cache size when we know we're always going to have
+        // a particular drink.  Make sure you fix this after cache is built!
+        if (!knownDrinks.isEmpty()) {
+            System.out.println("known drinks not empty, modifying materials available for cache");
+            System.out.println(MATERIALS_AVAILABLE);
+            Drink knownDrink = getDrinkByIndex(knownDrinks.get(0));
+            System.out.println(knownDrink.name() + ": " + knownDrink.getMaterialListString());
+            Map<Integer, Integer> mutableMaterialsAvailable = new HashMap<>(MATERIALS_AVAILABLE);
+            for (FormulaMaterial formulaMaterial : knownDrink.materials()) {
+                int currentMatCount = mutableMaterialsAvailable.get(formulaMaterial.id());
+                System.out.println("has " + currentMatCount + " " + MAT_NAME_TO_ID.inverse().get(formulaMaterial.id()) + ", removing " + formulaMaterial.num());
+                mutableMaterialsAvailable.put(formulaMaterial.id(), currentMatCount - formulaMaterial.num());
+            }
+            MATERIALS_AVAILABLE = ImmutableMap.copyOf(mutableMaterialsAvailable);
+            System.out.println(MATERIALS_AVAILABLE);
+        }
+
         ComboGenerator generator = new ComboGenerator(BarOptimizer.CACHE_DEPTH, getEmptyCombo(), allowDuplicateDrinks, ComboGenerator.RUN_FROM_START, lastDrinkIndex, getDisallowedDrinks());
         Combo combo = generator.next();
 
@@ -216,6 +273,8 @@ public class DataLoader {
 
         int currentKey = -1;
         Map<Integer, Integer> keyCount = new HashMap<>();
+        List<Integer> costs = new ArrayList<>();
+        List<Integer> tickets = new ArrayList<>();
         while (combo != null) {
             if (combo.getCost() > highestCap) {
                 skippedForCap++;
@@ -224,10 +283,14 @@ public class DataLoader {
             }
             if (combo.toIndices().get(0) > currentKey) {
                 if (currentKey >= 0) {
-                    System.out.printf("%2d: %8d - %s%n",
+                    System.out.printf("%3d: %8d - %s%n",
                             currentKey, keyCount.getOrDefault(currentKey, 0), LocalDateTime.now());
+//                    System.out.println(Quantiles.percentiles().indexes(List.of(0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100)).compute(costs));
+//                    System.out.println(Quantiles.percentiles().indexes(List.of(0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100)).compute(tickets));
                 }
                 currentKey = combo.toIndices().get(0);
+                costs.clear();
+                tickets.clear();
             }
             // TODO: This only excludes combos missing the 3* version of the current key - modifying the generator to be
             // smarter could exclude further combos involving 2/3* drinks besides the current key
@@ -236,16 +299,35 @@ public class DataLoader {
             } else {
                 treeCache.addCombo(combo);
                 keyCount.put(currentKey, keyCount.getOrDefault(currentKey, 0) + 1);
+                costs.add(combo.getCost());
+                tickets.add(combo.getTickets());
             }
             combo = generator.next();
         }
-        System.out.printf("%2d: %8d - %s%n",
+        System.out.printf("%3d: %8d - %s%n",
                 currentKey, keyCount.getOrDefault(currentKey, 0), LocalDateTime.now());
 
         System.out.println("Tree entries: " + treeCache.getSize());
         TREE_CACHE = treeCache;
         System.out.println("Skipped " + skippedForCap + " entries for being over " + highestCap);
         System.out.println(sw.elapsed(TimeUnit.SECONDS) + " seconds to create cache");
+
+        // HACK Unhack the hack above.  MATERIALS_AVAILABLE better be in the same state is was before the cache was built
+        if (!knownDrinks.isEmpty()) {
+            System.out.println("known drinks not empty, fixing materials available");
+            System.out.println(MATERIALS_AVAILABLE);
+            Drink knownDrink = getDrinkByIndex(knownDrinks.get(0));
+            Map<Integer, Integer> mutableMaterialsAvailable = new HashMap<>(MATERIALS_AVAILABLE);
+            for (FormulaMaterial formulaMaterial : knownDrink.materials()) {
+                int currentMatCount = mutableMaterialsAvailable.get(formulaMaterial.id());
+                mutableMaterialsAvailable.put(formulaMaterial.id(), currentMatCount + formulaMaterial.num());
+                currentMatCount = mutableMaterialsAvailable.get(formulaMaterial.id());
+                System.out.println("now has " + currentMatCount + " " + MAT_NAME_TO_ID.inverse().get(formulaMaterial.id()));
+            }
+            MATERIALS_AVAILABLE = ImmutableMap.copyOf(mutableMaterialsAvailable);
+            System.out.println(MATERIALS_AVAILABLE);
+        }
+
     }
 
     public record MaterialShop(int cost, int num, int level) {}
@@ -485,6 +567,9 @@ public class DataLoader {
                     Drink drink = createDrink(name, drinkJson, openBarLevel, ingredients);
                     builder.put(name, drink);
                 } else if (allowImperfectDrinks) {
+                    // Handpick 0 star drinks to keep combinations tractable
+                    Set<String> lowStarDrinks = Set.of("Crystal Coral", "Mistake", "Americano", "Moscow Mule", "Depth Charge", "San Francisco", "Lemon Soda Water", "Bloody Mary", "Refreshing Soda");
+
                     if (asInt(drinkJson.get("star")) == 2) {
                         // Can't make 2 star versions of 1 ingredient drinks
                         if (materials.size() != 1) {
@@ -499,15 +584,20 @@ public class DataLoader {
                     } else if (asInt(drinkJson.get("star")) == 1) {
                         // 1 star drinks require the number of total ingredients to be right, and at least one of each ingredient
                         // TODO: nodupes needs to treat all 1 star variants as dupes
-//                        generate1StarDrinks(name, drinkJson, materials, openBarLevel, matching, builder);
-                    } else if (asInt(drinkJson.get("star")) == 0) {
-                        // 0 star drinks just need to use the right ingredients.  1 of each is fine
-                        for (Object material : materials) {
-                            ingredients.add(new FormulaMaterial(asInt(material), 1));
+                        if (lowStarDrinks.contains(name)) {
+                            generate1StarDrinks(name, drinkJson, materials, openBarLevel, matching, builder);
                         }
-                        name += "-0";
-                        // TODO: temporarily hack out 0* drinks
-//                        builder.put(name, createDrink(name, drinkJson, openBarLevel, ingredients));
+                    } else if (asInt(drinkJson.get("star")) == 0) {
+                        // TODO: Some 0 star drinks can't be made, e.g. Gin, since it's the same as the 3 star version
+                        // 0 star drinks just need to use the right ingredients.  1 of each is fine
+                        if (lowStarDrinks.contains(name)) {
+                            for (Object material : materials) {
+                                ingredients.add(new FormulaMaterial(asInt(material), 1));
+                            }
+                            name += "-0";
+                            // TODO: temporarily hack out 0* drinks
+                            builder.put(name, createDrink(name, drinkJson, openBarLevel, ingredients));
+                        }
                     }
                 }
             }
@@ -552,9 +642,6 @@ public class DataLoader {
             totalIngredients += asInt(match);
         }
 
-        List<List<Integer>> z = generateValidCounts(totalIngredients, materials.size());
-
-
         for (List<Integer> coeffs : generateValidCounts(totalIngredients, materials.size())) {
             if (!isRegularDrink(coeffs, matching)) {
                 StringBuilder sb = new StringBuilder(name);
@@ -566,7 +653,16 @@ public class DataLoader {
                 }
                 String modifiedDrinkName = sb.toString();
                 Drink drink = createDrink(modifiedDrinkName, drinkJson, openBarLevel, ingredients);
-                builder.put(modifiedDrinkName, drink);
+
+
+                // Only the 4111 variant is needed for Crystal Coral, there's enough Tequila to make every other drink
+                if (modifiedDrinkName.startsWith("Crystal Coral")) {
+                    if ("Crystal Coral-1-4111".equals(modifiedDrinkName)) {
+                        builder.put(modifiedDrinkName, drink);
+                    }
+                } else {
+                    builder.put(modifiedDrinkName, drink);
+                }
             }
         }
     }
