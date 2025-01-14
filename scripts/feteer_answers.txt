@@ -1,0 +1,260 @@
+
+----------------------------
+You discover a lone crayfish.what will you choose to do?
+
+  Give it a warm home
+    1 4
+    ATK +20% / ATK -20%
+  Put it back in its hole
+    1 5
+    Atk Spd +30% / ATK -30%
+  Deep-fry it
+    2 5
+    DEF +40% / ATK -40%
+
+----------------------------
+A dragon's tail is stuck on a cliff.how will you help it?
+
+  Find a hero with unbounded strength
+    2 4
+    Crit Dmg +40% / ATK -50%
+  Crack the cliff open
+    1 5
+    HP +20% / ATK -60%
+  Cut off the dragon's tail
+    1 6
+    DEF +30% / Atk Speed -20%
+
+----------------------------
+An elderly lady is struggling to climb the mountain with heavy luggage.how will you help her?
+
+  Physically disintegrate the granny's suitcase
+    1 4
+    Atk Speed +40% / Atk Speed -30%
+  Chase the granny off the mountain
+    2 3
+    Crit Strike +40% / Atk Speed -40%
+  Physically disintegrate the mountain
+    2 2
+    Blast Dmg +20% / Atk Speed -50%
+
+----------------------------
+To attend a ghost's dinner party, you must choose a partner.who will you choose?
+
+  I'm an introvert. I refuse to attend.
+    2 5
+    HP +30% / Atk Speed -60%
+  I'm in the middle. I wait to be picked.
+    1 3
+    ATK +40% / Highest-ATK Food Soul ATK -20%
+  I'm an extrovert. Everyone is my companion.
+    1 6
+    Crit Strike +40% / Highest-ATK Food Soul ATK -30%
+
+----------------------------
+The prophecy states that a curse from an evil god is about to descend.how will you respond?
+
+  I'm rubber and you're glue
+    2 7
+    HP +20% / Highest-ATK Food Soul ATK -40%
+  It's none of my concern
+    1 5
+    Atk Speed +30% / Highest-ATK Food Soul ATK -50%
+  I transform the evil god with love
+    1 4
+    ATK +40% / Highest-ATK Food Soul ATK -60%
+
+----------------------------
+You’re being extorted by someone who looks tough.what will you do?
+
+  Report his name to the Peaceful Merchant Hall
+    2 6
+    Blast Dmg +50% / Highest-ATK Food Soul Atk Speed -20%
+  Pretend to pass out
+    2 6
+    DEF +20% / Highest-ATK Food Soul Atk Speed -30%
+  Team up with him to con other people
+    2 7
+    Atk Speed +30% / Highest-ATK Food Soul Atk Speed -40%
+
+----------------------------
+You find a notebook that can grant any wish you write in it.what will you do?
+
+  Fill it up right away
+    1 1
+    Blast Dmg +40% / Atk Speed -40%
+  Sell it
+    1 4
+    HP +50% / Atk Speed -50%
+  Give it to someone you hate to test it on him/her
+    2 5
+    Blast Dmg +20% / Atk Speed -60%
+
+----------------------------
+You encounter a steak and red wine arguing.what will you do?
+
+  Gentle persuade them not to fight
+    2 5
+    HP +30% / Highest-ATK Food Soul ATK -20%
+  Join them
+    2 4
+    Atk Speed +40% / Highest-ATK Food Soul ATK -30%
+  Sit back and watch the fun with Gingerbread
+    1 5
+    ATK +50% / Highest-ATK Food Soul ATK -40%
+
+----------------------------
+A mysterious island suddenly appears before you.what comes to your mind?
+
+  Mystery
+    1 6
+    HP +20% / Highest-ATK Food Soul ATK -50%
+  Island
+    2 4
+    DEF +30% / Highest-ATK Food Soul ATK -60%
+  I don't think anything
+    1 3
+    Atk Speed +40% / Highest-ATK Food Soul Atk Speed -30%
+
+----------------------------
+You pick up an emotional detector for a B-52 cocktail.what is it saying?
+
+  (*^▽^*)
+    1 2
+    Crit Strike +40% / Highest-ATK Food Soul Atk Speed -40%
+  o(╥﹏╥)o
+    2 5
+    Blast Dmg +20% / Highest-ATK Food Soul Atk Speed -50%
+  !!!∑(?Д?ノ)ノ
+    2 3
+    HP +30% / Highest-ATK Food Soul Atk Speed -60%
+
+----------------------------
+You are about to master a necessary skill.what will you choose?
+
+  Fence-Sitter
+    1 6
+    ATK +40% / Atk Speed -60%
+  Free As a Bird
+    1 4
+    Crit Strike +40% / Highest-ATK Food Soul ATK -20%
+  Beat a Retreat
+    1 5
+    HP +20% / Highest-ATK Food Soul ATK -30%
+
+----------------------------
+You accidentally enter the Eden of mashed potatoes and find a talking tree.what will you do?
+
+  Crack open the tree and chase off the person hiding inside
+    2 4
+    Atk Speed +30% / Highest-ATK Food Soul ATK -40%
+  Ask it for gossip about Mashed Potatoes
+    2 6
+    ATK +40% / Highest-ATK Food Soul ATK -50%
+  Dig it up and sell it for money
+    2 6
+    Blast Dmg +50% / Highest-ATK Food Soul ATK -60%
+
+----------------------------
+You've heard that Parata holds a mysterious treasure, but you don’t know where.what will you do?
+
+  Go ask where Palata's treasure trove is
+    2 8
+    DEF +20% / Highest-ATK Food Soul Atk Speed -30%
+  Join a treasure hunting expedition and search with professionals
+    1 1
+    Atk Speed +30% / Highest-ATK Food Soul Atk Speed -40%
+  Let the treasure remain a mystery
+    2 4
+    HP +30% / Highest-ATK Food Soul Atk Speed -50%
+
+----------------------------
+You find a lost duckling.what will you do?
+
+  Help it find its mommy
+    1 5
+    ATK +40% / Highest-ATK Food Soul Atk Speed -60%
+  Roast duck
+    1 5
+    Crit Strike +40% / Atk Speed -60%
+  I'll be its mommy
+    2 4
+    HP +20% / Highest-ATK Food Soul ATK -50%
+
+----------------------------
+You’re captured by an evil alchemist for experiments.if you could only say one thing, what would it be?
+
+  Don't be nervous. You do it voluntarily.
+    2 5
+    ATK +40% / Highest-ATK Food Soul ATK -60%
+  Don't say anything and fight him
+    1 6
+    Crit Strike +40% / Highest-ATK Food Soul Atk Speed -20%
+  Your beloved alchemy is all fake
+    1 4
+    HP +20% / Highest-ATK Food Soul Atk Speed -30%
+
+----------------------------
+You encounter a lost girl who has difficulty speaking.what will you do?
+
+  Bring her to the police department
+    1 3
+    Atk Speed +30% / Highest-ATK Food Soul Atk Speed -40%
+  Take out pen and paper and let her write it down
+    2 2
+    ATK +40% / Atk Speed -40%
+  Study how she talks in order to understand her
+    2 5
+    Blast Dmg +50% / Atk Speed -50%
+
+----------------------------
+You meet a strangely dressed person in a carnival club.what will you do?
+
+  Go find a security guard right away
+    2 3
+    DEF +20% / Atk Speed -60%
+  Take off your jacket and give it to him
+    1 6
+    Atk Speed +30% / Highest-ATK Food Soul ATK -20%
+  Confidently go up to him and say hello
+    1 7
+    Blast Dmg +40% / Highest-ATK Food Soul ATK -30%
+
+----------------------------
+You wake up hungover in "Elysium" facing a smiling shop owner.what will you do?
+
+  Ask him what happened last night
+    2 5
+    HP +50% / Highest-ATK Food Soul ATK -40%
+  Lodge a complaint that his wine was defective and seek reparations
+    1 4
+    Blast Dmg +20% / Highest-ATK Food Soul ATK -50%
+  Recommend a wooden bed to him and help Sakurajima develop
+    1 6
+    HP +30% / Highest-ATK Food Soul ATK -60%
+
+----------------------------
+The new barista at the Satan Café makes a strange-tasting coffee.what will you do?
+
+  Talk openly with him
+    2 6
+    Atk Speed +40% / Highest-ATK Food Soul Atk Speed -30%
+  Take the opportunity to blackmail him
+    2 7
+    ATK +50% / Highest-ATK Food Soul Atk Speed -40%
+  Scratch chocolate chips off the ingredients list
+    1 1
+    HP +20% / Highest-ATK Food Soul Atk Speed -50%
+
+----------------------------
+The restaurant lights keep flickering, causing you eye pain.what will you do?
+
+  Turn off the light and enjoy the dark
+    1 4
+    DEF +30% / Highest-ATK Food Soul Atk Speed -60%
+  Fix the light once and for all
+    1 5
+    Atk Speed +40% / Atk Speed -60%
+  Blink your eyes at the same frequency as the lightbulb
+    2 5
+    Crit Strike +40% / Highest-ATK Food Soul ATK -20%

@@ -1,0 +1,8 @@
+['Red Folding Fan', 'Red Wind Chime', 'Red Handball']
+['Yellow Folding Fan', 'Yellow Wind Chime', 'Yellow Handball']
+['Blue Folding Fan', 'Blue Wind Chime', 'Blue Handball']
+['Red Folding Fan', 'Red Wind Chime', 'Blue Handball']
+['Yellow Folding Fan', 'Yellow Wind Chime', 'Red Handball']
+['Blue Folding Fan', 'Blue Wind Chime', 'Red Handball']
+['Red Folding Fan', 'Red Wind Chime', 'Yellow Handball']
+['Yellow Folding Fan', 'Yellow Wind Chime', 'Blue Handball']
