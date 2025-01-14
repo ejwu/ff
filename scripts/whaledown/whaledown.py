@@ -3,7 +3,7 @@
 import argparse
 from collections import Counter
 from collections import defaultdict
-from ffutil.secret import (combined_fa_str, fa_str, fa_lines, fs_name, fs_arti_level_str, fs_str, short_fa_str, mirror_value, short_togi_str, shortest_togi_str, togis, togi_value, togi_value_str, update_togi_counts)
+from ffutil.secret import (combined_fa_str, fa_str, fa_lines, fs_name, fs_arti_level_str, fs_str, short_fa_str, mirror_value, mirror_value_str, short_togi_str, shortest_togi_str, togis, togi_value, togi_value_str, update_togi_counts)
 import json
 import os
 import re
@@ -39,16 +39,18 @@ def print_player(player):
         total_mirrors += team_mirrors
         total_togis += team_togis
         print()
-        print(f"~{team_mirrors:,} mirrors/FAs, or ~{float(team_mirrors) / 4551:.4} +20s")
+        print(mirror_value_str(team_mirrors))
         print(togi_value_str(team_togis))
 
         
     print()
     print("All teams")
-    print(f"~{total_mirrors:,} mirrors/FAs, or ~{float(total_mirrors) / 4551:.4} +20s")
+    print(mirror_value_str(total_mirrors))
     print(togi_value_str(total_togis))
 #    if parse_args().show_secrets:
 #        print(togi_value_str(total_togis))
+    return total_togis, total_mirrors
+
 
 def fa_sorter(counter_tuple):
     m = re.search("\+(\d*)", counter_tuple[0])
@@ -125,11 +127,16 @@ def show_monthly_summary():
         print(f"--------------------------{month}-------------------------")
         fs_used = Counter()
         full_fs_used = Counter()
+        togi_rankings = {}
+        mirror_rankings = {}
         for player in os.listdir(f"data/{month}"):
             player_data = load_player(player, f"data/{month}")
             print()
-            print(player[:-5])
-            print_player(player_data)
+            player_name = player[:-5]
+            print(player_name)
+            [togis, mirrors] = print_player(player_data)
+            togi_rankings[player_name] = togis
+            mirror_rankings[player_name] = mirrors
             for team_index in ["team1", "team2", "team3"]:
                 for fs_index in range(5):
                     fs = player_data[team_index][fs_index]
@@ -141,6 +148,16 @@ def show_monthly_summary():
                 print()
                     
         print(month)
+        print()
+        print("Togi rankings:")
+        for k in sorted(togi_rankings, key = lambda x:togi_rankings[x], reverse=True):
+            print(f"{k:13}: {togi_value_str(togi_rankings[k])}")
+        print()
+        print("Mirror rankings:")
+        for k in sorted(mirror_rankings, key = lambda x:mirror_rankings[x], reverse=True):
+            print(f"{k:13}: {mirror_value_str(mirror_rankings[k])}")
+        print()
+        
         print(fs_used.most_common())
         print(full_fs_used.most_common())
         

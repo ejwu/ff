@@ -241,6 +241,10 @@ def mirror_value(fs):
         total += FA_TO_MIRRORS[m.group(1)]
     return total
 
+def mirror_value_str(num_mirrors):
+    return f"~{num_mirrors:,} mirrors/FAs, or ~{float(num_mirrors) / FA_TO_MIRRORS['20']:.4} +20s"
+
+
 # init somehow?
 fs_map = load_fs_map()
 fa_map = load_fa_map()
