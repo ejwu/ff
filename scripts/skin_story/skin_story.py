@@ -3,17 +3,22 @@
 import json
 from pathlib import Path
 
-root = "ff20231214"
+root = "ff20241218"
+
 path = str(Path.home()) + "/ff/" + root + "/com.egg.foodandroid/files"
 
-scenes = ['514']
+# TODO: Fix 606 to include MC insert
+scenes = ['624']
 data = json.load(open(path + "/publish/conf/en-us/activityQuest/cardWords.json"))
+#data = json.load(open("cardWords-cn.json"))
 
 roles = {}
 for role_id, role in json.load(open(path + "/publish/conf/en-us/quest/role.json")).items():
     roles[role_id] = role['roleName']
 
 roles["200368"] = "Pesto Pasta"
+roles["300005"] = "Amazake"
+roles["300017"] = "Tanuki"
     
 fss = {}
 for fs_id, fs in json.load(open(path + "/publish/conf/en-us/card/card.json")).items():
@@ -41,19 +46,22 @@ if True:
 
 
                     
-tomahawk_event_stories = json.load(open(path + "/publish/conf/en-us/anniversary2021/story.json"))
-tomahawk_story_titles = json.load(open(path + "/publish/conf/en-us/anniversary2021/storyCollection.json"))
+#tomahawk_event_stories = json.load(open(path + "/publish/conf/en-us/anniversary2021/story.json"))
+#tomahawk_story_titles = json.load(open(path + "/publish/conf/en-us/anniversary2021/storyCollection.json"))
 
-for key, story_title in tomahawk_story_titles.items():
-    if story_title["chapterName"] == "Vanishing Guilt":
+vidal_event_stories = json.load(open(path + "/publish/conf/en-us/newSummerActivity/story.json"))
+vidal_story_titles = json.load(open(path + "/publish/conf/en-us/newSummerActivity/branchStoryCollection.json"))
+
+for key, story_title in vidal_story_titles.items():
+    if story_title["name"] == "Unvanquished Heart":
         print("\n-------------------------\n")
         print(key, story_title["name"])
-        for scene in tomahawk_event_stories[key]:
+        for scene in vidal_event_stories[key]:
             if scene['name'] in roles:
                 print(f"\n{roles[scene['name']]}: {scene['desc']}")
             else:
                 if scene['name']:
                     print(f"\n{fss[scene['name']]}: {scene['desc']}")
                 else:
-                    print(f"\n{scene['desc']}")
+                    print(f"\n{scene['desc'].replace('_when_', '-')}")
 
