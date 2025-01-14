@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+from ffutil.secret import (fa_str, fs_str, short_fa_str, short_togi_str, shortest_togi_str)
+
 import argparse
 from collections import Counter
 from collections import defaultdict
@@ -10,7 +12,7 @@ import itertools
 import json
 import wcwidth
 
-BASE_PATH = "/home/ejwu/ff/ff20231027/com.egg.foodandroid/files/"
+BASE_PATH = "/home/ejwu/ff/ff20240627/com.egg.foodandroid/files/"
 
 FA_NATURES = {"1": "Brave", "2": "unknown2", "3": "Cautious", "4": "unknown4", "5": "unknown5", "6": "Resolute"}
 
@@ -29,62 +31,12 @@ def load_fs_map():
             fs_map[fs] = "SP " + fs_data[fs]["name"]
     return fs_map
 
-def load_fa_map():
-    fa_data = json.load(open(BASE_PATH + "publish/conf/en-us/pet/pet.json"))
-    fa_map = {}
-    for fa in fa_data:
-        fa_map[fa] = fa_data[fa]["name"]
-    return fa_map
-
-togi_color_map = {"1": "Cyan", "2": "Blue", "3": "Red", "4": "Yellow", "5": "Purple", "6": "Green"}
-
-def load_togi_map():
-    togi_data = json.load(open(BASE_PATH + "res_sub/conf/en-us/artifact/gemstone.json"))
-    togi_map = {}
-    for togi in togi_data:
-        togi_map[togi] = f"{togi_color_map[togi_data[togi]['color']]} {togi_data[togi]['name'][0]}{togi_data[togi]['grade']}"
-    return togi_map
-
-def fs_skills(fs):
+def zfs_skills(fs):
     skill_levels = []
     for skill in fs["skill"].values():
         skill_levels.append(str(skill["level"]))
     return "/".join(skill_levels)
 
-def fs_str(fs_json):
-    return fs_json["breakLevel"] + "* " + fs_map[fs_json["cardId"]]
-
-def fa_str(fs):
-    if not "pets" in fs:
-        return "     no FA"
-    fa = fs["pets"]["1"]
-
-    if fa['level'] != '30':
-        print("weird")
-        print(fa)
-        raise
-    return f"+{fa['breakLevel']} {FA_NATURES[fa['character']]} {fa_map[fa['petId']]}"
-
-SHORT_FA_STRS = {
-    "Brave" : "Br",
-    "Resolute": "Re",
-    "Tsuchigumo": "Tsu",
-    "Thundaruda": "Thu",
-    "Leaf Ocean Queen": "LOQ",
-    "Uke Mochi (Enhanced)": "UME",
-    "Queen Conch": "Con",
-    "Inugami": "Inu",
-    "Spectra": "Spe",
-    "Uke Mochi": "Uke",
-    "Orochi": "Oro",
-    "Aizen": "Aiz"
-    }
-
-def short_fa_str(fs_json):
-    fa_string = fa_str(fs_json)
-    for original, replacement in SHORT_FA_STRS.items():
-        fa_string = fa_string.replace(original, replacement)
-    return fa_string
 
 SHORT_TOGI_COLORS = {
     "Green": "Gr",
@@ -95,7 +47,9 @@ SHORT_TOGI_COLORS = {
     "Yellow": "Ye"
 }
 
-def togis(fs):
+SHORT_TOGI_COLORS_REVERSED = {v:k for k, v in SHORT_TOGI_COLORS.items()}
+
+def ztogis(fs):
     togis = []
     if not fs["artifactTalent"]:
         return togis
@@ -111,31 +65,8 @@ def togis(fs):
                 togis.append("EMPTY")
     return togis
 
-def short_togi_str(fs):
-    short_togis = []
-    for togi in togis(fs):
-        for color, short in SHORT_TOGI_COLORS.items():
-            togi = togi.replace(color, short)
-        short_togis.append(togi)
-    togis_str = "/".join(short_togis)
-    if len(fs["artifactTalent"]) == 18:
-        togis_str += " +"
-    elif "11" in fs["artifactTalent"]:
-        togis_str += " B"
-    elif "13" in fs["artifactTalent"]:
-        togis_str += " E"
-    else:
-        togis_str += " ?"
 
-    return togis_str
-
-def shortest_togi_str(fs):
-    s = short_togi_str(fs)
-    for color in SHORT_TOGI_COLORS.values():
-        s = s.replace(color + " ", "") 
-    return s
-
-def artifact_nodes(fs):
+def zartifact_nodes(fs):
     if not fs["artifactTalent"]:
         return "no arti"
 
@@ -287,9 +218,11 @@ SPECIAL_NAME_LENGTHS = {
     # 오리너구리
     "1738235": 5,
     # 有五核烤鴨無腦上即可
-    "1015412": 10,
+    #《紅豆冰》
+    "1015412": 5,
     # 有五核大米無腦上即可
-    "111684": 10,
+    #《藍天使》
+    "111684": 5,
     # 신야옹이
     "1690538": 4
 }
@@ -302,9 +235,10 @@ def get_latest_date(player):
             latest = current
         if fs['artifactTalent']:
             for node in fs['artifactTalent'].values():
-                current = parse(node['createTime'])
-                if current > latest:
-                    latest = current
+                if node:
+                    current = parse(node['createTime'])
+                    if current > latest:
+                        latest = current
         if fs['marryTime']:
             current = datetime.datetime.fromtimestamp(int(fs['marryTime']))
             if current > latest:
@@ -312,13 +246,18 @@ def get_latest_date(player):
         
     return latest.date()
 
+def update_togi_counts(counts, fs):
+    togi_str = short_togi_str(fs)
+    for togi in togi_str.split('/'):
+        if togi != 'EMPTY' and not togi.startswith('LOCKED'):
+            counts[SHORT_TOGI_COLORS_REVERSED[togi[0:2]]][togi[3:5]] += 1
 
 def parse_disaster_snapshot():
     lk_data_202302 = json.load(open("lk_leaderboard_20230201.json.pretty"))["data"]["manual"]
-    lk_data_202307 = json.load(open("monthly/202311_lk_disaster.json"))["data"]["manual"]
+    lk_data_202307 = json.load(open("monthly/202406_lk_disaster.json"))["data"]["manual"]
 
     glori_data_202302 = json.load(open("glori_leaderboard_20230201.json.pretty"))["data"]["manual"]
-    glori_data_202307 = json.load(open("monthly/202311_glori_disaster.json"))["data"]["manual"]
+    glori_data_202307 = json.load(open("monthly/202406_glori_disaster.json"))["data"]["manual"]
 
     first = lk_data_202307
     second = glori_data_202307
@@ -327,18 +266,22 @@ def parse_disaster_snapshot():
     for i, lk_disaster in enumerate(first):
         for player in lk_disaster["topRank"]:
             if player["playerId"] in SPECIAL_NAME_LENGTHS:
-                max_name_length = max(max_name_length, 2 * SPECIAL_NAME_LENGTHS[player["playerId"]])
+                max_name_length = max(max_name_length, SPECIAL_NAME_LENGTHS[player["playerId"]])
             else:
                 max_name_length = max(max_name_length, wcwidth.wcswidth(player["playerName"]))
         for player in second[i]["topRank"]:
             if player["playerId"] in SPECIAL_NAME_LENGTHS:
-                max_name_length = max(max_name_length, 2 * SPECIAL_NAME_LENGTHS[player["playerId"]])
+                max_name_length = max(max_name_length, SPECIAL_NAME_LENGTHS[player["playerId"]])
             else:
                 max_name_length = max(max_name_length, wcwidth.wcswidth(player["playerName"]))
-    
-    print(f"{'lk':^35} {'glori':^35}")
+
+    COLUMN_WIDTH = 35
+                
+    print(f"{'lk':^{COLUMN_WIDTH}} {'glori':^{COLUMN_WIDTH}}")
     for i, disaster in enumerate(first):
         fs_togis = defaultdict(list)
+        lk_togi_levels_by_color = defaultdict(Counter)
+        glori_togi_levels_by_color = defaultdict(Counter)
         print()
         print(DISASTER_NAMES[str(disaster["questId"])])
         print()
@@ -351,13 +294,14 @@ def parse_disaster_snapshot():
         for i in range(0, players):
             lk_id = first_players[i]["playerId"]
             glori_id = second_players[i]["playerId"]
-            lk_length = max_name_length
-            if lk_id in SPECIAL_NAME_LENGTHS:
-                lk_length = SPECIAL_NAME_LENGTHS[lk_id]
-            glori_length = max_name_length
+
+            glori_name_length = max_name_length
             if glori_id in SPECIAL_NAME_LENGTHS:
-                glori_length = SPECIAL_NAME_LENGTHS[glori_id]
-            print(f"{first_players[i]['playerName']:{lk_length}} {first_players[i]['playerDamage']:<14,}   {second_players[i]['playerName']:{glori_length}} {second_players[i]['playerDamage']:12,}")
+                glori_name_length = SPECIAL_NAME_LENGTHS[glori_id]
+            
+            remaining_width = COLUMN_WIDTH - max_name_length - 1
+            
+            print(f"{first_players[i]['playerName']:{max_name_length}} {first_players[i]['playerDamage']:<{remaining_width},}   {second_players[i]['playerName']:{glori_name_length}} {second_players[i]['playerDamage']:{remaining_width},}")
             if parse_args().show_secrets:
                 print(f"After: {get_latest_date(first_players[i])}                     After:{get_latest_date(second_players[i])}")
             for j in range(0, 5):
@@ -367,6 +311,9 @@ def parse_disaster_snapshot():
                 fs_togis[fs_map[lk_fs["cardId"]]].append(shortest_togi_str(lk_fs))
                 fs_togis[fs_map[glori_fs["cardId"]]].append(shortest_togi_str(glori_fs))
 
+                update_togi_counts(lk_togi_levels_by_color, lk_fs)
+                update_togi_counts(glori_togi_levels_by_color, glori_fs)
+                
                 print(f"  {fs_str(lk_fs):23} {short_fa_str(lk_fs)}    {fs_str(glori_fs):23} {short_fa_str(glori_fs)}")
                 if parse_args().show_secrets:
 #                    print(fs_skills(lk_fs))
@@ -380,12 +327,17 @@ def parse_disaster_snapshot():
                 print(fs)
                 for togi in togis:
                     print("  ", togi)
+            print("\nlk togi counts in T4", DISASTER_NAMES[str(disaster["questId"])], '\n')
+            for color, counter in sorted(lk_togi_levels_by_color.items(), key=lambda togi: togi[::-1], reverse=True):
+                print(color, sorted(counter.items(), key=lambda entry: entry[0][::-1], reverse=True))
+            print("\nglori togi counts in T4", DISASTER_NAMES[str(disaster["questId"])], '\n')
+            for color, counter in sorted(glori_togi_levels_by_color.items()):
+                print(color, sorted(counter.items(), key=lambda entry: entry[0][::-1], reverse=True))
         print()
     
 if __name__ == '__main__':
+    # Look into not duplicating this with secret.py
     fs_map = load_fs_map()
-    fa_map = load_fa_map()
-    togi_map = load_togi_map()
 
 #    parse_goose_barnacle_leaderboards()
 #    parse_disaster_manual()
