@@ -1,0 +1,97 @@
+Combined results, 47480 embers, 1072 crystals
+Percentile |  Count | Result
+    0.0000 |   1430 | 2* +55 shards
+    0.0014 |  11016 | 3* +000 shards
+    0.0124 |  38865 | 3* +025 shards
+    0.0513 |  89380 | 3* +050 shards
+    0.1407 | 144177 | 3* +075 shards
+    0.2849 | 180077 | 3* +100 shards
+    0.4649 | 178575 | 4* +015 shards
+    0.6435 | 145594 | 4* +040 shards
+    0.7891 | 100193 | 4* +065 shards
+    0.8893 |  59019 | 4* +090 shards
+    0.9483 |  29979 | 4* +115 shards
+    0.9783 |  13374 | 4* +140 shards
+    0.9917 |   5459 | 5* +015 shards
+    0.9971 |   1971 | 5* +040 shards
+    0.9991 |    658 | 5* +065 shards
+    0.9998 |    181 | 5* +090 shards
+    0.9999 |     38 | 5* +115 shards
+    1.0000 |     11 | 5* +140 shards
+    1.0000 |      1 | 5* +165 shards
+    1.0000 |      2 | 5* +190 shards
+
+Combined results, 47780 embers, 4672 crystals
+Cycle pool finished twice
+Percentile |  Count | Result
+    0.0000 |    916 | 3* +000 shards
+    0.0009 |   7264 | 3* +025 shards
+    0.0082 |  27346 | 3* +050 shards
+    0.0355 |  67489 | 3* +075 shards
+    0.1030 | 118171 | 3* +100 shards
+    0.2212 | 160374 | 4* +015 shards
+    0.3816 | 174272 | 4* +040 shards
+    0.5558 | 158254 | 4* +065 shards
+    0.7141 | 120629 | 4* +090 shards
+    0.8347 |  79772 | 4* +115 shards
+    0.9145 |  45037 | 4* +140 shards
+    0.9595 |  23264 | 5* +015 shards
+    0.9828 |  10408 | 5* +040 shards
+    0.9932 |   4343 | 5* +065 shards
+    0.9975 |   1625 | 5* +090 shards
+    0.9992 |    576 | 5* +115 shards
+    0.9997 |    206 | 5* +140 shards
+    0.9999 |     38 | 5* +165 shards
+    1.0000 |     11 | 5* +190 shards
+    1.0000 |      5 | 5* +215 shards
+
+Combined results, 47480 embers, 5572 crystals
+Triple rate pulled 150 times
+Percentile |  Count | Result
+    0.0000 |    873 | 3* +025 shards
+    0.0009 |   6764 | 3* +050 shards
+    0.0076 |  25822 | 3* +075 shards
+    0.0335 |  64612 | 3* +100 shards
+    0.0981 | 114521 | 4* +015 shards
+    0.2126 | 157853 | 4* +040 shards
+    0.3704 | 174492 | 4* +065 shards
+    0.5449 | 159568 | 4* +090 shards
+    0.7045 | 123149 | 4* +115 shards
+    0.8277 |  82074 | 4* +140 shards
+    0.9097 |  47444 | 5* +015 shards
+    0.9572 |  24281 | 5* +040 shards
+    0.9815 |  11264 | 5* +065 shards
+    0.9927 |   4680 | 5* +090 shards
+    0.9974 |   1724 | 5* +115 shards
+    0.9991 |    625 | 5* +140 shards
+    0.9997 |    171 | 5* +165 shards
+    0.9999 |     65 | 5* +190 shards
+    1.0000 |     15 | 5* +215 shards
+    1.0000 |      3 | 5* +240 shards
+
+Combined results, 47780 embers, 9172 crystals
+Triple rate pulled 150 times
+Cycle pool finished twice
+Percentile |  Count | Result
+    0.0000 |    516 | 3* +050 shards
+    0.0005 |   4313 | 3* +075 shards
+    0.0048 |  17866 | 3* +100 shards
+    0.0227 |  47753 | 4* +015 shards
+    0.0704 |  92282 | 4* +040 shards
+    0.1627 | 136776 | 4* +065 shards
+    0.2995 | 163437 | 4* +090 shards
+    0.4629 | 162989 | 4* +115 shards
+    0.6259 | 138153 | 4* +140 shards
+    0.7641 | 101094 | 5* +015 shards
+    0.8652 |  64945 | 5* +040 shards
+    0.9301 |  36593 | 5* +065 shards
+    0.9667 |  18675 | 5* +090 shards
+    0.9854 |   8726 | 5* +115 shards
+    0.9941 |   3717 | 5* +140 shards
+    0.9978 |   1450 | 5* +165 shards
+    0.9993 |    482 | 5* +190 shards
+    0.9998 |    171 | 5* +215 shards
+    0.9999 |     45 | 5* +240 shards
+    1.0000 |     11 | 5* +265 shards
+    1.0000 |      5 | 5* +290 shards
+    1.0000 |      1 | 5* +315 shards
