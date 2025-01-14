@@ -1,0 +1,117 @@
+name,position,rarity,damage type,requirements,fixed attributes,# random attributes,fixed skills,# random skills
+Zongzi,Captain,M,Melee Physical,Power: 2,Melee Phys: 5,0,,0
+Chrysanthemum Wine,Captain,R,Melee Physical,Power: 4,Melee Phys: 7 / Melee Phys: 4,1,,0-1
+Sanma,Captain,R,Melee Physical,Power: 4,Melee Phys: 7 / Hit Rate: 0.02,1,,0-1
+Kuruma Prawn,Captain,R,Melee Physical,Power: 4,Melee Phys: 7 / Dodge: 0.02,1,,0-1
+Lamb Spine Hotpot,Captain,R,Melee Physical,Power: 4,Melee Phys: 7 / Crit Rate: 0.02,1,,0-1
+Kitsune Udon,Captain,R,Melee Physical,Power: 4,Melee Phys: 7 / Crit Dmg: 0.05,1,,0-1
+Mentaiko,Captain,SR,Melee Physical,Power: 6,Melee Phys: 9 / Melee Phys: 6,1,Attacks deal an extra 5 pts of Phys dmg,0-1
+Dragon & Phoenix,Captain,SR,Melee Physical,Power: 6,Melee Phys: 9 / Hit Rate: 0.04,1,Attacks deal an extra 5 pts of Phys dmg,0-1
+Toso,Captain,SR,Melee Physical,Power: 6,Melee Phys: 9 / Dodge: 0.04,1,Attacks deal an extra 5 pts of Phys dmg,0-1
+Gingerbread,Captain,SR,Melee Physical,Power: 6,Melee Phys: 9 / Crit Rate: 0.04,1,Attacks deal an extra 5 pts of Phys dmg,0-1
+Turkey,Captain,SR,Melee Physical,Power: 6,Melee Phys: 9 / Crit Dmg: 0.1,1,Attacks deal an extra 5 pts of Phys dmg,0-1
+Mapo Tofu,Captain,UR,Melee Physical,Power: 10,Melee Phys: 11 / Melee Phys: 7 / Hit Rate: 0.05,1-2,"When killing a monster, Max HP is raised 1 pt / When killing a monster, recover 2 HP",1-2
+Wuyi Da Hong Pao,Captain,UR,Melee Physical,Power: 10,Melee Phys: 11 / Melee Phys: 7 / Crit Rate: 0.05,1-2,Attacks deal an extra 10 pts of Phys dmg / Attack ignores monster armor,1-2
+Long Bao,Captain,M,Ranged Magic,Intellect: 2,Ranged Magic: 3,0,,0
+Pineapple Bun,Captain,R,Ranged Magic,Intellect: 4,Ranged Magic: 5 / Ranged Magic: 2,1,,0-1
+Mashed Potatoes,Captain,R,Ranged Magic,Intellect: 4,Ranged Magic: 5 / Magic Resist: 0.02,1,,0-1
+Waffle,Captain,R,Ranged Magic,Intellect: 4,Ranged Magic: 5 / Dodge: 0.02,1,,0-1
+Mixed Fish Soup,Captain,R,Ranged Magic,Intellect: 4,Ranged Magic: 5 / Crit Rate: 0.02,1,,0-1
+Amaebi,Captain,R,Ranged Magic,Intellect: 4,Ranged Magic: 5 / Crit Dmg: 0.05,1,,0-1
+Turducken,Captain,SR,Ranged Magic,Intellect: 6,Ranged Magic: 7 / Ranged Magic: 4,1,攻击后对1个随机怪物造成自身攻击力50%的魔法伤害,0-1
+Paella,Captain,SR,Ranged Magic,Intellect: 6,Ranged Magic: 7 / Magic Resist: 0.04,1,攻击后对1个随机怪物造成自身攻击力50%的魔法伤害,0-1
+Souffle,Captain,SR,Ranged Magic,Intellect: 6,Ranged Magic: 7 / Dodge: 0.04,1,攻击后对1个随机怪物造成自身攻击力50%的魔法伤害,0-1
+Butter Tea,Captain,SR,Ranged Magic,Intellect: 6,Ranged Magic: 7 / Crit Rate: 0.04,1,攻击后对1个随机怪物造成自身攻击力50%的魔法伤害,0-1
+Takowasa,Captain,SR,Ranged Magic,Intellect: 6,Ranged Magic: 7 / Crit Dmg: 0.1,1,攻击后对1个随机怪物造成自身攻击力50%的魔法伤害,0-1
+Foie Gras,Captain,UR,Ranged Magic,Intellect: 10,Ranged Magic: 9 / Ranged Magic: 6 / Crit Rate: 0.05,1-2,"攻击后对1个随机怪物造成自身攻击力70%的魔法伤害 / When killing a monster, recover 1 pt of Mana",1-2
+Peking Duck,Captain,UR,Ranged Magic,Intellect: 10,Ranged Magic: 9 / Ranged Magic: 6 / Crit Dmg: 0.05,1-2,攻击后对1个随机怪物造成自身攻击力70%的魔法伤害 / ATK is raised 9 pts,1-2
+Orange Juice,Captain,M,Ranged Physical,Agility: 2,Ranged Phys: 4,0,,0
+Black Tea,Captain,R,Ranged Physical,Agility: 4,Ranged Phys: 6 / Ranged Phys: 3,1,,0-1
+Brownie,Captain,R,Ranged Physical,Agility: 4,Ranged Phys: 6 / Hit Rate: 0.02,1,,0-1
+Tequila,Captain,R,Ranged Physical,Agility: 4,Ranged Phys: 6 / Dodge: 0.02,1,,0-1
+Hardtack,Captain,R,Ranged Physical,Agility: 4,Ranged Phys: 6 / Crit Rate: 0.02,1,,0-1
+Gyudon,Captain,SR,Ranged Physical,Agility: 6,Ranged Phys: 8 / Ranged Phys: 5,1,Crit dmg increased 20%,0-1
+Yuba Vegetable Spring Roll,Captain,SR,Ranged Physical,Agility: 6,Ranged Phys: 8 / Hit Rate: 0.04,1,Crit dmg increased 20%,0-1
+Kung Pao Chicken,Captain,SR,Ranged Physical,Agility: 6,Ranged Phys: 8 / Dodge: 0.04,1,Crit dmg increased 20%,0-1
+Peking Shredded Pork,Captain,SR,Ranged Physical,Agility: 6,Ranged Phys: 8 / Crit Rate: 0.04,1,Crit dmg increased 20%,0-1
+Champagne,Captain,SR,Ranged Physical,Agility: 6,Ranged Phys: 8 / Crit Dmg: 0.1,1,Crit dmg increased 20%,0-1
+Martini,Captain,UR,Ranged Physical,Agility: 10,Ranged Phys: 10 / Ranged Phys: 6 / Crit Rate: 0.05,1-2,Crit dmg increased 40%,1-2
+Croissant,Captain,UR,Ranged Physical,Agility: 10,Ranged Phys: 10 / Ranged Phys: 6 / Hit Rate: 0.05,1-2,Allied attacks must hit,1-2
+
+Tom Yum,Middle,M,,Stamina: 1,Max Armor: 2,0,,0
+Cappuccino,Middle,R,,Stamina: 2,Max Armor: 3 / Max HP: 5,1,,0-1
+Bonito Rice,Middle,R,,Stamina: 2,Max Armor: 3 / Phys Resist: 0.02,1,,0-1
+Steak,Middle,R,,Stamina: 2,Max Armor: 3 / Magic Resist: 0.02,1,,0-1
+Donut,Middle,R,,Stamina: 2,Max Armor: 3 / Melee Phys: 2,1,,0-1
+Red Wine,Middle,R,,Stamina: 2,Max Armor: 3 / Ranged Phys: 2,1,,0-1
+Royal Jelly,Middle,R,,Stamina: 2,Max Armor: 3 / Ranged Magic: 2,1,,0-1
+Dongtang,Middle,R,,Stamina: 2,Max Armor: 3 / Hit Rate: 0.02,1,,0-1
+Tiramisu,Middle,R,,Stamina: 2,Max Armor: 3 / Dodge: 0.02,1,,0-1
+Marshmallow,Middle,R,,Stamina: 2,Max Armor: 3 / Crit Rate: 0.02,1,,0-1
+Crab Long Bao,Middle,SR,,Stamina: 3,Max Armor: 4 / Max HP: 10,1,All dmg received is lowered 5%,0-1
+Durian Pancake,Middle,SR,,Stamina: 3,Max Armor: 4 / Phys Resist: 0.04,1,All dmg received is lowered 5%,0-1
+Anzu Ame,Middle,SR,,Stamina: 3,Max Armor: 4 / Magic Resist: 0.04,1,All dmg received is lowered 5%,0-1
+Pizza,Middle,SR,,Stamina: 3,Max Armor: 4 / Hit Rate: 0.04,1,All dmg received is lowered 5%,0-1
+White Truffle,Middle,SR,,Stamina: 3,Max Armor: 4 / Dodge: 0.04,1,All dmg received is lowered 5%,0-1
+Calamus Wine,Middle,SR,,Stamina: 3,Max Armor: 5 / Crit Rate: 0.04,1,All dmg received is lowered 5%,0-1
+Oyster,Middle,UR,,Power: 5 / Stamina: 4,Max Armor: 5 / Melee Phys: 5 / Hit Rate: 0.05,1-2,"All dmg received is lowered 10% / When killing a monster, recover 1 pt of Mana",1-2
+Candy Cane,Middle,UR,,Agility: 5 / Stamina: 4,Max Armor: 5 / Ranged Phys: 5 / Hit Rate: 0.05,1-2,All dmg received is lowered 10% / ATK is raised 6 pts,1-2
+Natto,Middle,UR,,Intellect: 5 / Stamina: 4,Max Armor: 5 / Ranged Magic: 5 / Dodge: 0.05,1-2,"All dmg received is lowered 10% / Upon entering a new layer, you recover 4 HP",1-2
+
+Milk,Scout,M,,Intellect: 1,Magic Resist: 0.02,0,,0
+Escargot,Scout,R,,Intellect: 2,Magic Resist: 0.03 / Max HP: 5,1,,0-1
+Gyoza,Scout,R,,Intellect: 2,Magic Resist: 0.03 / Phys Resist: 0.02,1,,0-1
+Sukiyaki,Scout,R,,Intellect: 2,Magic Resist: 0.03 / Magic Resist: 0.02,1,,0-1
+Century Egg,Scout,R,,Intellect: 2,Magic Resist: 0.03 / Melee Phys: 2,1,,0-1
+Beggar's Chicken,Scout,R,,Intellect: 2,Magic Resist: 0.03 / Ranged Phys: 2,1,,0-1
+Mandarin Squirrel Fish,Scout,R,,Intellect: 2,Magic Resist: 0.03 / Ranged Magic: 2,1,,0-1
+Beer,Scout,R,,Intellect: 2,Magic Resist: 0.03 / Hit Rate: 0.02,1,,0-1
+Opera Cake,Scout,R,,Intellect: 2,Magic Resist: 0.03 / Dodge: 0.02,1,,0-1
+Snowskin Mooncake,Scout,R,,Intellect: 2,Magic Resist: 0.03 / Crit Rate: 0.02,1,,0-1
+Adzuki Jelly,Scout,SR,,Intellect: 3,Magic Resist: 0.04 / Max HP: 10,1,"When killing a monster, recover 2 HP",0-1
+Apple Pie,Scout,SR,,Intellect: 3,Magic Resist: 0.04 / Phys Resist: 0.04,1,"When killing a monster, recover 2 HP",0-1
+Stargazy Pie,Scout,SR,,Intellect: 3,Magic Resist: 0.04 / Magic Resist: 0.04,1,"When killing a monster, recover 2 HP",0-1
+Rum,Scout,SR,,Intellect: 3,Magic Resist: 0.04 / Hit Rate: 0.04,1,"When killing a monster, recover 2 HP",0-1
+Inarizushi,Scout,SR,,Intellect: 3,Magic Resist: 0.04 / Dodge: 0.04,1,"When killing a monster, recover 2 HP",0-1
+Grass Jelly,Scout,SR,,Intellect: 3,Magic Resist: 0.04 / Crit Rate: 0.04,1,"When killing a monster, recover 2 HP",0-1
+Chiffon Cake,Scout,UR,,Power: 4 / Intellect: 4,Magic Resist: 0.05 / Melee Phys: 5 / Hit Rate: 0.05,1-2,"Upon using an item, recover 1 pt of Mana",1-2
+Wuchang Fish,Scout,UR,,Agility: 4 / Intellect: 4,Magic Resist: 0.05 / Ranged Phys: 5 / Hit Rate: 0.05,1-2,All dmg received is lowered 6 pts,1-2
+Cordyceps,Scout,UR,,Intellect: 9,Magic Resist: 0.05 / Ranged Magic: 5 / Dodge: 0.05,1-2,"When uncovering fog, recover 2 HP",1-2
+
+Sashimi,Vanguard,M,,Agility: 1,Hit Rate: 0.02,0,,0
+Tamagoyaki,Vanguard,R,,Agility: 2,Hit Rate: 0.03 / Max HP: 5,1,,0-1
+Fish and Chips,Vanguard,R,,Agility: 2,Hit Rate: 0.03 / Phys Resist: 0.02,1,,0-1
+Awamori,Vanguard,R,,Agility: 2,Hit Rate: 0.03 / Magic Resist: 0.02,1,,0-1
+Hamburger,Vanguard,R,,Agility: 2,Hit Rate: 0.03 / Melee Phys: 2,1,,0-1
+Candy Apple,Vanguard,R,,Agility: 2,Hit Rate: 0.03 / Ranged Phys: 2,1,,0-1
+Five Snake Soup,Vanguard,R,,Agility: 2,Hit Rate: 0.03 / Ranged Magic: 2,1,,0-1
+Milk Tea,Vanguard,R,,Agility: 2,Hit Rate: 0.03 / Hit Rate: 0.02,1,,0-1
+Square Mutton Fish,Vanguard,R,,Agility: 2,Hit Rate: 0.03 / Dodge: 0.02,1,,0-1
+Cookie,Vanguard,SR,,Agility: 3,Hit Rate: 0.04 / Max HP: 7,1,"When attacked by a monster, deal 5 pts of Phys dmg to the attacking monster",0-1
+Laziji,Vanguard,SR,,Agility: 3,Hit Rate: 0.04 / Phys Resist: 0.04,1,"When attacked by a monster, deal 5 pts of Phys dmg to the attacking monster",0-1
+Hibiscus Tea,Vanguard,SR,,Agility: 3,Hit Rate: 0.04 / Magic Resist: 0.04,1,"When attacked by a monster, deal 5 pts of Phys dmg to the attacking monster",0-1
+Buddha's Temptation,Vanguard,SR,,Agility: 3,Hit Rate: 0.04 / Hit Rate: 0.04,1,"When attacked by a monster, deal 5 pts of Phys dmg to the attacking monster",0-1
+Bird's Nest Soup,Vanguard,SR,,Agility: 3,Hit Rate: 0.04 / Dodge: 0.04,1,"When attacked by a monster, deal 5 pts of Phys dmg to the attacking monster",0-1
+Mingsixi,Vanguard,SR,,Agility: 3,Hit Rate: 0.04 / Crit Rate: 0.04,1,"When attacked by a monster, deal 5 pts of Phys dmg to the attacking monster",0-1
+Monkfish Liver,Vanguard,UR,,Power: 4 / Agility: 4,Hit Rate: 0.05 / Melee Phys: 9 / Hit Rate: 0.03,1-2,"When attacked by a monster, deal 10 pts of Phys dmg to the attacking monster / When killing a monster, Max HP is raised 2 pts",1-2
+Lamb Chops,Vanguard,UR,,Agility: 9,Hit Rate: 0.05 / Ranged Phys: 9 / Hit Rate: 0.03,1-2,"When attacked by a monster, deal 10 pts of Phys dmg to the attacking monster / Each time a monster is killed, uncover 0-5 squares of fog",1-2
+Whisky,Vanguard,UR,,Agility: 4 / Intellect: 4,Hit Rate: 0.05 / Ranged Magic: 9 / Dodge: 0.03,1-2,"When attacked by a monster, deal 10 pts of Phys dmg to the attacking monster / When uncovering fog, recover 2 HP",1-2
+
+Coffee,Rear,M,,Agility: 1,Dodge: 0.02,0,,0
+Sachertorte,Rear,R,,Agility: 2,Dodge: 0.03 / Max HP: 3,1,,0-1
+Easter Egg,Rear,R,,Agility: 2,Dodge: 0.03 / Phys Resist: 0.01,1,,0-1
+Lion's Head,Rear,R,,Agility: 2,Dodge: 0.03 / Magic Resist: 0.01,1,,0-1
+Unadon,Rear,R,,Agility: 2,Dodge: 0.03 / Melee Phys: 1,1,,0-1
+Kashiwa Mochi,Rear,R,,Agility: 2,Dodge: 0.03 / Ranged Phys: 1,1,,0-1
+Mackerel Ichiyaboshi,Rear,R,,Agility: 2,Dodge: 0.03 / Ranged Magic: 1,1,,0-1
+Ginger Milk Pudding,Rear,R,,Agility: 2,Dodge: 0.03 / Hit Rate: 0.01,1,,0-1
+Wensi Tofu,Rear,R,,Agility: 2,Dodge: 0.03 / Dodge: 0.01,1,,0-1
+Montblanc,Rear,R,,Agility: 2,Dodge: 0.03 / Crit Rate: 0.01,1,,0-1
+Longjing Tea,Rear,SR,,Agility: 3,Dodge: 0.04 / Max HP: 6,1,All dmg received is lowered 4 pts,0-1
+Dongding Oolong,Rear,SR,,Agility: 3,Dodge: 0.04 / Phys Resist: 0.02,1,All dmg received is lowered 4 pts,0-1
+Bamboo Rice,Rear,SR,,Agility: 3,Dodge: 0.04 / Magic Resist: 0.02,1,All dmg received is lowered 4 pts,0-1
+Junmai Daiginjo,Rear,SR,,Agility: 3,Dodge: 0.04 / Dodge: 0.02,1,All dmg received is lowered 4 pts,0-1
+Nanjing Roast Duck,Rear,SR,,Agility: 3,Dodge: 0.04 / Crit Rate: 0.02,1,All dmg received is lowered 4 pts,0-1
+Stollen Bread,Rear,UR,,Power: 4 / Agility: 4,Dodge: 0.05 / Melee Phys: 9 / Hit Rate: 0.03,1-2,All dmg received is lowered 6 pts / All dmg received is lowered 15%,1-2
+Matcha,Rear,UR,,Agility: 9,Dodge: 0.05 / Ranged Phys: 9 / Hit Rate: 0.03,1-2,All dmg received is lowered 6 pts / ATK is raised 9 pts,1-2
+Haggis,Rear,UR,,Agility: 4 / Intellect: 4,Dodge: 0.05 / Ranged Magic: 9 / Dodge: 0.03,1-2,"All dmg received is lowered 6 pts / Upon using an item, recover 2 pts of Mana",1-2

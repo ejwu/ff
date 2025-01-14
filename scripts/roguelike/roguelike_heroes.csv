@@ -1,0 +1,21 @@
+hero,blessing,curse,betray,taco
+Rice,"When killing a monster, there's a 30% chance of recovering 1 pt of Mana",Basic attacks will not crit,"When forsaken, Magic ATK decreases 5 pts",Max Mana increased 2 pts (Rice)
+,,,,Magic ATK increased 2 pts (Rice)
+,,,,"When uncovering fog, there's a 10% chance of recovering one pt of Mana (Rice)"
+
+Boston Lobster,Max Armor increased 10 pts,"Upon entering a new layer, receive 5% of current HP as Magic Dmg","When forsaken, own Max HP decreases 10%","Upon entering a new layer, you recover 10 HP (Boston Lobster)"
+,,,,Dmg received lowered 2 pt (Boston Lobster)
+,,,,"When making a basic attack, there's a 10% chance of an extra attack (Boston Lobster)"
+
+B-52,"When using an item, Soul cost decreases 5 pts","When killing a monster, uncover an extra 0-5 fog squares","When forsaken, you will take 5 pts of Magic Dmg when killing a monster","When killing a monster, recover 2 HP (B-52)"
+,,,,"When killing a monster, recover 5 Armor (B-52)"
+,,,,"Upon entering a new layer, get one random item (B-52)"
+
+Peking Duck,"When uncovering fog, get 2 pts of Armor","When using an item, receive 5 pts of Magic Dmg","When forsaken, your current HP decreases 90%",Dodge rate raised 10% (Peking Duck)
+,,,,"Upon dodging an attack, you recover 10 HP (Peking Duck)"
+,,,,"When a monster appears, he/she is stunned for 1 round (Peking Duck)"
+
+Beer,"When defeating a monster, ATK increases 1 pt within the current layer","Upon receiving Magic Dmg, dmg received in the current layer increases 3 pts","When forsaken, your Soul pts are cleared and Max Soul is lowered 15 pts",Max Mana decreases 5 pts; ATK increases 5 pts (Beer)
+,,,,"When a basic attack defeats a monster, melee Phys ATK is boosted 10 pts for 3 rounds (Beer)"
+,,,,"Unable to use skills, but own ATK increases 50% (Beer)"
+

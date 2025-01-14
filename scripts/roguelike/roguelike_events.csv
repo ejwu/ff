@@ -1,0 +1,200 @@
+You meet a wandering bard. Do you go have a chat?
+Chat,You learn about a lot of recent happenings in these parts from the bard. (Max Soul Pts +2)
+Dance for him,You get a thumbs up from the bard and he gives you a gift. (Item received: Cross)
+Don't chat,You miss out on a chance to get to know the bard. (Nothing happens)
+
+A monkey steals a bag of dried food. What to do?
+Pray,"Before the Lord comes to your aid, you're on the brink of starvation. (Current HP -5)"
+Find food,You find fresh wild berries. (Current HP +5)
+Find someone to help,You and a passing hunter go to teach the thieving monkey a lesson and get your rations back. (Current HP +10)
+
+The water source up ahead is surrounded by thorns. Do you give up on this watering hole?
+Give Up,You walk all day without finding water. You're exhausted. (Current Mana -7)
+Observe,"You discover a witch has sprinkled a black potion on the thorns, and they disappear. You wait for the witch to leave, then go get water. (Current Mana +2)"
+Don't give up,"You chop down the thorns and cut a path to the water. On the way back, you discover an item. (Item received: Grind Stone)"
+
+You pass an orc and dwarf village. Do you go pay them a visit?
+Visit,"You're treated hospitably by the orcs and dwarves, replenishing your field rations. (Current HP +5)"
+Go the long way,"You walk many kilometers to avoid the orc and dwarf village, expending a lot of energy. (Current HP -5)"
+Don't visit,You keep going on your way. (Nothing happens)
+
+Your arm was scratched by a tree branch. Should you treat it?
+Go to a clinic,You get a professional bandage and the wound heals quickly. (Current HP +10)
+Treat it yourself with herbs,"Your wound heals slowly, but it finally heals over and you learn some basic medical techniques. (Max HP +2)"
+Don't treat it,Your wound becomes irritated and gets worse. You're forced to find a clinic and spend even more money to get it treated. (Gold -200)
+
+"A strangely dressed youngster says to you: ""I am a great wizard. Do you believe me?"" How do you reply?"
+Believe him,The youngster is satisfied with your response and gives you a gift. (Item received: Savage Hammer)
+Ignore,The youngster thinks you're boring and walks away muttering. (Nothing happens)
+Don't believe him,The youngster angrily tries to convince you but gets taken away by a pastor. The pastor thanks you for stopping his escaped patient and promises to pray for you. (Max HP +5)
+
+"At the fork in the road ahead, there's an elderly elven woman who has fallen down. Do you help her up?"
+Help up the old lady,The old lady is grateful and gives you a magic potion. (Item received: Turbo Syringe)
+Pretend you didn't see,The old lady is angry and turns you into a dwarf. (Max HP -5)
+Lie down next to the old lady,The old lady looks on you with pity and gives you a pouch of medicine before going on her way. (Current HP +5)
+
+You meet a magician who invites you to see his magic show. You decide to...
+Agree,"The magician asks you to pay for a ticket, and you're too embarrassed to refuse. (Gold -500)"
+Refuse,The magician leaves dejectedly. (Nothing happens)
+Ask if you can have a cameo in his show,"The magician excitedly produces a lion from his hat that interacts with you, scaring you into running away. (Current Mana -2)"
+
+There's a veiled person on the roadside with a display of goods. Among them is an ornate dagger that catches your eye. Do you have a look?
+Ask how much,"You buy the mysterious dagger for a pretty penny, but aside from being sharp, there's nothing special about it. (Gold -1000)"
+Pick up and look,The veiled person snatches it away and warns you not to touch if you're not going to buy. (Nothing happens)
+Wonder if it's some mysterious organization's design,"The veiled person seems to recite some kind of curse. You don't understand, so the old lady chases you off with a broom. (Current HP -3)"
+
+"In the labyrinth, you notice an oddly-shaped crack in the wall beside you. Do you have a look?"
+Take a close look,"You notice a demon worm on the wall, but you don't disturb it and just sneak away. (Nothing happens)"
+Leave right away,You're bitten by a demon worm disguised as a crack and poisoned. (Current HP -5)
+Attack the wall,You find a demon worm under the rubble of the wall. You get its corpse. (Item received: Skeletal Hand)
+
+There's an abandoned old wooden hut up ahead. Do you go explore?
+Go in and take a look,"Aside from some old furniture, you don't find anything inside. The place gives you the willies, so you hurry out of there. (Nothing happens)"
+Investigate surroundings first,"You discover two tombstones in the backyard, pay your respects, and leave. You receive the spirts' blessing. (Hit Rate +3%)"
+Pass right by,"You're always encountering an identical house, which scares you into taking another route. (Nothing happens)"
+
+A rabbit hops out of the brush behind you and rushes toward you. You decide to...
+Wait for the rabbit,"The rabbit runs away, and a black bear emerges from the brush. You lose a shoe as you scurry away. (Gold -200)"
+Run with the rabbit,"You hear a black bear's roar behind you. Good thing you run fast and climb a tree before the bear gets to you, barely escaping with your life. (Gold +200)"
+Pay no mind,"You continue forward and are surprised to hear a brown bear roaring behind you. You duck into the roadside brush, and the bear doesn't find you. (Nothing happens)"
+
+A stone up ahead moved a bit. Do you have a look?
+Go forward and look,"You save a dwarf struck by a falling rock, and the dwarf gives you a treasure of his people as a thank-you. (Item received: Grind Stone)"
+Don't look,You ignore the dwarf pinned under the rock. He gets angry and curses you with three days of bad luck. (Max HP -3)
+Attack the stone,"Your attack breaks the rock but also injures the dwarf. Although hurting, he still gives you some gold to thank you for your help. (Gold +200)"
+
+A local blocks the way and demands you pay a toll. Do you pay it?
+Give it to him,The local sees that you're an easy mark and fleeces you good. (Gold -500)
+Firmly refuse to pay,"You're in a stand-off until it starts getting dark and the guy needs to go home and eat. He leaves with a shrug, and you continue on your way. (Current Mana -1)"
+Stare at him,"The local gets creeped out by your stare, and after muttering something, he slinks away. (Nothing happens)"
+
+A handsome young man covered in blood is lying under a tree. His expensive clothes are torn by beast claws. Do you save him?
+Save him,"The man is the Duke's son, and he gives you a priceless pocket watch as a thank-you. He also promises the Duke's help if you're ever in need. (Dodge +2%)"
+Don't save,"A soldier rushes to the scene and assumes you're the assailant, hauling you away. (Gold -200)"
+Shake him awake,The man weakly gives you a jewel-encrusted sword and hopes you'll save him. (Item received: Blessing Sword)
+
+Up ahead you discover a water town wreathed in mist. Do you investigate?
+Go get water,Your water flask is knocked away by the tail of an alligator. No one steals his water! (Current Mana -2)
+Observe surroundings,"You notice one big and one small alligator on the bank, and you silently flee. (Nothing happens)"
+Pray that a river god appears,The river god admonishes you to stop dreaming and hurry on with your exploration. (Nothing happens)
+
+There's a calico cat pacing on a tree branch. It seems to have climbed too high and can't get down. Do you save the cat?
+Climb the tree to get the cat down,"While you struggle to climb the tree, the cat nestles on your shoulder and you get it back to the ground. The cat takes a liking to you. (Current Mana +2)"
+Open arms wide to catch the cat,"The cat's soft paw pads step on your face, and it makes it back to the ground. Your face has a scratch mark, but you are liked by the cat. (Current HP -1)"
+Lie down and watch how the cat gets down,"The cat leaps down and nimbly lands on your belly to break the fall, dealing you a critical hit. (Current HP -5)"
+
+There's a line of goblins passing on the road up ahead. Do you go forward?
+Rush past and disturb their line,You're attacked by the angry goblins (Current HP -5)
+Jump in line behind the last goblin,You follow them to a cave and find treasure. (Gold +1000)
+Wait where you are for them to pass,You watch the goblins swagger off into the distance. (Nothing happens)
+
+A girl with her face covered by a hat sobbing that she's lost her way home. She asks you for help. Do you help her?
+Help the girl find her way home,You're taken to a gingerbread house. You remember a story about that and hurry out of there. (Nothing happens)
+Wait with her till family comes,"At dusk, the little girl suddenly disappears. You ask the residents nearby, but they all say they've never seen her. (Nothing happens)"
+Take her to the police,The girl refuses to go to the police and runs away quickly. (Nothing happens)
+
+A young man in priest's clothes is stuck under a tree trunk. Do you help him?
+Help,The priest gives you a blessing from above after being saved. (Hit Rate +5%)
+Interrogate,"The priest can barely breathe from the weight and can't answer. You save him, and he gives you a bottle of holy water as a thank-you. (Item received: Holy Water)"
+Don't help,The priest angrily summons a demon to haunt you. (Hit Rate -2%)
+
+A glittering chest flashes with a dazzling light up ahead. Do you go check it out?
+Go open it,"You get some gold, but you also get poisoned by a miasma in the chest. (Current HP -3)"
+Give it a knock,"You tentatively knock on the chest, causing a miasma inside to leak out. When the miasma disperses, you open the chest and get gold. (Current HP -5, Gold +500)"
+It's not so simple,"You don't think things are as simple as they seem, and there's no such thing as a free lunch. (Nothing happens)"
+
+There's an unusual spot on the wall that looks like a stone switch. Do you go check it out?
+Go pull it,"You pull the stone switch and get hurt by a falling stone, but you also discover a secret room filled with gold. (Gold +1000)"
+Give it a little tug,"You move the switch from a distance and see a stone crash to the ground, smashing open the ceiling of a secret room containing gold. (Gold +1000)"
+Ignore it,You pretend you didn't see a thing. (Nothing happens)
+
+You find a masked robber on the ground who has lost consciousness. You decide to...
+Go rescue them,"You go to the rescue, but the masked robber's associates jump out from their hiding spots and rough you up badly. (Current HP -10)"
+Rob him blind,"You use a tree branch to fish up a bag of money on the ground, then you safely leave. (Gold +200)"
+Hit him while he's down,You throw a big stone at the thief and then leave unscathed. (Nothing happens)
+
+The road forks in three directions. Which do you choose?
+The left path,"You take the left path and encounter a monster. You expend a lot of energy, but you defeat the monster and get gold. (Gold +500)"
+The middle path,You proceed down the middle fork in the road and uneventfully arrive at the next area. (Nothing happens)
+The right path,"You take the path on the right and find gold at its end, then follow the directions on the wall to get to the next area. (Gold +300)"
+
+The dust on the ground suddenly transforms into a witch. She holds to apples and says that one is poisoned. You're very hungry though. You choose...
+The left apple,You eat the apple on the left and feel like your wounds recover some. (Current HP +10)
+The right apple,"You eat the apple on the right and feel like all your abilities have been heightened. (Current HP +10, ATK +2)"
+Don't accept handouts,"You refuse the witch, who then transforms into countless bats that bite you on the neck. You feel yourself become weak. (Hit Rate -2%)"
+
+A gold frog squats on an empty altar. There are words written in blood on the ground saying you'll get gold if you defeat it. You decide to...
+Give it a try,You hit the gold frog and get a bit of gold. (Gold +200)
+Viciously attack,"You hit the gold frog ten times, and the frog spits out a large amount of gold but also an ominous black coin, which makes you feel unlucky. (Crit Rate -2%)"
+Take the frog,"You make off with the gold frog, but the frog eats some of your gold and then disappears, reappearing in its original spot. (Gold -300)"
+
+There's a dark fog up ahead with countless shadows flitting back and forth. How do you react?
+Pass straight through,"You pass right through the darkness and get scraped by a fast-moving shadow, however you feel like you've become more agile. (Dodge +3%)"
+Search around,"You find a magic circle nearby, and after activating it, a black fog wails painfully in the darkness and then disappears along with the darkness. (Nothing happens)"
+Safety first,"Exercising caution, you circumvent the shadows. (Nothing happens)"
+
+A veiled woman appears out of thin air and asks you if you think she's pretty. How do you reply?
+Of course you're pretty,"You say she's pretty, and the woman takes off her veil to reveal a warm smile. She gives you a kiss, and you feel your luck go up. (Crit Rate+2%)"
+Not very pretty,"You express your negative opinion, and the woman tears off her mask, revealing a hideous glowering face. She attacks and curses you, and you feel your luck going down. (Dodge -2%)"
+Refuse to answer,"You stare in silence with the woman for a while, then she shakes her head and walks by, disappearing into thin air. (Nothing happens)"
+
+Out of the barren land appears a lush and verdant tree with a golden apple hanging from it. Do you go to it?
+Go up and pick it,"You go up and pluck it, and you're bitten by a large black snake hiding in the top of the tree. (Current HP -2)"
+Throw a rock to knock it down,"You knock down the golden apple with a rock and put it in your sack. Meanwhile, you awaken a large black snake hidden in the treetop that slithers down and bites you. (Gold +200, Current HP -2)"
+Must be seeing things,You don't believe it's real and go to leave when the golden apple falls from the tree and rolls beside your foot. (Gold +1000)
+
+The path up ahead doesn't look very stable. There's a risk of it collapsing. You decide to...
+Go forward to pass,You go forward over the path and pass through safely. (Nothing happens)
+Take a tentative step,"You test the road's condition, and it collapses. The sound draws a crowd of nearby monsters. (Current HP -5)"
+Go around,You take the long way around and run into a pack of monsters elsewhere. (Current HP -3)
+
+"There's an incomplete magic circle on the ground, and beside it is an ancient tome documenting how to complete it. However, you need to use your own blood. You decide to..."
+Complete the magic circle,"You complete the magic circle, and an ancient demon spirit is summoned forth. It bows before you, and you feel filled with unlimited strength, but you also become more rageful. (Melee Phys ATK +3)"
+Complete a second magic circle,"After drawing the second magic circle, it summons an ancient angel spirit that protects you. You feel a surge of inexhaustible power coursing through you. (Hit Rate +2%)"
+Keep a safe distance,You're afraid of such mysterious power and want no part in it. (Nothing happens)
+
+A colorful and oddly-shaped chest attracts your attention. Do you go have a look?
+Go open it,"You go up and open the chest, and you're bitten by a chest monster pretending to be treasure. (Current HP -4)"
+Take a tentative step,"You poke at the chest with a weapon and discover it's actually a chest monster. Good thing it can't see, so it doesn't discover you. (Nothing happens)"
+Be afraid,You think it might be dangerous and decide to leave. (Nothing happens)
+
+"You just barely hear a beautiful, ethereal voice singing that tugs at your heartstrings. You think..."
+Go get to the bottom of it,You're drawn by the singing and fall into a pit of bones. You're attacked by a demon spider hiding overhead and barely manage to escape the pit in the scuffle. (Current HP -2)
+Restrain yourself,"You observe from where you are and hear a strange hissing sound amidst the singing. You look up and see a demon spider with a human's face, which you defeat. You get treasure. (Gold +500)"
+Keep your distance,"You think it must be a trick, so you decide to leave this sketchy place. (Nothing happens)"
+
+The legendary labyrinth merchant appears. Do you respond to him?
+Treat yourself,"You spend gold and feel like your wounds are recovering. Your abilities get a temporary, comprehensive boost. (Current HP +5, ATK +2)"
+Rob the merchant,"You go to rob the merchant, and he becomes enraged and transforms into a massive beast and beats you to an inch of your life. (Current HP -20)"
+You have no money,"You leave the merchant, and he disappears into the darkness with a laugh (Nothing happens)"
+
+A low growl comes from up ahead that makes the ground and walls shake. You decide to...
+Go see,You go have a look and run smack into a massive Fallen Angel. You take a licking but escape with your life. (Current HP -2)
+Take a tentative look,"You observe the surroundings and see another small path that goes around the snarling, massive Fallen Angel. Behind it, you discover a treasure chest. (Gold +200)"
+Run for your life,"Fearing danger, you take the long way around and run smack into a massive Fallen Angel. (Current HP -5)"
+
+A wounded Slimer is lying helpless in the middle of the road. Do you go check it out?
+Slay it,"You easily dispatch this Slimer, but then you're attacked by a mob of them that smell their comrade's juices. You take minor injuries, but you get nothing for your troubles. (Current HP -1)"
+Save it,"You rescue the injured slimer, which leads you around a giant monster to a place with gold. (Gold +200)"
+Go around it,"You go around the injured slimer and run into the big monster that attacked the slimer. After a hard-fought battle, you get some gold. (Current HP -5, Gold +200)"
+
+There's a demon monkey up ahead harassing an adventurer. Do you go help?
+Rush to help,"You go to the rescue, but your weapon is useless in the cramped cave and are given a sound thrashing by the monkey. (Current HP -4)"
+Don't be rash,"After observing from the sideline for a bit, you choose to attack with a short-range weapon. You kill the demon monkey and rescue the adventurer. (Nothing happens)"
+Take another path,"You throw some food far away, distracting the demon monkey and rescuing the adventurer. (Gold +300)"
+
+A clamor of footsteps and shaking comes from behind you. You decide to...
+Run away quick,"You're totally flustered and run into a trap, taking heavy injury. (Current HP -10)"
+Hide for a while,"You hide and watch, discovering that it's a gang of looters that would kill you without blinking an eye. Luckily, you escape death. (Nothing happens)"
+Go check it out,You take a sneak peek behind you and see that it's a gang of murderous bandits. You collect the loot they left behind as they run away. (Item received: Elite Hunter)
+
+A dilapidated and eerie cabin can be faintly seen in the darkness. Do you go explore?
+Go in and see,"You go into the cabin only to discover you've entered a monster's belly. You slash out of its abdomen with your blade and take corrosion damage, weakening you. (Current Armor -5)"
+Look on from afar,You observe from afar and discover this cabin is actually a hallucination generated by a monster. (Nothing happens)
+Definitely don't go in,"You prepare to go around and are chased by the monster disguised as a house. You manage to fend off the attack, but you get injured. (Current HP -5)"
+
+"Countless red, flashing eyes appear in the darkness ahead. Do you go have a look?"
+Go see,You go to see and discover countless highly-valuable red crystal gems inlaid in the wall. (Gold +2000)
+Safety first,"You get close and watch and discover some people go in. When they leave, you head over and find there is nothing there. (Nothing happens)"
+Start to leave,"Fearing danger, you get ready to leave when you encounter a bandit. After a hard-fought battle, you're injured but get some loot. (Current HP -5, Gold +300)"
+

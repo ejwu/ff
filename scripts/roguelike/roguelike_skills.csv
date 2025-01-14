@@ -1,0 +1,65 @@
+name,requirements
+Fighting Spirit,Power: 4
+"For 3 rounds, own ATK is raised 5 pts"
+
+Berserker,Power: 4
+Next 2 attacks must crit and must hit
+
+Dragon Breath,Intellect: 7
+Deal 100% of Magic ATK as Magic Dmg to all monsters
+
+Rage,Stamina: 5
+"For 5 rounds, own dmg received is raised 5 pts and ATK is raised 50%"
+
+Weapon Master,Agility: 4
+"In this layer, own basic atks have a 40% chance of dealing an extra attack"
+
+Sacrifice,Stamina: 3 / Power: 3
+"When you take 10 pts of dmg, the next basic atk must crit"
+
+Sharp Shooter,Agility: 4
+Deal 100% of own ranged Phys ATK as Phys Dmg to specified monster
+
+Holy Shield Spell,Stamina: 5
+"In this layer, you black 5 hits of basic atk dmg"
+
+Thick Skin,Stamina: 3
+"In this layer, dmg received is lowered 5 pts"
+
+Nimble,Agility: 4
+"For 3 rounds, own Dodge is raised 70%"
+
+Sledgehammer,Power: 3
+Deal 100% of own melee Phys ATK as Phys Dmg to specified monster and stun it for 1 round
+
+Fireball Spell,Intellect: 4
+Deal 50% of Magic ATK as Magic Dmg to a specified monster
+
+Recovery Spell,Stamina: 3
+Recover 10 HP for self
+
+Trap Expert,Intellect: 5
+Disable all traps in layer
+
+Magic Box,Intellect: 3
+Randomly get one item (invalid if item bar is full)
+
+Ignore Pain,Stamina: 7
+"In current layer, after taking your first lethal hit, you will recover 1 pt of HP"
+
+Weaken,Power: 4
+Dmg received for all monsters in current layer increases 3 pts
+
+Perfect End,Agility: 4
+"The next attack will be a 4x combo
+""Who wants to challenge me? I'll end them."""
+
+Midas Touch,Intellect: 2
+Get 100 Gold
+
+Fully Armored,Stamina: 3
+Get 15 Armor (not to exceed Max Armor)
+
+Blade Storm,Power: 7
+Deal 100% of own melee Phys ATK as Phys Dmg to all monsters
+
