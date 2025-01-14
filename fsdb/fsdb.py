@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import sqlite3
 import sys
+import unicodedata
 
 # Mostly from BattleConstants.lua
 
@@ -170,6 +171,22 @@ def parse_monsters():
     # Return a multimap of skills to every monster that uses it
     skills_to_monsters = defaultdict(list)
     monsters = json.load(open(MONSTER_FILE))
+
+    monsters_to_levels = defaultdict()
+    levels = json.load(open(ENEMY_LEVEL_FILE))
+    for _, rounds in levels.items():
+        for r in rounds.values():
+            print(r)
+            for npc in r["npc"]:
+                if npc["npcId"] in monsters_to_levels:
+                    if npc["level"] != monsters_to_levels[npc["npcId"]]:
+                        print(monsters_to_levels)
+                        print(monsters_to_levels[npc["npcId"]])
+                        print(_, npc)
+#                        exit()
+                monsters_to_levels[npc["npcId"]] = npc["level"]
+#    exit(0)
+    
     fill = ("?," * len(monsters["362122"]))[:-1]
     for monster_id, monster in monsters.items():
         monster = transform_monster(monster)
@@ -448,13 +465,38 @@ def insert_denormalized_skill(c, fsid, skill, monster_list, scaling_data):
     populate_and_insert(c, fsid, "", skill, scaling_data)
     for monster in monster_list:
         populate_and_insert(c, "", monster, skill, scaling_data)
-            
+
+# 20241111 patch has more skill_groups in the res_sub file than the publish file.  Take the union of the two,
+# preferring publish for historical reasons, even though I have no idea which one should have priority
+def get_skill_groups(path):
+    skill_groups = None
+    pub_file = PUB_PATH / path
+    res_file = RES_PATH / path
+    if pub_file.exists():
+        skill_groups = json.load(open(pub_file))
+    else:
+        # At least one of the files is guaranteed to exist
+        return json.load(open(res_file))
+
+    for i, k in json.load(open(res_file)).items():
+        if i not in skill_groups:
+            skill_groups[i] = k
+    
+    return skill_groups
+
+def is_cjk(s):
+    for c in s:
+        # Brutal good enough hack
+        if c != '\n' and unicodedata.name(c).startswith('CJK'):
+            return True
+    return False
+        
 def parse_artifacts():
     # Return a multimap of fsid to all their skills
     fs_to_skills = defaultdict(list)
     
     all_artifacts = json.load(open(ARTIFACT_MAPPING_FILE))
-    skill_groups = json.load(open(ARTIFACT_SKILL_GROUP_FILE))
+    skill_groups = get_skill_groups(ARTIFACT_SKILL_GROUP_PATH)
     
     for fsid in all_artifacts.keys():
         if fsid == "200028":
@@ -487,13 +529,20 @@ def parse_artifacts():
                 skill_count = 0
                 for skill in node["getSkill"]:
                     skill_count += 1
+
                     # Only use the L7 version of a skill to avoid spamming the main skill table
                     skill = transform_skill(artifact[str(skill_groups[skill]["7"])])
                     skill[TYPE_DESC] = f"T{togi_count}_{TOGI_TYPES[skill_count]}_L7"
 
                     # Make artifact skills look like normal skills
                     del skill["gemstoneGrade"]
-                    # Huh?  descr0 and descr show different ranges.  Might want to keep these
+
+                    # As of 20241118, many skills were untranslated.  Use the translated description with
+                    # incorrect scaling instead
+                    if is_cjk(skill["descr"]) and not is_cjk(skill["descr0"]):
+                        skill["descr"] = "WRONG:" + skill["descr0"]
+                        
+                    # "descr0" shows the skill scaling at level 1.  "descr" shows the actual scaling for leveled skills
                     del skill["descr0"]
                     skill["infectTarget"] = "artifact"
                     skill["infectTime"] = "artifact"
@@ -525,6 +574,9 @@ def assert_files_exist():
     if not ARTIFACT_SKILL_GROUP_FILE.exists():
         sys.exit(f"Can't find gemstoneSkillGroup.json at {ARTIFACT_SKILL_GROUP_FILE}")
 
+    if not ENEMY_LEVEL_FILE.exists():
+        sys.exit(f"Can't find enemy.json at {ENEMY_LEVEL_FILE}")
+
 # Get the file in /publish if it exists, otherwise fall back to /res_sub
 def get_file(path):
     pub_file = PUB_PATH / path
@@ -543,12 +595,15 @@ FS_FILE = get_file("card/card.json")
 SKILLS_FILE = get_file("card/skill.json")
 SKILLS_SCALING_FILE = get_file(Path("card/skillEffect.json"))
 MONSTER_FILE = get_file("monster/monster.json")
+ENEMY_LEVEL_FILE = get_file("quest/enemy.json")
 
 # This appears to be the togi map for every FS
 ARTIFACT_MAPPING_FILE = get_file("artifact/talentPoint.json")
 
 # Togi map refers to a skill group, which maps to individual skills for all 10 togi levels
 ARTIFACT_SKILL_GROUP_FILE = get_file("artifact/gemstoneSkillGroup.json")
+# Wacky new updates mean we might have to check both files
+ARTIFACT_SKILL_GROUP_PATH = "artifact/gemstoneSkillGroup.json"
 
 assert_files_exist()
 
