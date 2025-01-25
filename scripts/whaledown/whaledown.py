@@ -8,6 +8,9 @@ import json
 import os
 import re
 
+PLAYER_NAMES = {"whalesky": "《藍天使》", "whale1015412": "《紅豆冰》"}
+PLAYER_NAME_LENGTHS = {"《藍天使》": 5, "《紅豆冰》": 5}
+
 def parse_args():
     parser = argparse.ArgumentParser("Analyze teams for whaledown")
     parser.add_argument("--show_secrets", help="show nonpublic information", action="store_true", required=False)
@@ -68,7 +71,7 @@ def print_aggregate_stats():
     month = parse_args().month
     
     for player_filename in sorted(os.listdir(month)):
-        print(player_filename)
+        print(PLAYER_NAMES.get(player_filename, player_filename))
         player = json.load(open(f"{month}/{player_filename}"))["data"]
         for team_index in ["team1", "team2", "team3"]:
             for fs in player[team_index]:
@@ -123,7 +126,7 @@ def print_player_diff(player_name, month1, month2):
         print()
 
 def show_monthly_summary():
-    for month in ["202407", "202408", "202409", "202411"]:
+    for month in os.listdir("data"):
         print(f"--------------------------{month}-------------------------")
         fs_used = Counter()
         full_fs_used = Counter()
@@ -132,7 +135,7 @@ def show_monthly_summary():
         for player in os.listdir(f"data/{month}"):
             player_data = load_player(player, f"data/{month}")
             print()
-            player_name = player[:-5]
+            player_name = PLAYER_NAMES.get(player[:-5], player[:-5])
             print(player_name)
             [togis, mirrors] = print_player(player_data)
             togi_rankings[player_name] = togis
@@ -150,17 +153,23 @@ def show_monthly_summary():
         print(month)
         print()
         print("Togi rankings:")
-        for k in sorted(togi_rankings, key = lambda x:togi_rankings[x], reverse=True):
-            print(f"{k:13}: {togi_value_str(togi_rankings[k])}")
+        for k in sorted(togi_rankings, key=lambda x:togi_rankings[x], reverse=True):
+            print(f"{k:{13 - PLAYER_NAME_LENGTHS.get(k, 0)}}: {togi_value_str(togi_rankings[k])}")
         print()
         print("Mirror rankings:")
-        for k in sorted(mirror_rankings, key = lambda x:mirror_rankings[x], reverse=True):
-            print(f"{k:13}: {mirror_value_str(mirror_rankings[k])}")
+        for k in sorted(mirror_rankings, key=lambda x:mirror_rankings[x], reverse=True):
+            print(f"{k:{13 - PLAYER_NAME_LENGTHS.get(k, 0)}}: {mirror_value_str(mirror_rankings[k])}")
         print()
-        
-        print(fs_used.most_common())
-        print(full_fs_used.most_common())
-        
+
+        print("FS rankings:")
+        for [fs, count] in fs_used.most_common():
+            print(f"{count:3} {fs}")
+        print()
+
+        print("FS + ascension rankings:")
+        for [fs, count] in full_fs_used.most_common():
+            print(f"{count:3} {fs}")
+
 def show_diffs():
     prev_month_players = set()
     for month in os.listdir("data"):

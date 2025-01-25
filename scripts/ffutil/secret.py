@@ -230,7 +230,7 @@ def togi_value(fs):
     return total
 
 def togi_value_str(level_1_count):
-    return f"{level_1_count:,} L1 togis, or ~{float(level_1_count) / pow(3, 9):.3} L10 togis"
+    return f"{level_1_count:7,} L1 togis, or ~{(float(level_1_count) / pow(3, 9)):<04.3} L10 togis"
 
 FA_TO_MIRRORS = {"0": 0, "1": 1, "2": 2, "3": 3, "4": 5, "5": 6, "6": 8, "7": 11, "8": 16, "9": 23, "10": 33, "11": 71, "12": 151, "13": 280, "14": 462, "15": 702, "16": 1081, "17": 1604, "18": 2381, "19": 3300, "20": 4551} 
 
@@ -242,7 +242,7 @@ def mirror_value(fs):
     return total
 
 def mirror_value_str(num_mirrors):
-    return f"~{num_mirrors:,} mirrors/FAs, or ~{float(num_mirrors) / FA_TO_MIRRORS['20']:.4} +20s"
+    return f"~{num_mirrors:6,} mirrors/FAs, or ~{float(num_mirrors) / FA_TO_MIRRORS['20']:<04.3} +20s"
 
 
 # init somehow?
