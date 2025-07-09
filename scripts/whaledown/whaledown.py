@@ -130,6 +130,7 @@ def show_monthly_summary():
         print(f"--------------------------{month}-------------------------")
         fs_used = Counter()
         full_fs_used = Counter()
+        fa_used = Counter()
         togi_rankings = {}
         mirror_rankings = {}
         for player in os.listdir(f"data/{month}"):
@@ -148,6 +149,7 @@ def show_monthly_summary():
                         full_fs_used[fs_arti_level_str(fs)] += 1
                     else:
                         full_fs_used[fs_str(fs)] += 1
+                    fa_used[fa_str(fs)] += 1
                 print()
                     
         print(month)
@@ -169,6 +171,10 @@ def show_monthly_summary():
         print("FS + ascension rankings:")
         for [fs, count] in full_fs_used.most_common():
             print(f"{count:3} {fs}")
+
+        print("FA rankings:")
+        for [fa, count] in fa_used.most_common():
+            print(f"{count:3} {fa}")
 
 def show_diffs():
     prev_month_players = set()
