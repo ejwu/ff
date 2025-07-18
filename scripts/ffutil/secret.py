@@ -2,7 +2,7 @@ from collections import Counter
 import json
 import re
 
-BASE_PATH = "/home/ejwu/ff/ff20241218/com.egg.foodandroid/files/"
+BASE_PATH = "/home/ejwu/ff/ff20250513/com.egg.foodandroid/files/"
 
 FA_NATURES = {"1": "Brave", "2": "unknown2", "3": "Cautious", "4": "unknown4", "5": "unknown5", "6": "Resolute"}
 TOGI_COLORS = {"1": "Cyan", "2": "Blue", "3": "Red", "4": "Yellow", "5": "Purple", "6": "Green"}
@@ -45,6 +45,8 @@ def fs_skills(fs):
 
 # "5* Dunhuang Dogbane Tea"
 def fs_str(fs_json):
+#    if fs_map[fs_json["cardId"]] == "Nshima":
+#        print(fs_json)
     return str(fs_json["breakLevel"]) + "* " + fs_map[fs_json["cardId"]]
 
 # "5* T5 Dunhuang Dogbane Tea"
@@ -132,7 +134,7 @@ def togis(fs):
             togis.append("LOCKED")
         else:
             node = fs["artifactTalent"][str(i)]
-            if node["gemstoneId"]:
+            if "gemstoneId" in node and node["gemstoneId"]:
                 togis.append(togi_map[str(node["gemstoneId"])])
             else:
                 togis.append("EMPTY")

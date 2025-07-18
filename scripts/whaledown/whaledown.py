@@ -5,6 +5,8 @@ from collections import Counter
 from collections import defaultdict
 from ffutil.secret import (combined_fa_str, fa_str, fa_lines, fs_name, fs_arti_level_str, fs_str, short_fa_str, mirror_value, mirror_value_str, short_togi_str, shortest_togi_str, togis, togi_value, togi_value_str, update_togi_counts)
 import json
+import matplotlib
+import matplotlib.pyplot as plt
 import os
 import re
 
@@ -56,7 +58,7 @@ def print_player(player):
 
 
 def fa_sorter(counter_tuple):
-    m = re.search("\+(\d*)", counter_tuple[0])
+    m = re.search(r"\+(\d*)", counter_tuple[0])
     if m:
         return int(m.group(1))
     return 0
@@ -193,11 +195,119 @@ def show_diffs():
         prev_month = month
         prev_month_players = curr_month_players
 
+def plot_mirror_rankings():
+    """
+    Gathers mirror data across all months and plots the change over time for each player.
+    """
+    data_dir = "data"
+
+    # Find all existing month directories matching the YYYYMM format
+    existing_months = sorted([
+        m for m in os.listdir(data_dir)
+        if os.path.isdir(os.path.join(data_dir, m)) and re.match(r'^\d{6}$', m)
+    ])
+
+    if not existing_months:
+        print("Warning: No valid month data found in 'data' directory.")
+        return
+
+    # Determine the full, continuous range of months from the first to the last available month
+    start_month_str = existing_months[0]
+    end_month_str = existing_months[-1]
+
+    start_year, start_month = int(start_month_str[:4]), int(start_month_str[4:])
+    end_year, end_month = int(end_month_str[:4]), int(end_month_str[4:])
+
+    # This will be the master x-axis for the plot, including any missing months
+    all_months_in_range = []
+    cy, cm = start_year, start_month
+    while (cy, cm) <= (end_year, end_month):
+        all_months_in_range.append(f"{cy}{cm:02d}")
+        cm += 1
+        if cm > 12:
+            cm = 1
+            cy += 1
+
+    player_mirror_history = defaultdict(dict)
+
+    # Iterate through each EXISTING month and player to collect mirror data
+    for month in existing_months:
+        month_path = os.path.join(data_dir, month)
+        for player_filename in os.listdir(month_path):
+            try:
+                player_data = load_player(player_filename, month_path)
+                base_name = player_filename.removesuffix(".json")
+                player_name = PLAYER_NAMES.get(base_name, base_name)
+
+                # Calculate total mirrors for the player for this month
+                total_mirrors = 0
+                for team_index in ["team1", "team2", "team3"]:
+                    for fs in player_data[team_index]:
+                        total_mirrors += mirror_value(fs)
+
+                player_mirror_history[player_name][month] = total_mirrors
+            except (json.JSONDecodeError, KeyError) as e:
+                print(f"Warning: Could not process file {player_filename} in {month}: {e}")
+    # --- FONT CONFIGURATION FOR CJK CHARACTERS ---
+    # Set a font that supports the characters in PLAYER_NAMES. Matplotlib will
+    # use the first font it finds in this list from your system.
+    #
+    # Common font names by OS:
+    # - Windows: 'Microsoft JhengHei', 'SimHei'
+    # - macOS:   'Heiti TC', 'PingFang TC', 'Arial Unicode MS'
+    # - Linux:   'WenQuanYi Zen Hei', 'Noto Sans CJK TC' (may need to be installed)
+    #plt.rcParams['font.family'] = ['Noto Sans CJK TC', 'sans-serif']
+    matplotlib.rcParams['font.family'] = ['Noto Sans CJK JP', 'sans-serif']
+
+    # This setting resolves a common issue where minus signs are displayed as boxes.
+    plt.rcParams['axes.unicode_minus'] = False
+    # --- END FONT CONFIGURATION ---
+
+    # Plotting the data
+    fig, ax = plt.subplots(figsize=(12, 8))
+
+    # Create a mapping from month string to a numerical index for plotting
+    month_to_index = {month: i for i, month in enumerate(all_months_in_range)}
+
+    for player_name, history in sorted(player_mirror_history.items()):
+        if not history:
+            continue
+
+        # Create lists of the months and scores where data exists for this player.
+        player_months, player_scores = zip(*sorted(history.items()))
+
+        # Convert the player's months to their corresponding numerical indices
+        player_indices = [month_to_index[m] for m in player_months]
+
+        # Plot using the numerical indices for x-axis, which ensures correct ordering
+        ax.plot(player_indices, player_scores, marker='o', linestyle='-')
+
+        # Add the player name as a label to the right of the last data point
+        ax.text(player_indices[-1] + 0.1, player_scores[-1], player_name, verticalalignment='center')
+
+    # Formatting the graph
+    ax.set_xlabel("Month")
+    ax.set_ylabel("Total Mirror Value")
+    ax.set_title("Player Mirror Value Change Over Time")
+    ax.grid(True, which='both', linestyle='--', linewidth=0.5)
+
+    # Set the ticks to the numerical indices and the labels to the month strings.
+    # This ensures the x-axis is ordered correctly and labeled meaningfully.
+    if all_months_in_range:
+        ax.set_xticks(range(len(all_months_in_range)))
+        ax.set_xticklabels(all_months_in_range, rotation=45, ha="right")
+
+    # Adjust plot margins to make space for the labels on the right
+    ax.margins(x=0.15)
+
+    plt.tight_layout()
+    plt.show()
+
 if __name__ == '__main__':
     if parse_args().all_months:
         show_monthly_summary()
+        plot_mirror_rankings()
     elif parse_args().show_diffs:
         show_diffs()
     else:
         print_aggregate_stats()
-
