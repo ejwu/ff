@@ -35,6 +35,7 @@ def load_all_data(data_dir="data"):
 
     months = sorted([m for m in os.listdir(data_dir) if os.path.isdir(os.path.join(data_dir, m)) and re.match(r'^\d{6}$', m)])
 
+
     for month in months:
         month_path = os.path.join(data_dir, month)
         for filename in sorted(os.listdir(month_path)): # Sort for deterministic name selection
@@ -62,7 +63,7 @@ def load_all_data(data_dir="data"):
 
 def print_player(player_data, show_secrets=False):
     print()
-    print(get_player_id_from_data(player_data))
+#    print(get_player_id_from_data(player_data))
     total_togis = 0
     total_mirrors = 0
     for team_index in ["team1", "team2", "team3"]:
@@ -84,6 +85,7 @@ def print_player(player_data, show_secrets=False):
         print(togi_value_str(team_togis))
 
     print()
+    print(get_player_id_from_data(player_data))
     print("All teams")
     print(mirror_value_str(total_mirrors))
     print(togi_value_str(total_togis))
@@ -107,6 +109,7 @@ def print_aggregate_stats(args, all_data, player_id_map):
 
     month_key = os.path.basename(args.month)
     month_data = all_data.get(month_key)
+
 
     for player_id, player_data in sorted(month_data.items()):
         player_name = player_id_map.get(player_id, player_id)
@@ -189,11 +192,11 @@ def show_monthly_summary(args, all_data, player_id_map):
         print(month)
         print()
         print("Togi rankings:")
-        for k in sorted(togi_rankings, key=lambda x:togi_rankings[x], reverse=True):
+        for k in sorted(togi_rankings, key=togi_rankings.get, reverse=True):
             print(f"{k:{13 - PLAYER_NAME_LENGTHS.get(k, 0)}}: {togi_value_str(togi_rankings[k])}")
         print()
         print("Mirror rankings:")
-        for k in sorted(mirror_rankings, key=lambda x:mirror_rankings[x], reverse=True):
+        for k in sorted(mirror_rankings, key=mirror_rankings.get, reverse=True):
             print(f"{k:{13 - PLAYER_NAME_LENGTHS.get(k, 0)}}: {mirror_value_str(mirror_rankings[k])}")
         print()
 
@@ -227,19 +230,27 @@ def show_diffs(all_data, player_id_map):
             player_data2 = all_data[month2_str][player_id]
             print_player_diff(player_name, player_data1, player_data2, month1_str, month2_str)
 
-def plot_mirror_rankings(all_data, player_id_map):
-    """
-    Gathers mirror data across all months and plots the change over time for each player.
-    """
-    existing_months = sorted(all_data.keys())
+def _get_player_history(all_data, player_id_map, value_func):
+    """Helper function to gather historical data for either mirrors or togis."""
+    player_history = defaultdict(dict)
 
-    if not existing_months:
-        print("Warning: No valid month data found.")
+    sorted_months = sorted(all_data.keys())
+    for month in sorted_months:
+        for player_id, player_data in all_data[month].items():
+            player_name = player_id_map.get(player_id, player_id)
+            total_value = sum(value_func(fs) for team in ["team1", "team2", "team3"] for fs in player_data[team])
+            player_history[player_name][month] = total_value
+
+    return player_history, sorted_months
+
+def _plot_rankings(player_history, existing_months, y_label, title):
+    """Generic plotting function for historical data."""
+    if not player_history:
+        print("Warning: No valid month data found to plot.")
         return
 
     start_month_str = existing_months[0]
     end_month_str = existing_months[-1]
-
     start_year, start_month = int(start_month_str[:4]), int(start_month_str[4:])
     end_year, end_month = int(end_month_str[:4]), int(end_month_str[4:])
 
@@ -251,17 +262,6 @@ def plot_mirror_rankings(all_data, player_id_map):
         if cm > 12:
             cm = 1
             cy += 1
-
-    player_mirror_history = defaultdict(dict)
-
-    for month, month_data in all_data.items():
-        for player_id, player_data in month_data.items():
-            player_name = player_id_map.get(player_id, player_id)
-            total_mirrors = 0
-            for team_index in ["team1", "team2", "team3"]:
-                for fs in player_data[team_index]:
-                    total_mirrors += mirror_value(fs)
-            player_mirror_history[player_name][month] = total_mirrors
 
     # --- FONT CONFIGURATION FOR CJK CHARACTERS ---
     # Set a font that supports the characters in PLAYER_NAMES. Matplotlib will
@@ -281,7 +281,7 @@ def plot_mirror_rankings(all_data, player_id_map):
     # Create a mapping from month string to a numerical index for plotting
     month_to_index = {month: i for i, month in enumerate(all_months_in_range)}
 
-    for player_name, history in sorted(player_mirror_history.items()):
+    for player_name, history in sorted(player_history.items()):
         if not history:
             continue
         # Create lists of the months and scores where data exists for this player.
@@ -295,8 +295,8 @@ def plot_mirror_rankings(all_data, player_id_map):
 
     # Formatting the graph
     ax.set_xlabel("Month")
-    ax.set_ylabel("Total Mirror Value")
-    ax.set_title("Player Mirror Value Change Over Time")
+    ax.set_ylabel(y_label)
+    ax.set_title(title)
     ax.grid(True, which='both', linestyle='--', linewidth=0.5)
 
     # Set the ticks to the numerical indices and the labels to the month strings.
@@ -310,6 +310,18 @@ def plot_mirror_rankings(all_data, player_id_map):
     plt.tight_layout()
     plt.show()
 
+def plot_mirror_rankings(all_data, player_id_map):
+    """Gathers and plots mirror data across all months."""
+    player_history, existing_months = _get_player_history(all_data, player_id_map, mirror_value)
+    if player_history:
+        _plot_rankings(player_history, existing_months, "Total Mirror Value", "Whaledown Mirror Values")
+
+def plot_togi_rankings(all_data, player_id_map):
+    """Gathers and plots togi data across all months."""
+    player_history, existing_months = _get_player_history(all_data, player_id_map, togi_value)
+    if player_history:
+        _plot_rankings(player_history, existing_months, "Total L1 Togi Value", "Whaledown Togi Values")
+
 if __name__ == '__main__':
     args = parse_args()
     all_data, player_id_map = load_all_data()
@@ -321,6 +333,7 @@ if __name__ == '__main__':
     if args.all_months:
         show_monthly_summary(args, all_data, player_id_map)
         plot_mirror_rankings(all_data, player_id_map)
+        plot_togi_rankings(all_data, player_id_map)
     elif args.show_diffs:
         show_diffs(all_data, player_id_map)
     else:
