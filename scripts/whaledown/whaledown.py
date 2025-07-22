@@ -63,7 +63,7 @@ def load_all_data(data_dir="data"):
 
 def print_player(player_data, show_secrets=False):
     print()
-#    print(get_player_id_from_data(player_data))
+    #    print(get_player_id_from_data(player_data))
     total_togis = 0
     total_mirrors = 0
     for team_index in ["team1", "team2", "team3"]:
@@ -89,8 +89,8 @@ def print_player(player_data, show_secrets=False):
     print("All teams")
     print(mirror_value_str(total_mirrors))
     print(togi_value_str(total_togis))
-#    if show_secrets:
-#        print(togi_value_str(total_togis))
+    #    if show_secrets:
+    #        print(togi_value_str(total_togis))
     return total_togis, total_mirrors
 
 
@@ -243,7 +243,7 @@ def _get_player_history(all_data, player_id_map, value_func):
 
     return player_history, sorted_months
 
-def _plot_rankings(player_history, existing_months, y_label, title):
+def _plot_rankings(player_history, existing_months, y_label, title, color_map):
     """Generic plotting function for historical data."""
     if not player_history:
         print("Warning: No valid month data found to plot.")
@@ -289,7 +289,7 @@ def _plot_rankings(player_history, existing_months, y_label, title):
         # Convert the player's months to their corresponding numerical indices
         player_indices = [month_to_index[m] for m in player_months]
         # Plot using the numerical indices for x-axis, which ensures correct ordering
-        ax.plot(player_indices, player_scores, marker='o', linestyle='-')
+        ax.plot(player_indices, player_scores, marker='o', linestyle='-', color=color_map.get(player_name))
         # Add the player name as a label to the right of the last data point
         ax.text(player_indices[-1] + 0.1, player_scores[-1], player_name, verticalalignment='center')
 
@@ -310,17 +310,17 @@ def _plot_rankings(player_history, existing_months, y_label, title):
     plt.tight_layout()
     plt.show()
 
-def plot_mirror_rankings(all_data, player_id_map):
+def plot_mirror_rankings(all_data, player_id_map, color_map):
     """Gathers and plots mirror data across all months."""
     player_history, existing_months = _get_player_history(all_data, player_id_map, mirror_value)
     if player_history:
-        _plot_rankings(player_history, existing_months, "Total Mirror Value", "Whaledown Mirror Values")
+        _plot_rankings(player_history, existing_months, "Total Mirror Value", "Whaledown Mirror Values", color_map)
 
-def plot_togi_rankings(all_data, player_id_map):
+def plot_togi_rankings(all_data, player_id_map, color_map):
     """Gathers and plots togi data across all months."""
     player_history, existing_months = _get_player_history(all_data, player_id_map, togi_value)
     if player_history:
-        _plot_rankings(player_history, existing_months, "Total L1 Togi Value", "Whaledown Togi Values")
+        _plot_rankings(player_history, existing_months, "Total L1 Togi Value", "Whaledown Togi Values", color_map)
 
 if __name__ == '__main__':
     args = parse_args()
@@ -332,8 +332,15 @@ if __name__ == '__main__':
 
     if args.all_months:
         show_monthly_summary(args, all_data, player_id_map)
-        plot_mirror_rankings(all_data, player_id_map)
-        plot_togi_rankings(all_data, player_id_map)
+
+        # Create a stable color mapping to use for all plots
+        all_player_names = sorted(player_id_map.values())
+        prop_cycle = plt.rcParams['axes.prop_cycle']
+        colors = prop_cycle.by_key()['color']
+        color_map = {name: colors[i % len(colors)] for i, name in enumerate(all_player_names)}
+
+        plot_mirror_rankings(all_data, player_id_map, color_map)
+        plot_togi_rankings(all_data, player_id_map, color_map)
     elif args.show_diffs:
         show_diffs(all_data, player_id_map)
     else:
