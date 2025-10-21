@@ -7,8 +7,13 @@ from ffutil.secret import (combined_fa_str, fa_str, fa_lines, fs_name, fs_arti_l
 import json
 import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+import matplotlib.image as mpimg
 import os
 import re
+
+SB_AVATAR_FILE = "/home/ejwu/ff/ff20250704/com.egg.foodandroid/files/res_sub/ui/head/avator_icon_500294.png"
+SB_PLAYERS = ["mrjq", "lulamei", "shigetora", "bolacha", "russian", "decielle", "samus", "mirae", "rawchips", "anaishi", "salmonbella", "missmason", "atlant", "hyejung", "munyee"]
 
 # Use playerId as the key for overrides.
 PLAYER_ID_TO_NAME = {"111684": "《藍天使》", "1015412": "《紅豆冰》"}
@@ -249,6 +254,14 @@ def _plot_rankings(player_history, existing_months, y_label, title, color_map):
         print("Warning: No valid month data found to plot.")
         return
 
+
+    # Load the avatar image for special players
+    sb_avatar_img = None
+    try:
+        sb_avatar_img = mpimg.imread(SB_AVATAR_FILE)
+    except FileNotFoundError:
+        print(f"Warning: Avatar file not found at {SB_AVATAR_FILE}. SB players will use text labels.")
+
     start_month_str = existing_months[0]
     end_month_str = existing_months[-1]
     start_year, start_month = int(start_month_str[:4]), int(start_month_str[4:])
@@ -289,9 +302,27 @@ def _plot_rankings(player_history, existing_months, y_label, title, color_map):
         # Convert the player's months to their corresponding numerical indices
         player_indices = [month_to_index[m] for m in player_months]
         # Plot using the numerical indices for x-axis, which ensures correct ordering
-        ax.plot(player_indices, player_scores, marker='o', linestyle='-', color=color_map.get(player_name))
+#        ax.plot(player_indices, player_scores, marker='o', linestyle='-', color=color_map.get(player_name))
         # Add the player name as a label to the right of the last data point
-        ax.text(player_indices[-1] + 0.1, player_scores[-1], player_name, verticalalignment='center')
+#         ax.text(player_indices[-1] + 0.1, player_scores[-1], player_name, verticalalignment='center')
+        line_color = color_map.get(player_name)
+        ax.plot(player_indices, player_scores, marker='o', linestyle='-', color=line_color)
+
+        last_x = player_indices[-1]
+        last_y = player_scores[-1]
+
+        if player_name in SB_PLAYERS and sb_avatar_img is not None and False:
+            imagebox = OffsetImage(sb_avatar_img, zoom=0.08)
+            ab = AnnotationBbox(imagebox, (last_x, last_y),
+                                xybox=(20., 0.),
+                                xycoords='data',
+                                boxcoords="offset points",
+                                frameon=False,
+                                pad=0,
+                                box_alignment=(0, 0.5))
+            ax.add_artist(ab)
+        else:
+            ax.text(last_x + 0.1, last_y, player_name, verticalalignment='center')
 
     # Formatting the graph
     ax.set_xlabel("Month")
