@@ -12,7 +12,8 @@ import itertools
 import json
 import wcwidth
 
-BASE_PATH = "/home/ejwu/ff/ff20240627/com.egg.foodandroid/files/"
+BASE_PATH = "/home/ejwu/ff/ff20250918/com.egg.foodandroid/files/"
+DATA_PATH = "monthly/202510"
 
 FA_NATURES = {"1": "Brave", "2": "unknown2", "3": "Cautious", "4": "unknown4", "5": "unknown5", "6": "Resolute"}
 
@@ -44,7 +45,8 @@ SHORT_TOGI_COLORS = {
     "Red": "Re",
     "Blue": "Bl",
     "Purple": "Pu",
-    "Yellow": "Ye"
+    "Yellow": "Ye",
+    "EMPTY": "EM"
 }
 
 SHORT_TOGI_COLORS_REVERSED = {v:k for k, v in SHORT_TOGI_COLORS.items()}
@@ -235,7 +237,7 @@ def get_latest_date(player):
             latest = current
         if fs['artifactTalent']:
             for node in fs['artifactTalent'].values():
-                if node:
+                if node and 'createTime' in node:
                     current = parse(node['createTime'])
                     if current > latest:
                         latest = current
@@ -250,17 +252,20 @@ def update_togi_counts(counts, fs):
     togi_str = short_togi_str(fs)
     for togi in togi_str.split('/'):
         if togi != 'EMPTY' and not togi.startswith('LOCKED'):
-            counts[SHORT_TOGI_COLORS_REVERSED[togi[0:2]]][togi[3:5]] += 1
+            level = togi[3:5]
+            if togi[4:6] == "10":
+                level = togi[3:6]
+            counts[SHORT_TOGI_COLORS_REVERSED[togi[0:2]]][level] += 1
 
 def parse_disaster_snapshot():
-    lk_data_202302 = json.load(open("lk_leaderboard_20230201.json.pretty"))["data"]["manual"]
-    lk_data_202307 = json.load(open("monthly/202406_lk_disaster.json"))["data"]["manual"]
+#    lk_data_202302 = json.load(open("lk_leaderboard_20230201.json.pretty"))["data"]["manual"]
+    lk_data = json.load(open("monthly/202505_lk_disaster.json"))["data"]["manual"]
 
-    glori_data_202302 = json.load(open("glori_leaderboard_20230201.json.pretty"))["data"]["manual"]
-    glori_data_202307 = json.load(open("monthly/202406_glori_disaster.json"))["data"]["manual"]
+#    glori_data_202302 = json.load(open("glori_leaderboard_20230201.json.pretty"))["data"]["manual"]
+    glori_data = json.load(open(DATA_PATH + "_glori_disaster.json"))["data"]["manual"]
 
-    first = lk_data_202307
-    second = glori_data_202307
+    first = lk_data
+    second = glori_data
     
     max_name_length = 1
     for i, lk_disaster in enumerate(first):
@@ -331,8 +336,9 @@ def parse_disaster_snapshot():
             for color, counter in sorted(lk_togi_levels_by_color.items(), key=lambda togi: togi[::-1], reverse=True):
                 print(color, sorted(counter.items(), key=lambda entry: entry[0][::-1], reverse=True))
             print("\nglori togi counts in T4", DISASTER_NAMES[str(disaster["questId"])], '\n')
+            # TODO: these sorts don't work with L10s - this hack puts L10s first but the rest out of order
             for color, counter in sorted(glori_togi_levels_by_color.items()):
-                print(color, sorted(counter.items(), key=lambda entry: entry[0][::-1], reverse=True))
+                print(color, sorted(counter.items(), key=lambda entry: entry[0][:-2], reverse=True))
         print()
     
 if __name__ == '__main__':
